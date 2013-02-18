@@ -8,6 +8,7 @@ Roman Valls Guimera, Science for Life Laboratory, Stockholm, Sweden.
 """
 
 import codecs
+from pprint import pprint
 from genologics.lims import *
 
 # Login parameters for connecting to a LIMS instance.
@@ -18,8 +19,14 @@ from genologics.site_cloud import BASEURI, USERNAME, PASSWORD
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 lims.check_version()
 
-# Get the list of all projects.
-projects = lims.get_projects()
+project = Project(lims, id="P193")
 
-for prj in projects:
-    print prj, prj.uri
+print 'UDFs:'
+pprint(project.udf.items())
+
+print 'files:'
+for file in project.files:
+    print file.content_location
+
+project.udf['Delivery Report'] = "http://example.com/delivery_note.pdf"
+project.put()

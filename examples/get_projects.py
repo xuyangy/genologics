@@ -29,7 +29,7 @@ projects = lims.get_projects(open_date=day)
 print len(projects), 'projects opened since', day
 
 # Get the project with the specified LIMS id, and print some info.
-project = Project(lims, id='KRA61')
+project = Project(lims, id='P193')
 print project, project.name, project.open_date, project.close_date
 
 print '    UDFs:'

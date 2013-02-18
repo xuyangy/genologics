@@ -265,7 +265,7 @@ class UdfDictionary(object):
             if self._udt:
                 root = self._instance.root.find(nsmap('udf:type'))
             else:
-                root = self._instance.root
+                root = self.instance.root
             elem = ElementTree.SubElement(root,
                                           nsmap('udf:field'),
                                           type=type,
