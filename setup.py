@@ -12,13 +12,13 @@ setup(name='genologics',
       keywords='genologics api rest',
       author='Per Kraulis',
       author_email='per.kraulis@scilifelab.se',
-      url='https://github.com/pekrau/genologics',
+      url='https://github.com/scilifelab/genologics',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          "requests" 
+          "requests"
       ],
       entry_points="""
       # -*- Entry points: -*-
