@@ -263,7 +263,7 @@ class UdfDictionary(object):
                 raise NotImplementedError("Cannot handle value of type '%s'"
                                           " for UDF" % type(value))
             if self._udt:
-                root = self._instance.root.find(nsmap('udf:type'))
+                root = self.instance.root.find(nsmap('udf:type'))
             else:
                 root = self.instance.root
             elem = ElementTree.SubElement(root,
@@ -278,7 +278,7 @@ class UdfDictionary(object):
         del self._lookup[key]
         for node in self._elems:
             if node.attrib['name'] == key:
-                self._instance.root.remove(node)
+                self.instance.root.remove(node)
                 break
 
     def items(self):
