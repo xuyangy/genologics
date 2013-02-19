@@ -22,31 +22,32 @@ instance to the database.
 
 ### Installation
 
-pip install <this github repository>
-
-or:
-
 pip install genologics
 
-(see know bugs though...)
+or for the cutting edge version:
+
+pip install http://github.com/scilifelab/
 
 ### Usage
 
-The client script imports the class Lims from the genologics.lims module,
-and instantiates it with the required arguments:
-
-- Base URI of the server, including the port number, but excluding
-  the '/api/v2' segment of the path.
-- User name of the account on the server.
-- Password of the account on the server.
-
-The URL and credentials should be wrintten in a new file in
-"genologics/site_cloud.py":
+The URL and credentials should be wrintten in a new file in any
+of those config files (ordered by preference):
 
 ```
-BASEURI="https://yourlims.example.com:8443"
-USERNAME="username"
-PASSWORD="password"
+$HOME/.genologicsrc, .genologicsrc, genologics.conf, genologics.cfg
+```
+
+or if installed system_wide:
+
+```
+/etc/genologics.conf
+```
+
+```
+[genologics]
+BASEURI=https://yourlims.example.com:8443
+USERNAME=your_username
+PASSWORD=your_password
 ```
 
 ### Example scripts
@@ -63,6 +64,3 @@ for your server, all these must be reviewed and modified.
   It is not entirely clear how to deal with this in the Lims.cache:
   Currently, an artifact that has the current state may be represented
   by a URL that includes the state, and another that does not contain it.
-
-- At the moment the URI/username/password are not very package-friendly (site_cloud.py),
-this needs some fixing.

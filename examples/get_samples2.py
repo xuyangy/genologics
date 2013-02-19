@@ -9,7 +9,7 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 
 from genologics.lims import *
 
-from genologics.site_cloud import BASEURI, USERNAME, PASSWORD
+from genologics.config import BASEURI, USERNAME, PASSWORD
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 lims.check_version()
 

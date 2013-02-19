@@ -13,7 +13,7 @@ from genologics.lims import Lims
 
 # Login parameters for connecting to a LIMS instance.
 # NOTE: Modify according to your setup.
-from genologics.site_cloud import BASEURI, USERNAME, PASSWORD
+from genologics.config import BASEURI, USERNAME, PASSWORD
 
 # Create the LIMS interface instance, and check the connection and version.
 lims = Lims(BASEURI, USERNAME, PASSWORD)
