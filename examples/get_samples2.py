@@ -2,7 +2,7 @@
 
 Usage examples: Get some samples, and sample info.
 
-NOTE: You need to set the BASEURI, USERNAME AND PASSWORD.
+
 
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 """
