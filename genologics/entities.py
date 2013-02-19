@@ -222,9 +222,13 @@ class UdfDictionary(object):
         for node in self._elems:
             if node.attrib['name'] != key: continue
             type = node.attrib['type'].lower()
+
             if value is None:
                 pass
             elif type == 'string':
+                if not isinstance(value, basestring):
+                    raise TypeError('String UDF requires str or unicode value')
+            elif type == 'str':
                 if not isinstance(value, basestring):
                     raise TypeError('String UDF requires str or unicode value')
             elif type == 'text':
@@ -241,6 +245,10 @@ class UdfDictionary(object):
             elif type == 'date':
                 if not isinstance(value, datetime.date): # Too restrictive?
                     raise TypeError('Date UDF requires datetime.date value')
+                value = str(value)
+            elif type == 'uri':
+                if not isinstance(value, basestring):
+                    raise TypeError('URI UDF requires str or punycode (unicode) value')
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % type)
