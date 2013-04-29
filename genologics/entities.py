@@ -561,7 +561,6 @@ class Project(Entity):
     researcher    = EntityDescriptor('researcher', Researcher)
     udf           = UdfDictionaryDescriptor()
     udt           = UdtDictionaryDescriptor()
-    notes         = EntityListDescriptor('note', Note)
     files         = EntityListDescriptor(nsmap('file:file'), File)
     externalids   = ExternalidListDescriptor()
     # permissions XXX
