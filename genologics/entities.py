@@ -316,7 +316,6 @@ class UdfDictionaryDescriptor(BaseDescriptor):
         self.value = UdfDictionary(instance, udt=self._UDT)
         return self.value
 
-
 class UdtDictionaryDescriptor(UdfDictionaryDescriptor):
     """An instance attribute containing a dictionary of UDF values
     in a UDT represented by multiple XML elements.
@@ -405,6 +404,17 @@ class LocationDescriptor(TagDescriptor):
         uri = node.find('container').attrib['uri']
         return Container(instance.lims, uri=uri), node.find('value').text
 
+class ReagentLabelList(BaseDescriptor):
+    """An instance attribute yielding a list of reagent labels"""
+    def __get__(self, instance, cls):
+	instance.get()
+	self.value = []
+	for node in instance.root.findall('reagent-label'):
+	    try:
+	    	self.value.append(node.attrib['name']) 
+	    except:
+		pass
+	return self.value
 
 class InputOutputMapList(BaseDescriptor):
     """An instance attribute yielding a list of tuples (input, output)
@@ -527,6 +537,8 @@ class Researcher(Entity):
     def name(self):
         return u"%s %s" % (self.first_name, self.last_name)
 
+class Reagent_label(Entity):
+    reagent_label = StringDescriptor('reagent-label')
 
 class Note(Entity):
     "Note attached to a project or a sample."
@@ -656,9 +668,20 @@ class Artifact(Entity):
     samples        = EntityListDescriptor('sample', Sample)
     udf            = UdfDictionaryDescriptor()
     files          = EntityListDescriptor(nsmap('file:file'), File)
-    # reagent_labels XXX
+    reagent_labels = ReagentLabelList()
     # artifact_flags XXX
     # artifact_groups XXX
+
+    def input_artifact_list(self):
+        """Returns the input artifact ids of the parrent process."""
+        input_artifact_list=[]
+        try:
+            for tuple in self.parent_process.input_output_maps:
+                if tuple[1]['limsid'] == self.id:
+                    input_artifact_list.append(tuple[0]['limsid'])
+        except:
+            pass
+        return input_artifact_list
 
     def get_state(self):
         "Parse out the state value from the URI."
