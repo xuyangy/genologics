@@ -19,10 +19,10 @@ import scilifelab.log
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 
 def  main(proj_name, all_projects, days, conf):
-    first_of_july = '2013-01-30'#'2013-06-30'
+    first_of_july = '2013-06-30'
     today = date.today()
     couch = load_couch_server(conf)
-    proj_db = couch['analysis']#['projects']
+    proj_db = couch['projects']
     if all_projects:
         projects = lims.get_projects()
         for proj in projects:
