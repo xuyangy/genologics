@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/maya.brandi/.virtualenvs/master/bin/python
 
 """Script to load project info from Lims into the project database in statusdb.
 
