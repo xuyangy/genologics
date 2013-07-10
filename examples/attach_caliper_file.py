@@ -9,9 +9,8 @@ Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
 
 from pprint import pprint
 from genologics.lims import Lims
-from genologics.entities import Artifact, Glsstorage, File
+from genologics.entities import Artifact
 from shutil import copy
-from xml.etree import ElementTree
 
 from genologics.config import BASEURI, USERNAME, PASSWORD
 import os
