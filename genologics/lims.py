@@ -264,6 +264,38 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def post_file(self, attached_instance, original_location=None):
+        """Add a file to the server and attach it to the given
+        resource. Attached instance can be of type project,
+        sample, process or file artifact. Must be executed
+        where original location and the server's file system 
+        is mounted."""
+
+        assert original_location and attached_instance
+        node = ElementTree.Element('file:file')
+        node.attrib['xmlns:file'] = "http://genologics.com/ri/file"
+
+        at = ElementTree.SubElement(node,'attached-to')
+        at.text = attached_instance.uri
+        
+        ol = ElementTree.SubElement(node,'original-location')
+        ol.text = original_location
+
+        data = self.tostring(ElementTree.ElementTree(node))
+        uri = self.get_uri('glsstorage')
+
+        r = self.post(uri,data)
+
+        # The response should contain a location where
+        # the file should be placed on the server.
+        cl = r.find('content-location')
+        from shutil import copy
+        copy(ol.text,cl.text)
+        
+        files_uri = attached_instance.uri
+        return self.post(uri,data)
+
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
