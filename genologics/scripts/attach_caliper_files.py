@@ -31,14 +31,44 @@ fn_rna = '27-1893_E2_P189_113_info_L9.png'
 fn_sv = 'P671P1_A1_P671_101_A1.png'
 fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
 
+
+
+class NotFoundError(Exception):
+    """Exception raised if certain item is not found in the Clarity Lims.
+    
+    Attributes:
+        entity -- entity that was looked for
+        q_key  -- query key
+        q_val  -- query value
+        fn     -- file name
+    """
+
+    def __init__(self,entity,q_key,q_val,fn):
+        self.entity = entity
+        self.q_key = q_key
+        self.q_val = q_val
+        self.fn = fn
+
+    def __str__(self):
+        s =  ("No %(entity)s found with query key '%(q_key)s' "
+              "and query value '%(q_val)s', parsed from file name %(fn)s.") % \
+            {'entity':self.entity.__name__, 
+             'q_key':self.q_key,
+             'q_val':self.q_val,
+             'fn':self.fn}
+        return s
+
+
+class MultipleFoundError(Exception):
+        pass
+
 def process_from_file_name(fn,lims):
     fn_l = fn.split('_')
     input_container = Container(lims,id=fn_l[0])
     try:
         input_container.get()
     except:
-        raise Exception(
-            "No container found with id %(id)s, parsed from file name %(fn)s." % {id:fn_l[0],fn:fn}
+        raise NotFoundError(Container,'id',fn_l[0],fn)
     input_sample_name = fn_l[2]+'_'+fn_l[3]
     input_samples = lims.get_samples(name=input_sample_name)
     if len(input_samples) != 1:
@@ -100,12 +130,12 @@ def process_from_file_name(fn,lims):
 
     return process,output_artifact
     
+if __name__ == "__main__":
+    pr_1,oa_1 = process_from_file_name(fn,lims)
 
-pr_1,oa_1 = process_from_file_name(fn,lims)
+    print pr_1,oa_1
+    pr_2,oa_2 = process_from_file_name(fn_rna,lims)
+    print pr_2,oa_2
 
-print pr_1,oa_1
-pr_2,oa_2 = process_from_file_name(fn_rna,lims)
-print pr_2,oa_2
-
-pr_sv,oa_sv = process_from_file_name(fn_sv_edit,lims)
-print pr_sv,oa_sv
+    pr_sv,oa_sv = process_from_file_name(fn_sv_edit,lims)
+    print pr_sv,oa_sv
