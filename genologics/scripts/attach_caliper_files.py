@@ -7,6 +7,7 @@ Usage example: Attach caliper image files to LIMS
 Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
 """
 
+from argparse import ArgumentParser
 from pprint import pprint
 from genologics.lims import Lims
 from genologics.entities import Artifact, Process,Container, Sample
@@ -144,12 +145,57 @@ def artifact_from_file_name(fn,lims):
 
     return output_artifact
     
-if __name__ == "__main__":
-    fn = '27-4562_A1_P601_101_A1.png'
-    fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
+def allocate_resource_for_file(attached_instance,file_path,lims):
+    from xml.etree import ElementTree
 
+    node = ElementTree.Element('file:file')
+    node.attrib['xmlns:file'] = "http://genologics.com/ri/file"
+    
+    at = ElementTree.SubElement(node,'attached-to')
+    at.text = attached_instance.uri
+    
+    ol = ElementTree.SubElement(node,'original-location')
+    ol.text = file_path
+
+    data = lims.tostring(ElementTree.ElementTree(node))
+    uri = lims.get_uri('glsstorage')
+
+    r = lims.post(uri,data)
+    return r
+
+def move_file_to_lims(src,content_location,domain):
+    location = content_location.split(domain)[1]
+
+    location_path = os.path.abspath(location)
+
+    if not os.path.exists(location_path):
+        print os.path.abspath(location)
+        os.makedirs(os.path.abspath(location))
+    copy(src,location)
+    
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('file',
+           help='A caliper image to be uploaded to the Lims')
+    parser.add_argument('--domain', default='.se',
+                        help=('The domain used for the lims server,'
+                              ' used for parsing out the file location,'
+                              ' default=".se"'))
+    args = parser.parse_args()
+
+    #    fn = '27-4562_A1_P601_101_A1.png'
+    #    fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
+    assert os.path.isfile(args.file)
+    fn = os.path.basename(args.file)
+    print fn
     oa_1 = artifact_from_file_name(fn,lims)
     print oa_1
-
-    oa_sv = artifact_from_file_name(fn_sv_edit,lims)
-    print oa_sv
+    r = allocate_resource_for_file(oa_1,args.file,lims)
+    print r
+    content_location = r.getchildren()[1].text
+    print content_location
+    move_file_to_lims(args.file,content_location,args.domain)
+    data = lims.tostring(ElementTree.ElementTree(r))
+    uri = lims.get_uri('files')
+    lims.post(uri,data)
