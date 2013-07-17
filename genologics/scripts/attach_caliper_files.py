@@ -18,19 +18,8 @@ import os
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 lims.check_version()
 
-# Allocate location at the LIMS server
-#original_location='/home/johannes/repos/genologics/test_data/2-26065.JPG'
-#assert os.path.isfile(original_location)
-#response = lims.post_file(artifact,original_location)
 
 #print response
-
-
-fn = '27-4562_A1_P601_101_A1.png'
-fn_rna = '27-1893_E2_P189_113_info_L9.png'
-fn_sv = 'P671P1_A1_P671_101_A1.png'
-fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
-
 
 
 class NotFoundError(Exception):
@@ -60,9 +49,31 @@ class NotFoundError(Exception):
 
 
 class MultipleFoundError(Exception):
-        pass
+    """Exception raised if multiple items are found where uniqueness was assumed
+    
+    Attributes:
+        entity -- entity that was looked for
+        q_key  -- query key
+        q_val  -- query value
+        fn     -- file name
+    """
 
-def process_from_file_name(fn,lims):
+    def __init__(self,entity,q_key,q_val,fn):
+        self.entity = entity
+        self.q_key = q_key
+        self.q_val = q_val
+        self.fn = fn
+
+    def __str__(self):
+        s =  ("Multiple %(entity)s was found with query key '%(q_key)s' "
+              "and query value '%(q_val)s', parsed from file name %(fn)s.") % \
+            {'entity':self.entity.__name__, 
+             'q_key':self.q_key,
+             'q_val':self.q_val,
+             'fn':self.fn}
+        return s
+
+def artifact_from_file_name(fn,lims):
     fn_l = fn.split('_')
     input_container = Container(lims,id=fn_l[0])
     try:
@@ -73,52 +84,55 @@ def process_from_file_name(fn,lims):
     input_samples = lims.get_samples(name=input_sample_name)
     if len(input_samples) != 1:
         if len(input_samples) == 0:
-            raise Exception(
-                "No sample found with name %(name)s, parsed from file name %(fn)s." % {name:input_sample_name,fn:fn} )
+            raise NotFoundError(Sample,'name',input_sample_name,fn)
         else:
-            raise Exception(
-                "Non unique sample for name %(name)s, parsed from file name %(fn)s." % {name:input_sample_name,fn:fn} )
+            raise MultipleFoundError(Sample,'name',input_sample_name,fn)
+        
 
     input_sample = input_samples[0]
-    input_artifacts = lims.get_artifacts(containerlimsid=input_container.id,sample_name=input_sample_name)
+    input_artifacts = lims.get_artifacts(containerlimsid=input_container.id,
+                                         sample_name=input_sample_name)
 
     if len(input_artifacts) != 1:
         if len(input_artifacts) == 0:
-            raise Exception(
-                """No artifact found with container lims id %(cid)s,
-                   sample name %(sn)s, 
-                   parsed from file name %(fn)s.""" % {'cid':input_container.id,'sn':input_sample_name, 'fn':fn} )
+            raise NotFoundError(Artifact,
+                                'container lims id, input sample name',
+                                (input_container.id,input_sample_name),
+                                fn)
         else:
-            raise Exception(
-                """Non unique artifacts was found with container lims id %(cid)s,
-                   sample name %(sn)s, 
-                   parsed from file name %(fn)s.""" % {'cid':input_container.id,'sn':input_sample_name, 'fn':fn} )
-        
+            raise MultipleFoundError(Artifact,
+                                'container lims id, input sample name',
+                                (input_container.id,input_sample_name),
+                                fn)
 
     input_artifact = input_artifacts[0]
     # Find the correct process
-    processes_for_input_artifact = lims.get_processes(inputartifactlimsid=input_artifact.id)
-    processes_for_type_dna_and_project = lims.get_processes(projectname=input_sample.project.name,type='CaliperGX QC (DNA)')
-    processes_for_type_rna_and_project = lims.get_processes(projectname=input_sample.project.name,type='CaliperGX QC (RNA)')
+    prcs_input_art = lims.get_processes(inputartifactlimsid=input_artifact.id)
+    prcs_dna_and_project = lims.get_processes(
+        projectname=input_sample.project.name,
+        type='CaliperGX QC (DNA)')
+    prcs_rna_and_project = lims.get_processes(
+        projectname=input_sample.project.name,
+        type='CaliperGX QC (RNA)')
 
 
-    process_ids_input = set([prc.id for prc in processes_for_input_artifact])
-    process_ids_dna = set([prc.id for prc in processes_for_type_dna_and_project])
-    process_ids_rna = set([prc.id for prc in processes_for_type_rna_and_project])
+    prc_ids_input = set([prc.id for prc in prcs_input_art])
+    prc_ids_dna = set([prc.id for prc in prcs_dna_and_project])
+    prc_ids_rna = set([prc.id for prc in prcs_rna_and_project])
 
-    ids = (process_ids_input & process_ids_dna) | (process_ids_input & process_ids_rna)
+    ids = (prc_ids_input & prc_ids_dna) | (prc_ids_input & prc_ids_rna)
     if len(ids) != 1:
         if len(ids) == 0:
-            raise Exception(
-                """No process found with container lims id %(cid)s,
-                   sample name %(sn), 
-                   parsed from file name %(fn)s.""" % {'cid':input_container,'sn':input_sample_name, 'fn':fn} )
+            raise NotFoundError(Process,
+                                'container lims id, sample name',
+                                (input_container.id,input_sample_name),
+                                fn)
+
         else:
-            raise Exception(
-                """Non unique artifacts was found with container lims id %(cid)s,
-                   sample name %(sn), 
-                   parsed from file name %(fn)s.""" % {'cid':input_container,'sn':input_sample_name, 'fn':fn} )
-        
+            raise MultipleFoundError(Process,
+                                'container lims id, sample name',
+                                (input_container.id,input_sample_name),
+                                fn)
 
     process = Process(lims,id =ids.pop())
     
@@ -128,14 +142,14 @@ def process_from_file_name(fn,lims):
             in_id_out_id[input['limsid']]=output['limsid']
     output_artifact = Artifact(lims,id=in_id_out_id[input_artifact.id])
 
-    return process,output_artifact
+    return output_artifact
     
 if __name__ == "__main__":
-    pr_1,oa_1 = process_from_file_name(fn,lims)
+    fn = '27-4562_A1_P601_101_A1.png'
+    fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
 
-    print pr_1,oa_1
-    pr_2,oa_2 = process_from_file_name(fn_rna,lims)
-    print pr_2,oa_2
+    oa_1 = artifact_from_file_name(fn,lims)
+    print oa_1
 
-    pr_sv,oa_sv = process_from_file_name(fn_sv_edit,lims)
-    print pr_sv,oa_sv
+    oa_sv = artifact_from_file_name(fn_sv_edit,lims)
+    print oa_sv
