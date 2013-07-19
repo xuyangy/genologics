@@ -7,7 +7,7 @@ Usage example: Attach caliper image files to LIMS
 Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
 """
 
-from argparse import ArgumentParser
+from optparse import OptionParser
 from pprint import pprint
 from genologics.lims import Lims
 from genologics.entities import Artifact, Process,Container, Sample
