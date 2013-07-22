@@ -13,11 +13,9 @@ from genologics.lims import Lims
 from genologics.entities import Artifact, Process,Container, Sample
 from shutil import copy
 
-from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics.config import BASEURI
 import os
 
-lims = Lims(BASEURI,USERNAME,PASSWORD)
-lims.check_version()
 
 
 #print response
@@ -184,6 +182,9 @@ if __name__ == "__main__":
                               ' default=".se"'))
     args = parser.parse_args()
 
+    lims = Lims(BASEURI,args.username,args.password)
+    lims.check_version()
+   
     #    fn = '27-4562_A1_P601_101_A1.png'
     #    fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
     assert os.path.isfile(args.file)
