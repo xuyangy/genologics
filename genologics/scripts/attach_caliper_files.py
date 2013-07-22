@@ -13,7 +13,6 @@ from genologics.lims import Lims
 from genologics.entities import Artifact, Process,Container, Sample
 from shutil import copy
 
-from genologics.config import BASEURI
 import os
 
 
@@ -180,9 +179,15 @@ if __name__ == "__main__":
                         help=('The domain used for the lims server,'
                               ' used for parsing out the file location,'
                               ' default=".se"'))
+    parser.add_argument('--username',
+                        help=('The user name'))
+    parser.add_argument('--password',
+                        help=('Password'))
+    parser.add_argument('--baseuri',
+                        help=('Uri for the lims server'))
     args = parser.parse_args()
 
-    lims = Lims(BASEURI,args.username,args.password)
+    lims = Lims(args.baseuri,args.username,args.password)
     lims.check_version()
    
     #    fn = '27-4562_A1_P601_101_A1.png'
