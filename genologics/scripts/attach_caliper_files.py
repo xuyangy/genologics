@@ -15,7 +15,7 @@ from shutil import copy
 
 from argparse import ArgumentParser
 import os
-
+import re
 
 
 #print response
@@ -71,6 +71,25 @@ class MultipleFoundError(Exception):
              'q_val':self.q_val,
              'fn':self.fn}
         return s
+
+def _file_dict(p):
+    """ Constructs a mapping from input container, input sample to image file
+
+    p: Path where images are stored
+    """
+    # Regular expression will match at least 4 underscores and
+    # file extension png, pdf or PNG.
+    im_file_r = re.compile('^.+_.+_.+_.+_.+\.(png|pdf|PNG)')
+    d = {}
+    for fn in os.listdir(p):
+        if im_file_r.match(fn):
+            fn_l = fn.split('_')
+            cn=fn_l[0]
+            sn=fn_l[2]+'_'+fn_l[3]
+            if (cn,sn) in d:
+                raise MultipleFoundError(None,None,None,None)
+            d[(cn,sn)]=fn
+    return d
 
 def artifact_from_file_name(fn,lims):
     fn_l = fn.split('_')
@@ -174,35 +193,49 @@ def move_file_to_lims(src,content_location,domain):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('file',
-           help='A caliper image to be uploaded to the Lims')
-    parser.add_argument('--domain', default='.se',
-                        help=('The domain used for the lims server,'
-                              ' used for parsing out the file location,'
-                              ' default=".se"'))
     parser.add_argument('--username',
-                        help=('The user name'))
+                        help='The user name')
     parser.add_argument('--password',
-                        help=('Password'))
+                        help='Password')
     parser.add_argument('--baseuri',
-                        help=('Uri for the lims server'))
+                        help='Uri for the lims server')
+    parser.add_argument('--pluid',
+                        help='Process Lims Id')
+    parser.add_argument('--path',
+                        help='Path where image files are located')
     args = parser.parse_args()
-
+    
     lims = Lims(args.baseuri,args.username,args.password)
     lims.check_version()
-   
-    #    fn = '27-4562_A1_P601_101_A1.png'
-    #    fn_sv_edit = '27-4118_A1_P671_101_info_A1.png'
-    assert os.path.isfile(args.file)
-    fn = os.path.basename(args.file)
-    print fn
-    oa_1 = artifact_from_file_name(fn,lims)
-    print oa_1
-    r = allocate_resource_for_file(oa_1,args.file,lims)
-    print r
-    content_location = r.getchildren()[1].text
-    print content_location
-    move_file_to_lims(args.file,content_location,args.domain)
-    data = lims.tostring(ElementTree.ElementTree(r))
-    uri = lims.get_uri('files')
-    lims.post(uri,data)
+    p = Process(lims,id=args.pluid)
+
+    file_list = os.listdir(args.path)
+
+    io = p.input_output_maps
+    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
+
+
+    for input,output in io_filtered:
+        i_a = Artifact(lims,id=input['limsid'])
+        o_a = Artifact(lims,id=output['limsid'])
+        if len(i_a.samples)==0:
+            raise NotFoundError(None,None,None,None)
+        elif len(i_a.samples)!=1:
+            raise MultipleFoundError(None,None,None,None)
+        i_s=i_a.samples[0]
+        i_c = i_a.location[0]
+        im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
+        fns = filter(im_file_r.match,file_list)
+        if len(fns)==0:
+            raise NotFoundError(None,None,None,None)
+        elif len(fns)!=1:
+            raise MultipleError(None,None,None,None)
+        fn = fns[0]
+        fp = os.path.join(args.path,fn)
+        
+        r = allocate_resource_for_file(o_a,fp,lims)
+        content_location=r.getchildren()[1].text
+        move_file_to_lims(fp,content_location,'.se')
+        data = lims.tostring(ElementTree.ElementTree(r))
+        uri = lims.get_uri('files')
+        lims.post(uri,data)
