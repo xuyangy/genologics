@@ -13,6 +13,7 @@ from genologics.lims import Lims
 from genologics.entities import Artifact, Process,Container, Sample
 from shutil import copy
 
+from argparse import ArgumentParser
 import os
 
 
