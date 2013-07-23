@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 
 def attach_file(src,resource):
     """Attach file at src to given resource
