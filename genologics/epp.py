@@ -31,9 +31,9 @@ class StreamToLogger(object):
          self.logger.log(self.log_level, line.rstrip())
  
 
-def configure_logging(logger,log_file):
+def configure_logging(log_file):
     """Set up logging so both stdout and stderr is logged to the log_file"""
-    logger.basicConfig(
+    logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
         filename=log_file,
