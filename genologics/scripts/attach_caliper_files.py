@@ -262,7 +262,7 @@ if __name__ == "__main__":
             raise MultipleFoundError(None,None,None,None)
         i_s=i_a.samples[0]
         i_c = i_a.location[0]
-        im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
+        im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.name))
         fns = filter(im_file_r.match,file_list)
         if len(fns)==0:
             raise NotFoundError(None,None,None,None)
