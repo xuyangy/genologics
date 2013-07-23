@@ -8,7 +8,7 @@ def attach_file(src,resource):
     Copies the file to the current directory, EPP node will upload this file
     automatically if the process output is properly set up"""
     original_name = os.path.basename(src)
-    new_name = artifact.id + '_' + original_name
+    new_name = resource.id + '_' + original_name
     dir = os.getcwd()
     location = os.path.join(dir,new_name)
     print "Moving {0} to {1}".format(src,location)
