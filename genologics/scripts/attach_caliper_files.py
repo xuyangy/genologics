@@ -48,8 +48,9 @@ def main(lims,pluid,path):
         
         # Use a reguluar expression to find the file name given
         # the container and sample
-        im_file_r = re.compile('.+^{sample}.+{container}.+\.(png|pdf|PNG)'\
-                                   .format(sample=i_s.name,container=i_c.id))
+        re_str = '.+{sample}.+{container}.+\.(png|pdf|PNG)'\
+                                   .format(sample=i_s.name,container=i_c.id)
+        im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
         print "Looking for files with container id {0} and sample name {1}"\
             .format(i_c.id,i_s.name)
