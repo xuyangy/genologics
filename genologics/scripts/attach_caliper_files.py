@@ -182,14 +182,12 @@ def allocate_resource_for_file(attached_instance,file_path,lims):
     r = lims.post(uri,data)
     return r
 
-def move_file_to_lims(src,content_location,domain):
-    location = content_location.split(domain)[1]
-
-    location_path = os.path.abspath(location)
-
-    if not os.path.exists(location_path):
-        print os.path.abspath(location)
-        os.makedirs(os.path.abspath(location))
+def move_file_to_lims(src,attached_artifact):
+    original_name = os.path.basename(src)
+    new_name = attached_artifact.id + '_' + original_name
+    dir = os.getcwd()
+    location = os.path.join(dir,new_name)
+    print "Moving {0} to {1}".format(src,location)
     copy(src,location)
     
  
@@ -264,18 +262,14 @@ if __name__ == "__main__":
         i_c = i_a.location[0]
         im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.name))
         fns = filter(im_file_r.match,file_list)
-        print ("Looking for files with container id {0} and sample name {1}".format(i_c.id,i_s.name))
+        print "Looking for files with container id {0} and sample name {1}".format(i_c.id,i_s.name)
         if len(fns)==0:
             raise NotFoundError(None,None,None,None)
         elif len(fns)!=1:
             raise MultipleError(None,None,None,None)
         fn = fns[0]
+        print "Found image file {0}".format(fn)
         fp = os.path.join(args.path,fn)
         
-        r = allocate_resource_for_file(o_a,fp,lims)
-        content_location=r.getchildren()[1].text
-        move_file_to_lims(fp,content_location,'.se')
-        data = lims.tostring(ElementTree.ElementTree(r))
-        uri = lims.get_uri('files')
-        lims.post(uri,data)
+        move_file_to_lims(fp,o_a)
         
