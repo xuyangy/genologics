@@ -15,6 +15,7 @@ from shutil import copy
 
 from argparse import ArgumentParser
 import os
+import sys
 import re
 
 
@@ -191,6 +192,26 @@ def move_file_to_lims(src,content_location,domain):
     copy(src,location)
     
 
+class Logger(object):
+    """Context manager to handle logging, redirects stderr to log file
+
+    """
+    def __init__(self, log=None):
+        if log:
+            self._stderr = open(log,'w+')
+        else:
+            self._stderr = sys.stderr
+
+    def __enter__(self):
+        self.old_stderr = sys.stderr
+        self.old_stderr.flush()
+        sys.stderr = self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stderr.flush()
+        sys.stderr = self.old_stderr
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('--username',
@@ -203,39 +224,45 @@ if __name__ == "__main__":
                         help='Process Lims Id')
     parser.add_argument('--path',
                         help='Path where image files are located')
+    parser.add_argument('-l','--log',default=None,
+                        help='Log file')
     args = parser.parse_args()
-    
-    lims = Lims(args.baseuri,args.username,args.password)
-    lims.check_version()
-    p = Process(lims,id=args.pluid)
-
-    file_list = os.listdir(args.path)
-
-    io = p.input_output_maps
-    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
-
-
-    for input,output in io_filtered:
-        i_a = Artifact(lims,id=input['limsid'])
-        o_a = Artifact(lims,id=output['limsid'])
-        if len(i_a.samples)==0:
-            raise NotFoundError(None,None,None,None)
-        elif len(i_a.samples)!=1:
-            raise MultipleFoundError(None,None,None,None)
-        i_s=i_a.samples[0]
-        i_c = i_a.location[0]
-        im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
-        fns = filter(im_file_r.match,file_list)
-        if len(fns)==0:
-            raise NotFoundError(None,None,None,None)
-        elif len(fns)!=1:
-            raise MultipleError(None,None,None,None)
-        fn = fns[0]
-        fp = os.path.join(args.path,fn)
-        
-        r = allocate_resource_for_file(o_a,fp,lims)
-        content_location=r.getchildren()[1].text
-        move_file_to_lims(fp,content_location,'.se')
-        data = lims.tostring(ElementTree.ElementTree(r))
-        uri = lims.get_uri('files')
-        lims.post(uri,data)
+    with Logger(log=args.log):
+        try:
+            lims = Lims(args.baseuri,args.username,args.password)
+            lims.check_version()
+            p = Process(lims,id=args.pluid)
+            
+            file_list = os.listdir(args.path)
+            
+            io = p.input_output_maps
+            io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
+            
+            
+            for input,output in io_filtered:
+                i_a = Artifact(lims,id=input['limsid'])
+                o_a = Artifact(lims,id=output['limsid'])
+                if len(i_a.samples)==0:
+                    raise NotFoundError(None,None,None,None)
+                elif len(i_a.samples)!=1:
+                    raise MultipleFoundError(None,None,None,None)
+                i_s=i_a.samples[0]
+                i_c = i_a.location[0]
+                im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
+                fns = filter(im_file_r.match,file_list)
+                if len(fns)==0:
+                    raise NotFoundError(None,None,None,None)
+                elif len(fns)!=1:
+                    raise MultipleError(None,None,None,None)
+                fn = fns[0]
+                fp = os.path.join(args.path,fn)
+                
+                r = allocate_resource_for_file(o_a,fp,lims)
+                content_location=r.getchildren()[1].text
+                move_file_to_lims(fp,content_location,'.se')
+                data = lims.tostring(ElementTree.ElementTree(r))
+                uri = lims.get_uri('files')
+                lims.post(uri,data)
+        except:
+            import traceback
+            traceback.print_exc()
