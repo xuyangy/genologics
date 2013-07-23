@@ -1,5 +1,7 @@
 import logging
 import sys
+import os
+from shutil import copy
 
 def attach_file(src,resource):
     """Attach file at src to given resource
@@ -7,7 +9,7 @@ def attach_file(src,resource):
     Copies the file to the current directory, EPP node will upload this file
     automatically if the process output is properly set up"""
     original_name = os.path.basename(src)
-    new_name = artifact.id + '_' + original_name
+    new_name = resource.id + '_' + original_name
     dir = os.getcwd()
     location = os.path.join(dir,new_name)
     print "Moving {0} to {1}".format(src,location)
@@ -31,9 +33,9 @@ class StreamToLogger(object):
          self.logger.log(self.log_level, line.rstrip())
  
 
-def configure_logging(logger,log_file):
+def configure_logging(log_file):
     """Set up logging so both stdout and stderr is logged to the log_file"""
-    logger.basicConfig(
+    logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
         filename=log_file,
