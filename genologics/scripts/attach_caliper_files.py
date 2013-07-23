@@ -20,9 +20,6 @@ import re
 
 import logging
 
-#print response
-
-
 class NotFoundError(Exception):
     """Exception raised if certain item is not found in the Clarity Lims.
     
@@ -74,117 +71,9 @@ class MultipleFoundError(Exception):
              'fn':self.fn}
         return s
 
-def _file_dict(p):
-    """ Constructs a mapping from input container, input sample to image file
-
-    p: Path where images are stored
-    """
-    # Regular expression will match at least 4 underscores and
-    # file extension png, pdf or PNG.
-    im_file_r = re.compile('^.+_.+_.+_.+_.+\.(png|pdf|PNG)')
-    d = {}
-    for fn in os.listdir(p):
-        if im_file_r.match(fn):
-            fn_l = fn.split('_')
-            cn=fn_l[0]
-            sn=fn_l[2]+'_'+fn_l[3]
-            if (cn,sn) in d:
-                raise MultipleFoundError(None,None,None,None)
-            d[(cn,sn)]=fn
-    return d
-
-def artifact_from_file_name(fn,lims):
-    fn_l = fn.split('_')
-    input_container = Container(lims,id=fn_l[0])
-    try:
-        input_container.get()
-    except:
-        raise NotFoundError(Container,'id',fn_l[0],fn)
-    input_sample_name = fn_l[2]+'_'+fn_l[3]
-    input_samples = lims.get_samples(name=input_sample_name)
-    if len(input_samples) != 1:
-        if len(input_samples) == 0:
-            raise NotFoundError(Sample,'name',input_sample_name,fn)
-        else:
-            raise MultipleFoundError(Sample,'name',input_sample_name,fn)
-        
-
-    input_sample = input_samples[0]
-    input_artifacts = lims.get_artifacts(containerlimsid=input_container.id,
-                                         sample_name=input_sample_name)
-
-    if len(input_artifacts) != 1:
-        if len(input_artifacts) == 0:
-            raise NotFoundError(Artifact,
-                                'container lims id, input sample name',
-                                (input_container.id,input_sample_name),
-                                fn)
-        else:
-            raise MultipleFoundError(Artifact,
-                                'container lims id, input sample name',
-                                (input_container.id,input_sample_name),
-                                fn)
-
-    input_artifact = input_artifacts[0]
-    # Find the correct process
-    prcs_input_art = lims.get_processes(inputartifactlimsid=input_artifact.id)
-    prcs_dna_and_project = lims.get_processes(
-        projectname=input_sample.project.name,
-        type='CaliperGX QC (DNA)')
-    prcs_rna_and_project = lims.get_processes(
-        projectname=input_sample.project.name,
-        type='CaliperGX QC (RNA)')
-
-
-    prc_ids_input = set([prc.id for prc in prcs_input_art])
-    prc_ids_dna = set([prc.id for prc in prcs_dna_and_project])
-    prc_ids_rna = set([prc.id for prc in prcs_rna_and_project])
-
-    ids = (prc_ids_input & prc_ids_dna) | (prc_ids_input & prc_ids_rna)
-    if len(ids) != 1:
-        if len(ids) == 0:
-            raise NotFoundError(Process,
-                                'container lims id, sample name',
-                                (input_container.id,input_sample_name),
-                                fn)
-
-        else:
-            raise MultipleFoundError(Process,
-                                'container lims id, sample name',
-                                (input_container.id,input_sample_name),
-                                fn)
-
-    process = Process(lims,id =ids.pop())
-    
-    in_id_out_id = {}
-    for input,output in process.input_output_maps:
-        if output['output-generation-type'] == 'PerInput':
-            in_id_out_id[input['limsid']]=output['limsid']
-    output_artifact = Artifact(lims,id=in_id_out_id[input_artifact.id])
-
-    return output_artifact
-    
-def allocate_resource_for_file(attached_instance,file_path,lims):
-    from xml.etree import ElementTree
-
-    node = ElementTree.Element('file:file')
-    node.attrib['xmlns:file'] = "http://genologics.com/ri/file"
-    
-    at = ElementTree.SubElement(node,'attached-to')
-    at.text = attached_instance.uri
-    
-    ol = ElementTree.SubElement(node,'original-location')
-    ol.text = file_path
-
-    data = lims.tostring(ElementTree.ElementTree(node))
-    uri = lims.get_uri('glsstorage')
-
-    r = lims.post(uri,data)
-    return r
-
-def move_file_to_lims(src,attached_artifact):
+def attach_file(src,artifact):
     original_name = os.path.basename(src)
-    new_name = attached_artifact.id + '_' + original_name
+    new_name = artifact.id + '_' + original_name
     dir = os.getcwd()
     location = os.path.join(dir,new_name)
     print "Moving {0} to {1}".format(src,location)
@@ -208,48 +97,28 @@ class StreamToLogger(object):
       for line in buf.rstrip().splitlines():
          self.logger.log(self.log_level, line.rstrip())
  
+def configure_logging(logging,log_file):
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+        filename=log_file,
+        filemode='a'
+        )
+    stdout_logger = logging.getLogger('STDOUT')
+    sl = StreamToLogger(stdout_logger, logging.INFO)
+    sys.stdout = sl
+    
+    stderr_logger = logging.getLogger('STDERR')
+    sl = StreamToLogger(stderr_logger, logging.ERROR)
+    sys.stderr = sl
 
-
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument('--username',
-                        help='The user name')
-    parser.add_argument('--password',
-                        help='Password')
-    parser.add_argument('--baseuri',
-                        help='Uri for the lims server')
-    parser.add_argument('--pluid',
-                        help='Process Lims Id')
-    parser.add_argument('--path',
-                        help='Path where image files are located')
-    parser.add_argument('-l','--log',default=None,
-                        help='Log file')
-    args = parser.parse_args()
- 
-    if args.log:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-            filename=args.log,
-            filemode='a'
-            )
-        stdout_logger = logging.getLogger('STDOUT')
-        sl = StreamToLogger(stdout_logger, logging.INFO)
-        sys.stdout = sl
- 
-        stderr_logger = logging.getLogger('STDERR')
-        sl = StreamToLogger(stderr_logger, logging.ERROR)
-        sys.stderr = sl
-
-    lims = Lims(args.baseuri,args.username,args.password)
-    lims.check_version()
+def main(lims,pluid,path):
     p = Process(lims,id=args.pluid)
     
     file_list = os.listdir(args.path)
     
     io = p.input_output_maps
     io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
-    
     
     for input,output in io_filtered:
         i_a = Artifact(lims,id=input['limsid'])
@@ -271,5 +140,30 @@ if __name__ == "__main__":
         print "Found image file {0}".format(fn)
         fp = os.path.join(args.path,fn)
         
-        move_file_to_lims(fp,o_a)
+        attach_file(fp,o_a)
         
+    
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('--username',
+                        help='The user name')
+    parser.add_argument('--password',
+                        help='Password')
+    parser.add_argument('--baseuri',
+                        help='Uri for the lims server')
+    parser.add_argument('--pluid',
+                        help='Process Lims Id')
+    parser.add_argument('--path',
+                        help='Path where image files are located')
+    parser.add_argument('-l','--log',default=None,
+                        help='Log file')
+    args = parser.parse_args()
+ 
+    if args.log:
+        configure_logging(logging,args.log)
+
+    lims = Lims(args.baseuri,args.username,args.password)
+    lims.check_version()
+
+    main(lims,args.pluid,args.path)
