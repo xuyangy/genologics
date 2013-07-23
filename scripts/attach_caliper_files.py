@@ -21,7 +21,7 @@ from argparse import ArgumentParser
 import os
 import re
 
-from genologics.epp import attach_file,StreamToLogger,configure_logging, unique_check
+from genologics.epp import attach_file,configure_logging, unique_check
     
 def main(lims,pluid,path):
     """Uploads images found in path, for each input artifact for a process
