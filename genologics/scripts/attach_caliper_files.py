@@ -18,6 +18,7 @@ import os
 import sys
 import re
 
+import logging
 
 #print response
 
@@ -191,25 +192,24 @@ def move_file_to_lims(src,content_location,domain):
         os.makedirs(os.path.abspath(location))
     copy(src,location)
     
-
-class Logger(object):
-    """Context manager to handle logging, redirects stderr to log file
-
-    """
-    def __init__(self, log=None):
-        if log:
-            self._stderr = open(log,'w+')
-        else:
-            self._stderr = sys.stderr
-
-    def __enter__(self):
-        self.old_stderr = sys.stderr
-        self.old_stderr.flush()
-        sys.stderr = self._stderr
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._stderr.flush()
-        sys.stderr = self.old_stderr
+ 
+class StreamToLogger(object):
+   """
+   Fake file-like stream object that redirects writes to a logger instance.
+   
+   source: 
+   http://www.electricmonk.nl/log/2011/08/14/
+   redirect-stdout-and-stderr-to-a-logger-in-python/
+   """
+   def __init__(self, logger, log_level=logging.INFO):
+      self.logger = logger
+      self.log_level = log_level
+      self.linebuf = ''
+ 
+   def write(self, buf):
+      for line in buf.rstrip().splitlines():
+         self.logger.log(self.log_level, line.rstrip())
+ 
 
 
 if __name__ == "__main__":
@@ -227,42 +227,54 @@ if __name__ == "__main__":
     parser.add_argument('-l','--log',default=None,
                         help='Log file')
     args = parser.parse_args()
-    with Logger(log=args.log):
-        try:
-            lims = Lims(args.baseuri,args.username,args.password)
-            lims.check_version()
-            p = Process(lims,id=args.pluid)
-            
-            file_list = os.listdir(args.path)
-            
-            io = p.input_output_maps
-            io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
-            
-            
-            for input,output in io_filtered:
-                i_a = Artifact(lims,id=input['limsid'])
-                o_a = Artifact(lims,id=output['limsid'])
-                if len(i_a.samples)==0:
-                    raise NotFoundError(None,None,None,None)
-                elif len(i_a.samples)!=1:
-                    raise MultipleFoundError(None,None,None,None)
-                i_s=i_a.samples[0]
-                i_c = i_a.location[0]
-                im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
-                fns = filter(im_file_r.match,file_list)
-                if len(fns)==0:
-                    raise NotFoundError(None,None,None,None)
-                elif len(fns)!=1:
-                    raise MultipleError(None,None,None,None)
-                fn = fns[0]
-                fp = os.path.join(args.path,fn)
-                
-                r = allocate_resource_for_file(o_a,fp,lims)
-                content_location=r.getchildren()[1].text
-                move_file_to_lims(fp,content_location,'.se')
-                data = lims.tostring(ElementTree.ElementTree(r))
-                uri = lims.get_uri('files')
-                lims.post(uri,data)
-        except:
-            import traceback
-            traceback.print_exc()
+ 
+    if args.log:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+            filename=args.log,
+            filemode='a'
+            )
+        stdout_logger = logging.getLogger('STDOUT')
+        sl = StreamToLogger(stdout_logger, logging.INFO)
+        sys.stdout = sl
+ 
+        stderr_logger = logging.getLogger('STDERR')
+        sl = StreamToLogger(stderr_logger, logging.ERROR)
+        sys.stderr = sl
+
+    lims = Lims(args.baseuri,args.username,args.password)
+    lims.check_version()
+    p = Process(lims,id=args.pluid)
+    
+    file_list = os.listdir(args.path)
+    
+    io = p.input_output_maps
+    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
+    
+    
+    for input,output in io_filtered:
+        i_a = Artifact(lims,id=input['limsid'])
+        o_a = Artifact(lims,id=output['limsid'])
+        if len(i_a.samples)==0:
+            raise NotFoundError(None,None,None,None)
+        elif len(i_a.samples)!=1:
+            raise MultipleFoundError(None,None,None,None)
+        i_s=i_a.samples[0]
+        i_c = i_a.location[0]
+        im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.id))
+        fns = filter(im_file_r.match,file_list)
+        if len(fns)==0:
+            raise NotFoundError(None,None,None,None)
+        elif len(fns)!=1:
+            raise MultipleError(None,None,None,None)
+        fn = fns[0]
+        fp = os.path.join(args.path,fn)
+        
+        r = allocate_resource_for_file(o_a,fp,lims)
+        content_location=r.getchildren()[1].text
+        move_file_to_lims(fp,content_location,'.se')
+        data = lims.tostring(ElementTree.ElementTree(r))
+        uri = lims.get_uri('files')
+        lims.post(uri,data)
+        
