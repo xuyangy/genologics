@@ -264,6 +264,7 @@ if __name__ == "__main__":
         i_c = i_a.location[0]
         im_file_r = re.compile('^{container}.+{sample}.+\.(png|pdf|PNG)'.format(container=i_c.id,sample=i_s.name))
         fns = filter(im_file_r.match,file_list)
+        print ("Looking for files with container id {0} and sample name {1}".format(i_c.id,i_s.name))
         if len(fns)==0:
             raise NotFoundError(None,None,None,None)
         elif len(fns)!=1:
