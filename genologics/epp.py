@@ -1,6 +1,7 @@
 import logging
 import sys
 import os
+from shutil import copy
 
 def attach_file(src,resource):
     """Attach file at src to given resource
