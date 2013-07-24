@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Python script to upload Caliper image files, triggered as a EPP script.
 
 Command to trigger this script:

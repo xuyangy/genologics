@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """EPP example script for Clarity LIMS, written in Python
 
 Usage example: Trigger from Clarity with command
