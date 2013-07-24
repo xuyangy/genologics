@@ -1,8 +1,7 @@
 """EPP example script for Clarity LIMS, written in Python
 
 Usage example: Trigger from Clarity with command
-bash -c "PATH/TO/PYTHON/BINARY
-/opt/gls/clarity/customextensions/epp_script.py
+bash -c "PATH/TO/INSTALLED/SCRIPT
 --username {username} 
 --password {password} 
 --baseuri YOUR.URI 

@@ -1,8 +1,7 @@
 """Python script to upload Caliper image files, triggered as a EPP script.
 
 Command to trigger this script:
-bash -c "PATH/TO/PYTHON/BINARY
-PATH/TO/CUSTOMEXTENSIONS/attach_caliper_files.py
+bash -c "PATH/TO/INSTALLED/SCRIPT
 --username {username} 
 --password {password} 
 --baseuri YOUR.URI 
