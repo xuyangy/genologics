@@ -28,7 +28,7 @@ def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
         result_udf,udf1,op,udf2)
     for artifact in output_artifacts:
         print 'Updating: Artifact id: {0}, result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
-            artifact.id, artifact[result_udf],artifact[udf1],operator,artifact[udf2])
+            artifact.id, artifact.udf[result_udf],artifact.udf[udf1],operator,artifact.udf[udf2])
         artifact.udf[result_udf] = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
         artifact.put()
         print 'Updated {0} to {1}.'.format(result_udf,artifact.udf[result_udf])
