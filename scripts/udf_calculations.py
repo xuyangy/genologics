@@ -30,7 +30,7 @@ def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
 
 def main(lims,args):
     outputs = map(lambda id: Artifact(lims,id=id),args.output_files)
-    apply_calculations(lims,outputs,args.udf1,args.operator,args.udf2,arrgs.result_udf)
+    apply_calculations(lims,outputs,args.udf1,args.operator,args.udf2,args.result_udf)
 
 
 if __name__ == "__main__":
