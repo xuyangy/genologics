@@ -25,7 +25,7 @@ from genologics.epp import configure_logging,setup_standard_parser
 
 def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
     print 'result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
-        result_udf,udf1,operator,udf2)
+        result_udf,udf1,op,udf2)
     for artifact in output_artifacts:
         print 'Updating: Artifact id: {0}, result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
             artifact.id, artifact[result_udf],artifact[udf1],operator,artifact[udf2])
