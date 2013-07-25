@@ -24,11 +24,14 @@ from genologics.epp import configure_logging,setup_standard_parser
 
 
 def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
+    print 'result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
+        result_udf,udf1,operator,udf2)
     for artifact in output_artifacts:
-        print 'Change result udf from: ',artifact.udf[result_udf]
+        print 'Updating: Artifact id: {0}, result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
+            artifact.id, artifact[result_udf],artifact[udf1],operator,artifact[udf2])
         artifact.udf[result_udf] = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
-        print 'to: ',artifact.udf[result_udf]
         artifact.put()
+        print 'Updated {0} to {1}.'.format(result_udf,artifact.udf[result_udf])
 
 def main(lims,args):
     p = Process(lims,id = args.pid)
