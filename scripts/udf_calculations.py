@@ -19,24 +19,24 @@ Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
-from genologics.entities import Artifact
+from genologics.entities import Artifact, Process
 from genologics.epp import configure_logging,setup_standard_parser
 
 
 def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
     for artifact in output_artifacts:
-        artifact[result_udf] = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
+        print 'Change result udf from: ',artifact.udf[result_udf]
+        artifact.udf[result_udf] = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
+        print 'to: ',artifact.udf[result_udf]
         artifact.put()
 
 def main(lims,args):
-    outputs = map(lambda id: Artifact(lims,id=id),args.output_files)
-    for artifact in outputs:
-        try:
-            artifact.get()
-        except:
-            print "Unsuccesful get for artifact: {0}".format(artifact)
-            raise
-    apply_calculations(lims,outputs,args.udf1,args.operator,args.udf2,args.result_udf)
+    p = Process(lims,id = args.pid)
+    input_ids = map(lambda io: io[0]['limsid'],p.input_output_maps)
+    input_set = frozenset(input_ids)
+    inputs = map(lambda id: Artifact(lims,id=id),list(input_set))
+
+    apply_calculations(lims,inputs,args.udf1,args.operator,args.udf2,args.result_udf)
 
 
 if __name__ == "__main__":
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                         help='Lims unique ids for each output file artifact')
     parser.add_argument('--udf1',
                         help='The first udf in the formula')
-    parser.add_argument('--operator', choices =['+','-'],
+    parser.add_argument('--operator', choices =['+','-','*'],
                         help='operator to apply')
     parser.add_argument('--udf2',
                         help='The second udf in the formula')
