@@ -54,6 +54,8 @@ if __name__ == "__main__":
     # Start logging
     if args.log:
         configure_logging(args.log)
+    lims = Lims(args.baseuri,args.username,args.password)
+    lims.check_version()
 
-    main(args)
+    main(lims, args)
 
