@@ -19,6 +19,7 @@ Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
+from genologics.entities import Artifact
 from genologics.epp import configure_logging,setup_standard_parser
 
 
