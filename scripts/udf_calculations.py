@@ -19,7 +19,7 @@ Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
-from genologics.epp import configure_logging,get_standard_parser
+from genologics.epp import configure_logging,setup_standard_parser
 
 
 def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
@@ -43,7 +43,7 @@ if __name__ == "__main__":
                         help='Lims unique ids for each output file artifact')
     parser.add_argument('--udf1',
                         help='The first udf in the formula')
-    parser.add_argument('--operator', choices =['+','-']
+    parser.add_argument('--operator', choices =['+','-'],
                         help='operator to apply')
     parser.add_argument('--udf2',
                         help='The second udf in the formula')
