@@ -30,6 +30,12 @@ def apply_calculations(lims,output_artifacts,udf1,op,udf2,result_udf):
 
 def main(lims,args):
     outputs = map(lambda id: Artifact(lims,id=id),args.output_files)
+    for artifact in outputs:
+        try:
+            artifact.get()
+        except:
+            print "Unsuccesful get for artifact: {0}".format(artifact)
+            raise
     apply_calculations(lims,outputs,args.udf1,args.operator,args.udf2,args.result_udf)
 
 
