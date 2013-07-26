@@ -33,7 +33,7 @@ def apply_calculations(lims,input_artifacts,udf1,op,udf2,result_udf):
             udf2_val = artifact.udf[udf2]
         except:
             print artifact.udf.items()
-            raise
+
         print 'Updating: Artifact id: {0}, result_udf: {1}, udf1: {2}, operator: {3}, udf2: {4}'.format(
             artifact.id, artifact.udf[result_udf],artifact.udf[udf1],operator,artifact.udf[udf2])
         artifact.udf[result_udf] = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
