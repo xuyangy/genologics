@@ -28,9 +28,9 @@ def apply_calculations(lims,input_artifacts,udf1,op,udf2,result_udf):
         result_udf,udf1,op,udf2)
     for artifact in input_artifacts:
         try:
-            result_udf = artifact.udf[result_udf]
-            udf1=artifact.udf[udf1]
-            udf2 = artifact.udf[udf2]
+            result_udf_val = artifact.udf[result_udf]
+            udf1_val=artifact.udf[udf1]
+            udf2_val = artifact.udf[udf2]
         except:
             print artifact.udf.items()
             raise
