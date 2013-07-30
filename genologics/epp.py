@@ -4,20 +4,6 @@ import os
 from shutil import copy
 from argparse import ArgumentParser
 
-def setup_standard_parser(**kwargs):
-    parser = ArgumentParser(**kwargs)
-    parser.add_argument('--username',
-                        help='The user name')
-    parser.add_argument('--password',
-                        help='Password')
-    parser.add_argument('--baseuri',
-                        help='Uri for the lims server')
-    parser.add_argument('--pid',
-                        help='Process Lims Id')
-    parser.add_argument('-l','--log',default=None,
-                        help='Log file')
-    return parser
-
 def attach_file(src,resource):
     """Attach file at src to given resource
 
