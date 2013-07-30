@@ -32,9 +32,7 @@ def apply_calculations(lims,input_artifacts,udf1,op,udf2,result_udf):
 
 def main(lims,args):
     p = Process(lims,id = args.pid)
-    input_ids = map(lambda io: io[0]['limsid'],p.input_output_maps)
-    input_set = frozenset(input_ids)
-    inputs = map(lambda id: Artifact(lims,id=id),list(input_set))
+    inputs = p.all_inputs(unique=True)
 
     apply_calculations(lims,inputs,args.udf1,args.operator,args.udf2,args.result_udf)
 
@@ -43,7 +41,7 @@ if __name__ == "__main__":
     # Initialize parser with standard arguments and description
     desc = """EPP script to perform basic calculations on UDF:s in Clarity LIMS.
     result_udf=udf1 *operator* udf2"""
-    parser = setup_standard_parser(description=desc)
+    parser = ArgumentParser(description=desc)
 
     # Additional arguments
     parser.add_argument('--output_files',nargs='*',
