@@ -485,7 +485,8 @@ class Entity(object):
     @property
     def id(self):
         "Return the LIMS id; obtained from the URI."
-        
+        parts = urlparse.urlsplit(self.uri)
+        return parts.path.split('/')[-1]
 
     def get(self, force=False):
         "Get the XML data for this instance."
