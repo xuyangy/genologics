@@ -2,7 +2,6 @@ import logging
 import sys
 import os
 from shutil import copy
-from argparse import ArgumentParser
 
 def attach_file(src,resource):
     """Attach file at src to given resource
