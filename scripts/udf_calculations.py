@@ -2,9 +2,6 @@
 """EPP script to perform basic calculations on UDF:s in Clarity LIMS
 Command to trigger this script:
 bash -c "PATH/TO/INSTALLED/SCRIPT
---username {username} 
---password {password} 
---baseuri YOUR.URI 
 --pid {processLuid} 
 --log {compoundOutputFileLuidN}"
 --output_files {outputFileLuids}
@@ -21,7 +18,7 @@ from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.entities import Artifact, Process
 from genologics.epp import configure_logging,setup_standard_parser
-
+from genologics.config import BASEURI,USERNAME,PASSWORD
 
 def apply_calculations(lims,input_artifacts,udf1,op,udf2,result_udf):
     print 'result_udf: {0}, udf1: {1}, operator: {2}, udf2: {3}'.format(
@@ -64,7 +61,7 @@ if __name__ == "__main__":
     # Start logging
     if args.log:
         configure_logging(args.log)
-    lims = Lims(args.baseuri,args.username,args.password)
+    lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
 
     main(lims, args)
