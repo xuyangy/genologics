@@ -485,8 +485,7 @@ class Entity(object):
     @property
     def id(self):
         "Return the LIMS id; obtained from the URI."
-        parts = urlparse.urlsplit(self.uri)
-        return parts.path.split('/')[-1]
+        
 
     def get(self, force=False):
         "Get the XML data for this instance."
@@ -646,6 +645,15 @@ class Process(Entity):
     files          = EntityListDescriptor(nsmap('file:file'), File)
     # instrument XXX
     # process_parameters XXX
+    
+    def all_inputs(self,unique=False):
+        """Retrieving all input artifacts from input_output_maps
+        if unique is true, no duplicates are returned.
+        """
+        ids = map(lambda io: io[0]['limsid'],self.input_output_maps)
+        if unique:
+            ids = list(frozenset(ids))
+        return map(lambda id: Artifact(self.lims,id=id),ids)
 
 
 class Artifact(Entity):
