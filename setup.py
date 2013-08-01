@@ -28,7 +28,7 @@ setup(name='genologics',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       scripts=["scripts/attach_caliper_files.py",
-               "scripts/udf_calculations.py"],
+               "scripts/qc_amount_calculation.py"],
       include_package_data=True,
       zip_safe=False,
       install_requires=[
