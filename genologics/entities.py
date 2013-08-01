@@ -658,7 +658,7 @@ class Process(Entity):
 
     def parent_processes(self):
         """Retrieving all parent processes through the input artifacts"""
-        return map(lambda i_a: i_a.parent_process, self.all_inputs(unique=True)
+        return map(lambda i_a: i_a.parent_process, self.all_inputs(unique=True))
 
 
 class Artifact(Entity):
