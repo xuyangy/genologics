@@ -20,7 +20,7 @@ from genologics.entities import Artifact, Process
 from genologics.epp import configure_logging,setup_standard_parser
 from genologics.config import BASEURI,USERNAME,PASSWORD
 
-def apply_calculations(lims,input_artifacts,udf1,op,udf2,result_udf):
+def apply_calculations(lims,artifact,udf1,op,udf2,result_udf):
     print 'result_udf: {0}, udf1: {1}, operator: {2}, udf2: {3}'.format(
         result_udf,udf1,op,udf2)
     for artifact in input_artifacts:
@@ -43,7 +43,10 @@ if __name__ == "__main__":
     result_udf=udf1 *operator* udf2"""
     parser = ArgumentParser(description=desc)
 
-    # Additional arguments
+    parser.add_argument('--pid',
+                        help='Lims id for current Process')
+    parser.add_argument('--log',
+                        help='Log file')
     parser.add_argument('--output_files',nargs='*',
                         help='Lims unique ids for each output file artifact')
     parser.add_argument('--udf1',
