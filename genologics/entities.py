@@ -656,6 +656,10 @@ class Process(Entity):
             ids = list(frozenset(ids))
         return map(lambda id: Artifact(self.lims,id=id),ids)
 
+    def parent_processes(self):
+        """Retrieving all parent processes through the input artifacts"""
+        return map(lambda i_a: i_a.parent_process, self.all_inputs(unique=True)
+
 
 class Artifact(Entity):
     "Any process input or output; analyte or file."
