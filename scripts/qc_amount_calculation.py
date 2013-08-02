@@ -14,7 +14,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 
 from genologics.entities import Process
-from genologics.epp import configure_logging,significant_figures
+from genologics.epp import configure_logging
 
 def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf):
     print ("result_udf: {0}, udf1: {1}, "
