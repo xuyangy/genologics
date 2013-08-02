@@ -3,13 +3,6 @@ import sys
 import os
 from shutil import copy
 
-
-def significant_figures(f,n):
-    """Formats the float f into its string representation with n 
-    significant numbers"""
-    return ("{0:."+str(n)+"g}").format(f)
-
-
 def attach_file(src,resource):
     """Attach file at src to given resource
 
