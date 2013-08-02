@@ -27,7 +27,7 @@ setup(name='genologics',
       url='https://github.com/scilifelab/genologics',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-      scripts=["scripts/attach_caliper_files.py","scripts/generate_run_info.py"],
+      scripts=["scripts/attach_caliper_files.py"],
       include_package_data=True,
       zip_safe=False,
       install_requires=[
