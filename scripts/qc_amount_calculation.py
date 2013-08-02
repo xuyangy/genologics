@@ -14,8 +14,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 
 from genologics.entities import Process
-from genologics.epp import configure_logging
-
+from genologics.epp import configure_logging,significant_figures
 
 def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf):
     print ("result_udf: {0}, udf1: {1}, "
@@ -27,8 +26,9 @@ def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf):
                                                   artifact.udf[result_udf],
                                                   artifact.udf[udf1],op,
                                                   artifact.udf[udf2])
-        artifact.udf[result_udf] = eval(
-            '{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
+        
+        artifact.udf[result_udf] = significant_figures(eval(
+            '{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2])),2)
         artifact.put()
         print 'Updated {0} to {1}.'.format(result_udf,artifact.udf[result_udf])
 
