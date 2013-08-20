@@ -23,65 +23,41 @@ def unique_check(l,msg):
     elif len(l)!=1:
         raise Exception("Multiple items found for {0}".format(msg))
 
-
-
     
 class EppLogger(object):
-    """Logger class that collect stdout, stderr and info. Output is in html."""
+    """Logger class that collect stdout, stderr and info."""
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self,exc_type,exc_val,exc_tb):
-        self.htmlify()
+        # If no exception has occured in block, turn off logging.
+        if not exc_type:
+            logging.shutdown()
+            sys.stderr = self.saved_stderr
+            sys.stdout = self.saved_stdout
+        # Do not repress possible exception
+        return False
 
     def __init__(self, log_file,level=logging.INFO):
         self.log_file = log_file
-        # check if file is empty:
-        self.fresh = (not os.path.isfile(log_file)) or os.stat(log_file).st_size == 0
         self.level = level
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=self.level,
             format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
             filename=log_file,
             filemode='a'
             )
 
-        # This part was copied together with the StreamToLogger class below
         stdout_logger = logging.getLogger('STDOUT')
-        sl = self.StreamToLogger(stdout_logger, logging.INFO)
-        sys.stdout = sl
+        self.slo = self.StreamToLogger(stdout_logger, logging.INFO)
+        self.saved_stdout = sys.stdout
+        sys.stdout = self.slo
 
         stderr_logger = logging.getLogger('STDERR')
-        sl = self.StreamToLogger(stderr_logger, logging.ERROR)
-        sys.stderr = sl
-
-    def htmlify(self):
-        """Turn log file into html with colour coding"""
-        pre_style = """pre {
-                      white-space: pre-wrap; /* css-3 */
-                      white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
-                      white-space: -pre-wrap; /* Opera 4-6 */
-                      white-space: -o-pre-wrap; /* Opera 7 */
-                      word-wrap: break-word; /* Internet Explorer 5.5+ */
-                      border: 1px double #cccccc;
-                      background-color: #f0f8ff;
-                      padding: 5px;
-                   }"""
-        colors= {'green':'#28DD31'}
-
-        log = open(self.log_file,'r').read()
-        if self.fresh:
-            doc = HTML()
-            h = doc.html
-            he = h.head
-            he.title("EPP script Log")
-            he.style(pre_style,type="text/css")
-            b = h.body
-            b.pre(log)
-            with open(self.log_file,'w') as f:
-                f.write(str(h))
-
+        self.sle = self.StreamToLogger(stderr_logger, logging.ERROR)
+        self.saved_stderr = sys.stderr
+        sys.stderr = self.sle
 
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
@@ -94,8 +70,7 @@ class EppLogger(object):
             self.logger = logger
             self.log_level = log_level
             self.linebuf = ''
-            
+
         def write(self, buf):
             for line in buf.rstrip().splitlines():
                 self.logger.log(self.log_level, line.rstrip())
-                
