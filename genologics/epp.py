@@ -15,12 +15,20 @@ def attach_file(src,resource):
     print "Moving {0} to {1}".format(src,location)
     copy(src,location)
 
+class EmptyError(ValueError):
+    "Raised if an iterator is unexpectedly empty."
+    pass
+
+class NotUniqueError(ValueError):
+    "Raised if there are unexpectedly more than 1 item in an iterator"
+    pass
+
 def unique_check(l,msg):
     "Check that l is of length 1, otherwise raise error, with msg appended"
     if len(l)==0:
-        raise Exception("No item found for {0}".format(msg))
+        raise EmptyError("No item found for {0}".format(msg))
     elif len(l)!=1:
-        raise Exception("Multiple items found for {0}".format(msg))
+        raise NotUniqueError("Multiple items found for {0}".format(msg))
 
     
 class EppLogger(object):
