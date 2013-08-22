@@ -3,7 +3,7 @@
 
 Command to trigger this script:
 bash -c "PATH/TO/INSTALLED/SCRIPT
---pluid {processLuid} 
+--pid {processLuid} 
 --path PATH_TO_CURRENT_IMAGE_STORAGE
 --log {compoundOutputFileLuidN}"
 
@@ -20,7 +20,7 @@ import os
 import re
 import sys
 
-from genologics.epp import attach_file,EppLogger, unique_check
+from genologics.epp import attach_file,EppLogger, unique_check, EmptyError
     
 def main(lims,pluid,path):
     """Uploads images found in path, for each input artifact for a process
@@ -47,20 +47,28 @@ def main(lims,pluid,path):
         
         # Use a reguluar expression to find the file name given
         # the container and sample
-        re_str = '.+{sample}.+{container}.+\.(png|pdf|PNG)'\
-                                   .format(sample=i_s.name,container=i_c.id)
+        re_str = '.+{well}_.+{sample}_.+{container}'\
+                                   .format(well=i_a.location[1],
+                                           sample=i_s.name,
+                                           container=i_c.id)
         im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
-        print "Looking for files with container id {0} and sample name {1}"\
-            .format(i_c.id,i_s.name)
-        unique_check(fns,"files connected to container {0} and sample {1}"\
-                         .format(i_c.id,i_s.name))
-        fn = fns[0]
-        print "Found image file {0}".format(fn)
-        fp = os.path.join(args.path,fn)
+        print "Looking for files for well {0} in container id {1} and sample name {2}"\
+            .format(i_a.location[1],i_c.id,i_s.name)
+        try:
+            unique_check(fns,"files connected to container {0} and sample {1}"\
+                             .format(i_c.id,i_s.name))
+            fn = fns[0]
+            print "Found image file {0}".format(fn)
+            fp = os.path.join(args.path,fn)
 
-        # Attach file to the LIMS
-        attach_file(fp,o_a)
+            # Attach file to the LIMS
+            attach_file(fp,o_a)
+        except EmptyError as e:
+            print e.msg
+            print "Skipping input with container id {0} and sample name {1}"
+            pass
+
     
 
 if __name__ == "__main__":
