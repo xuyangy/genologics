@@ -43,21 +43,25 @@ def main(lims,pluid,path):
         o_a = Artifact(lims,id=output['limsid'])
         unique_check(i_a.samples,
                      "samples connected to artifact {0}".format(i_a.id))
-        i_s,i_c=i_a.samples[0],i_a.location[0]
+        # Input Well, Input Sample, Input Container
+        i_w,i_s,i_c=i_a.location[1],i_a.samples[0],i_a.location[0]
+
+        # Well is typed without colon in filename:
+        i_w = ''.join(i_w.split(':'))
         
         # Use a reguluar expression to find the file name given
         # the container and sample
-        re_str = '.+{well}_.+{sample}_.+{container}'\
-                                   .format(well=i_a.location[1],
+        re_str = '.*{well}_.*{sample}_.*{container}'\
+                                   .format(well=i_w,
                                            sample=i_s.name,
                                            container=i_c.id)
         im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
         print "Looking for files for well {0} in container id {1} and sample name {2}"\
-            .format(i_a.location[1],i_c.id,i_s.name)
+            .format(i_w,i_c.id,i_s.name)
         try:
-            unique_check(fns,"files connected to container {0} and sample {1}"\
-                             .format(i_c.id,i_s.name))
+            unique_check(fns,"files for well {0} in container {1} and sample {2}, skipping"\
+                             .format(i_w,i_c.id,i_s.name))
             fn = fns[0]
             print "Found image file {0}".format(fn)
             fp = os.path.join(args.path,fn)
@@ -65,11 +69,9 @@ def main(lims,pluid,path):
             # Attach file to the LIMS
             attach_file(fp,o_a)
         except EmptyError as e:
-            print e.msg
-            print "Skipping input with container id {0} and sample name {1}"
-            pass
+            print >> sys.stderr, e
 
-    
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()
