@@ -30,7 +30,7 @@ def main(lims,pluid,path):
     path: The path to the directory where images are stored
 
     """
-    p = Process(lims,id=args.pluid)
+    p = Process(lims,id=args.pid)
     
     file_list = os.listdir(args.path)
     
