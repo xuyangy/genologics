@@ -1,3 +1,11 @@
+"""Contains useful and reusable code for EPP scripts.
+
+Classes, methods and exceptions.
+
+Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
+Copyright (C) 2013 Johannes Alneberg
+"""
+
 import logging
 import sys
 import os
