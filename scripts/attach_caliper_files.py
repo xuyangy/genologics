@@ -51,10 +51,12 @@ def main(lims,pluid,path):
         
         # Use a reguluar expression to find the file name given
         # the container and sample
-        re_str = '.*{well}_.*{sample}_.*{container}'\
+        re_str = '.*{well}_.*{sample_name}_.*{container}_.*{sample_id}'\
                                    .format(well=i_w,
-                                           sample=i_s.name,
-                                           container=i_c.id)
+                                           sample_name=i_s.name,
+                                           container=i_c.id,
+                                           sample_id=i_s.id)
+    
         im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
         print "Looking for files for well {0} in container id {1} and sample name {2}"\
