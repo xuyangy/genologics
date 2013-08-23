@@ -22,12 +22,13 @@ import sys
 
 from genologics.epp import attach_file,EppLogger, unique_check, EmptyError
     
-def main(lims,pluid,path):
+def main(lims,pluid,path,logger):
     """Uploads images found in path, for each input artifact for a process
 
     lims: The lims instance
     pluid: Process Lims id
     path: The path to the directory where images are stored
+    logger: Logging instance to handle log entries
 
     """
     p = Process(lims,id=args.pid)
@@ -60,21 +61,22 @@ def main(lims,pluid,path):
         
         im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
-        print ("Looking for file: well {well}, "
+        logger.info(("Looking for file: well {well}, "
                "container id: {container_id}, "
                "Analyte/Sample name: {input_artifact_name}, "
-               "Artifact id: {input_artifact_id}").format(**info)
+               "Artifact id: {input_artifact_id}").format(**info))
         try:
             unique_check(fns,"input artifact.")
             fn = fns[0]
-            print "Found image file {0}".format(fn)
+            logger.info("Found image file {0}".format(fn))
             fp = os.path.join(args.path,fn)
 
             # Attach file to the LIMS
-            attach_file(fp,o_a)
+            location = attach_file(fp,o_a)
+            logger.debug("Moving {0} to {1}".format(fp,location))
         except EmptyError as e:
-            print >> sys.stderr, e
-            print "Skipping."
+            logger.warning(e)
+            logger.warning("Skipping.")
 
 
 
@@ -87,9 +89,9 @@ if __name__ == "__main__":
     parser.add_argument('-l','--log',default=sys.stdout,
                         help='Log file')
     args = parser.parse_args()
- 
-    with EppLogger(args.log):
+
+    with EppLogger(args.log) as logger:
         lims = Lims(BASEURI,USERNAME,PASSWORD)
         lims.check_version()
-        main(lims,args.pid,args.path)
+        main(lims,args.pid,args.path,logger)
 
