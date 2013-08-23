@@ -49,21 +49,23 @@ def main(lims,pluid,path):
         # Well is typed without colon in filename:
         i_w = ''.join(i_w.split(':'))
         
+        info = {'well':i_w,
+                'container_id':i_c.id,
+                'input_artifact_name':i_a.name,
+                'input_artifact_id':i_a.id}
         # Use a reguluar expression to find the file name given
         # the container and sample
-        re_str = '.*{well}_.*{sample_name}_.*{container}_.*{sample_id}'\
-                                   .format(well=i_w,
-                                           sample_name=i_s.name,
-                                           container=i_c.id,
-                                           sample_id=i_s.id)
-    
+        re_str = '.*{well}_.*{input_artifact_name}_.*{container_id}_.*{input_artifact_id}'\
+                                   .format(**info)
+        
         im_file_r = re.compile(re_str)
         fns = filter(im_file_r.match,file_list)
-        print "Looking for files for well {0} in container id {1} and sample name {2}"\
-            .format(i_w,i_c.id,i_s.name)
+        print ("Looking for file: well {well}, "
+               "container id: {container_id}, "
+               "Analyte/Sample name: {input_artifact_name}, "
+               "Artifact id: {input_artifact_id}").format(**info)
         try:
-            unique_check(fns,"files for well {0} in container {1} and sample {2}, skipping"\
-                             .format(i_w,i_c.id,i_s.name))
+            unique_check(fns,"input artifact.")
             fn = fns[0]
             print "Found image file {0}".format(fn)
             fp = os.path.join(args.path,fn)
@@ -72,6 +74,7 @@ def main(lims,pluid,path):
             attach_file(fp,o_a)
         except EmptyError as e:
             print >> sys.stderr, e
+            print "Skipping."
 
 
 
