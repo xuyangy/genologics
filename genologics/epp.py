@@ -12,8 +12,8 @@ def attach_file(src,resource):
     new_name = resource.id + '_' + original_name
     dir = os.getcwd()
     location = os.path.join(dir,new_name)
-    print "Moving {0} to {1}".format(src,location)
     copy(src,location)
+    return location
 
 class EmptyError(ValueError):
     "Raised if an iterator is unexpectedly empty."
@@ -35,7 +35,7 @@ class EppLogger(object):
     """Logger class that collect stdout, stderr and info."""
 
     def __enter__(self):
-        return self
+        return self.logger
 
     def __exit__(self,exc_type,exc_val,exc_tb):
         # If no exception has occured in block, turn off logging.
@@ -65,6 +65,8 @@ class EppLogger(object):
         self.sle = self.StreamToLogger(stderr_logger, logging.ERROR)
         self.saved_stderr = sys.stderr
         sys.stderr = self.sle
+
+        self.logger = logging.getLogger()
 
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
