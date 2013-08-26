@@ -67,7 +67,7 @@ class EppLogger(object):
         # Do not repress possible exception
         return False
 
-    def __init__(self,lims,log_file,level=logging.INFO,lims=None,prepend=False):
+    def __init__(self,log_file,level=logging.INFO,lims=None,prepend=False):
         """ help string for __Init__ """
         self.lims = lims
         self.log_file = log_file
