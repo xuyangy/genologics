@@ -56,7 +56,7 @@ class EppLogger(object):
             logging.error(e)
             logging.error('Make sure you have the {0} package installed'.format(self.PACKAGE))
             sys.exit(-1)
-        return self.logger
+        return self
 
     def __exit__(self,exc_type,exc_val,exc_tb):
         # If no exception has occured in block, turn off logging.
@@ -67,13 +67,13 @@ class EppLogger(object):
         # Do not repress possible exception
         return False
 
-    def __init__(self, lims,log_file,level=logging.INFO,local=True):
+    def __init__(self,lims,log_file,level=logging.INFO,lims=None,prepend=False):
         """ help string for __Init__ """
         self.lims = lims
         self.log_file = log_file
         self.level = level
-        self.local = local
-        if self.local:
+        self.prepend = prepend
+        if prepend:
             self.prepend_old_log()
 
         logging.basicConfig(
@@ -95,15 +95,16 @@ class EppLogger(object):
 
         self.logger = logging.getLogger()
 
-    def prepend_old_log(self,lims):
+    def prepend_old_log(self):
         """Prepend the old log stored locally to the new log. """
         # In try statement, catch non existent artifact error
-        log_artifact = Artifact(lims,id=self.log_file)
+        log_artifact = Artifact(self.lims,id=self.log_file)
         log_artifact.get()
         if log_artifact.files:
             log_path = log_artifact.files[0].content_location.split(BASEURI.split(':')[1])
             # in try statement, catch non-reachable path for log file
-            copy(log_path,log_file)
+            copy(log_path,self.log_file)
+
         
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
