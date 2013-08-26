@@ -9,6 +9,8 @@ Copyright (C) 2013 Johannes Alneberg
 import logging
 import sys
 import os
+import pkg_resources
+from pkg_resources import DistributionNotFound
 from shutil import copy
 
 def attach_file(src,resource):
@@ -41,8 +43,14 @@ def unique_check(l,msg):
     
 class EppLogger(object):
     """Logger class that collect stdout, stderr and info."""
-
+    PACKAGE = 'genologics'
     def __enter__(self):
+        try:
+            logging.info('Version: ' + pkg_resources.require(self.PACKAGE)[0].version)
+        except DistributionNotFound as e:
+            logging.error(e)
+            logging.error('Make sure you have the {0} package installed'.format(self.PACKAGE))
+            sys.exit(-1)
         return self.logger
 
     def __exit__(self,exc_type,exc_val,exc_tb):
