@@ -12,6 +12,9 @@ import os
 import pkg_resources
 from pkg_resources import DistributionNotFound
 from shutil import copy
+from requests import HTTPError
+from genologics.config import BASEURI
+from genologics.entities import Artifact
 
 def attach_file(src,resource):
     """Attach file at src to given resource
@@ -42,7 +45,9 @@ def unique_check(l,msg):
 
     
 class EppLogger(object):
+
     """Logger class that collect stdout, stderr and info."""
+
     PACKAGE = 'genologics'
     def __enter__(self):
         try:
@@ -62,9 +67,15 @@ class EppLogger(object):
         # Do not repress possible exception
         return False
 
-    def __init__(self, log_file,level=logging.INFO):
+    def __init__(self, lims,log_file,level=logging.INFO,local=True):
+        """ help string for __Init__ """
+        self.lims = lims
         self.log_file = log_file
         self.level = level
+        self.local = local
+        if self.local:
+            self.prepend_old_log()
+
         logging.basicConfig(
             level=self.level,
             format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
@@ -84,6 +95,16 @@ class EppLogger(object):
 
         self.logger = logging.getLogger()
 
+    def prepend_old_log(self,lims):
+        """Prepend the old log stored locally to the new log. """
+        # In try statement, catch non existent artifact error
+        log_artifact = Artifact(lims,id=self.log_file)
+        log_artifact.get()
+        if log_artifact.files:
+            log_path = log_artifact.files[0].content_location.split(BASEURI.split(':')[1])
+            # in try statement, catch non-reachable path for log file
+            copy(log_path,log_file)
+        
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
         
@@ -99,3 +120,4 @@ class EppLogger(object):
         def write(self, buf):
             for line in buf.rstrip().splitlines():
                 self.logger.log(self.log_level, line.rstrip())
+
