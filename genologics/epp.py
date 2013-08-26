@@ -98,14 +98,21 @@ class EppLogger(object):
     def prepend_old_log(self):
         """Prepend the old log stored locally to the new log. """
         # In try statement, catch non existent artifact error
-        log_artifact = Artifact(self.lims,id=self.log_file)
-        log_artifact.get()
-        if log_artifact.files:
-            log_path = log_artifact.files[0].content_location.split(BASEURI.split(':')[1])
-            # in try statement, catch non-reachable path for log file
-            copy(log_path,self.log_file)
+        try:
+            log_artifact = Artifact(self.lims,id=self.log_file)
+            log_artifact.get()
+            if log_artifact.files:
+                log_path = log_artifact.files[0].content_location.split(BASEURI.split(':')[1])[1]
+                dir = os.getcwd()
+                destination = os.path.join(dir,self.log_file)
+                copy(log_path,destination)
+        except HTTPError: # Probably no artifact found, skip prepending
+            logging.warning('No log file artifact found for id: {0}'.format(self.log_file))
+        except IOError as e: # Probably some path was wrong in copy
+            logging.error(('Log could not be prepended, make sure {0} and {1} '
+                           'are proper paths.').format(log_path,self.log_file))
+            raise e
 
-        
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
         
