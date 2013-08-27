@@ -14,6 +14,7 @@ from pkg_resources import DistributionNotFound
 from shutil import copy
 from requests import HTTPError
 from genologics.entities import Artifact
+from logging.handlers import RotatingFileHandler
 
 def attach_file(src,resource):
     """Attach file at src to given resource
@@ -85,13 +86,7 @@ class EppLogger(object):
         if prepend:
             self.prepend_old_log()
 
-        logging.basicConfig(
-            level = self.level,
-            format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-            filename = log_file,
-            filemode = 'a'
-            )
-
+        # Loggers that will capture stdout and stderr respectively
         stdout_logger = logging.getLogger('STDOUT')
         self.slo = self.StreamToLogger(stdout_logger, logging.INFO)
         self.saved_stdout = sys.stdout
@@ -102,7 +97,25 @@ class EppLogger(object):
         self.saved_stderr = sys.stderr
         sys.stderr = self.sle
 
+        # Root logger with filehandler(s)
         self.logger = logging.getLogger()
+        self.logger.setLevel(self.level)
+        formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+        individual_fh = logging.FileHandler(self.log_file,mode='a')
+        individual_fh.setFormatter(formatter)
+        self.logger.addHandler(individual_fh)
+
+        try:
+            from genologics.config import MAIN_LOG
+            # Rotating file handler, that will create up to 10 backup logs,
+            # each no bigger than 100MB.
+            main_fh = RotatingFileHandler(MAIN_LOG,mode='a',
+                                          maxBytes=1e8,backupCount=10)
+            main_fh.setFormatter(formatter)
+            self.logger.addHandler(main_fh)
+        except ImportError:
+            self.logger.warning('No main log file found.')
+
 
     def prepend_old_log(self):
         """Prepend the old log to the new log. 
