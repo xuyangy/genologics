@@ -116,7 +116,7 @@ class EppLogger(object):
             log_artifact.get()
             if log_artifact.files:
                 log_path = log_artifact.files[0].content_location.split(
-                    lims.baseuri.split(':')[1])[1]
+                    self.lims.baseuri.split(':')[1])[1]
                 dir = os.getcwd()
                 destination = os.path.join(dir,self.log_file)
                 copy(log_path,destination)
