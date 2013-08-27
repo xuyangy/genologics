@@ -50,6 +50,8 @@ class EppLogger(object):
 
     PACKAGE = 'genologics'
     def __enter__(self):
+        logging.info('Executing file: {0}'.format(sys.argv[0]))
+        logging.info('with parameters: {0}'.format(sys.argv[1:]))
         try:
             logging.info('Version of {0}: '.format(self.PACKAGE) + 
                          pkg_resources.require(self.PACKAGE)[0].version)
