@@ -52,6 +52,7 @@ or if installed system_wide:
 BASEURI=https://yourlims.example.com:8443
 USERNAME=your_username
 PASSWORD=your_password
+MAIN_LOG=/home/glsai/your_main_log_file
 ```
 
 ### Example scripts
