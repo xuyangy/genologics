@@ -105,15 +105,15 @@ class EppLogger(object):
         individual_fh.setFormatter(formatter)
         self.logger.addHandler(individual_fh)
 
-        try:
-            from genologics.config import MAIN_LOG
+        from genologics.config import MAIN_LOG
+        if MAIN_LOG:
             # Rotating file handler, that will create up to 10 backup logs,
             # each no bigger than 100MB.
             main_fh = RotatingFileHandler(MAIN_LOG,mode='a',
                                           maxBytes=1e8,backupCount=10)
             main_fh.setFormatter(formatter)
             self.logger.addHandler(main_fh)
-        except ImportError:
+        else:
             self.logger.warning('No main log file found.')
 
 

@@ -15,9 +15,12 @@ try:
 	BASEURI = config.get('genologics', 'BASEURI').rstrip()
 	USERNAME = config.get('genologics', 'USERNAME').rstrip()
 	PASSWORD = config.get('genologics', 'PASSWORD').rstrip()
-	MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
+
 except:
 	warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
 	sys.exit(-1)
 
-
+if config.has_section('logging') and config.has_option('logging','MAIN_LOG'):
+	MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
+else:
+	MAIN_LOG = None
