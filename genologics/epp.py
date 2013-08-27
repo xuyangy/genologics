@@ -13,7 +13,6 @@ import pkg_resources
 from pkg_resources import DistributionNotFound
 from shutil import copy
 from requests import HTTPError
-from genologics.config import BASEURI
 from genologics.entities import Artifact
 
 def attach_file(src,resource):
@@ -51,10 +50,12 @@ class EppLogger(object):
     PACKAGE = 'genologics'
     def __enter__(self):
         try:
-            logging.info('Version: ' + pkg_resources.require(self.PACKAGE)[0].version)
+            logging.info('Version of {0}: '.format(self.PACKAGE) + 
+                         pkg_resources.require(self.PACKAGE)[0].version)
         except DistributionNotFound as e:
             logging.error(e)
-            logging.error('Make sure you have the {0} package installed'.format(self.PACKAGE))
+            logging.error(('Make sure you have the {0} '
+                           'package installed').format(self.PACKAGE))
             sys.exit(-1)
         return self
 
@@ -68,7 +69,15 @@ class EppLogger(object):
         return False
 
     def __init__(self,log_file,level=logging.INFO,lims=None,prepend=False):
-        """ help string for __Init__ """
+        """ Initialize the logger with custom settings.
+
+        Arguments:
+        log_file  -- file to write individual log to
+        
+        Keyword Arguments:
+        level   -- Logging level, default logging.INFO
+        lims    -- Lims instance, needed for prepend to work
+        prepend -- If True, prepend old log file to new, require lims"""
         self.lims = lims
         self.log_file = log_file
         self.level = level
@@ -77,10 +86,10 @@ class EppLogger(object):
             self.prepend_old_log()
 
         logging.basicConfig(
-            level=self.level,
-            format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-            filename=log_file,
-            filemode='a'
+            level = self.level,
+            format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+            filename = log_file,
+            filemode = 'a'
             )
 
         stdout_logger = logging.getLogger('STDOUT')
@@ -96,18 +105,24 @@ class EppLogger(object):
         self.logger = logging.getLogger()
 
     def prepend_old_log(self):
-        """Prepend the old log stored locally to the new log. """
-        # In try statement, catch non existent artifact error
+        """Prepend the old log to the new log. 
+
+        The location of the old log file is retrieved through the REST api. 
+        In order to work, the script should be executed on the LIMS server
+        since the location on the disk is parsed out from the sftp string
+        and then used for local copy of file. """
         try:
             log_artifact = Artifact(self.lims,id=self.log_file)
             log_artifact.get()
             if log_artifact.files:
-                log_path = log_artifact.files[0].content_location.split(BASEURI.split(':')[1])[1]
+                log_path = log_artifact.files[0].content_location.split(
+                    lims.baseuri.split(':')[1])[1]
                 dir = os.getcwd()
                 destination = os.path.join(dir,self.log_file)
                 copy(log_path,destination)
         except HTTPError: # Probably no artifact found, skip prepending
-            logging.warning('No log file artifact found for id: {0}'.format(self.log_file))
+            logging.warning(('No log file artifact found '
+                            'for id: {0}').format(self.log_file))
         except IOError as e: # Probably some path was wrong in copy
             logging.error(('Log could not be prepended, make sure {0} and {1} '
                            'are proper paths.').format(log_path,self.log_file))
