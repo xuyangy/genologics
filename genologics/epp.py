@@ -120,6 +120,8 @@ class EppLogger(object):
                 dir = os.getcwd()
                 destination = os.path.join(dir,self.log_file)
                 copy(log_path,destination)
+                with open(destination) as f:
+                    f.write('='*80+'\n')
         except HTTPError: # Probably no artifact found, skip prepending
             logging.warning(('No log file artifact found '
                             'for id: {0}').format(self.log_file))
