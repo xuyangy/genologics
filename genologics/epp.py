@@ -14,6 +14,7 @@ from pkg_resources import DistributionNotFound
 from shutil import copy
 from requests import HTTPError
 from genologics.entities import Artifact
+from genologics.config import MAIN_LOG
 from logging.handlers import RotatingFileHandler
 
 def attach_file(src,resource):
@@ -107,7 +108,6 @@ class EppLogger(object):
         individual_fh.setFormatter(formatter)
         self.logger.addHandler(individual_fh)
 
-        from genologics.config import MAIN_LOG
         if MAIN_LOG:
             # Rotating file handler, that will create up to 10 backup logs,
             # each no bigger than 100MB.
