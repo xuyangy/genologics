@@ -6,7 +6,7 @@ import logging
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.lims import Lims
 from genologics.epp import EppLogger
-
+from genologics.entities import Process
 
 def construct(*args, **kwargs):
     start = int(kwargs.get('start'))
@@ -54,30 +54,35 @@ def getArgs():
     description = ("Print barcodes on zebra barcode printer "
                    "for NGI Genomics Projects.")
     parser = ArgumentParser(description=description)
-    parser.add_argument('--plateid',
-                        help='The plate ID to print on the barcode.')
+    parser.add_argument('--label_type', choices=["container_id"],
+                        help='The type of label that will be printed')
+    parser.add_argument('--copies', default=1, type=int,
+                        help='Number of printout copies')
+    parser.add_argument('--pid',
+                        help='The process LIMS id.')
     parser.add_argument('--log',
                         help='File name to use as log file')
-    parser.add_argument('--printout',action="store_true",
+    parser.add_argument('--use_printer',action="store_true",
                         help=('Print file on default or '
                               'supplied printer using lp command.'))
     parser.add_argument('--hostname',
                         help='Hostname for lp CUPS server.')
     parser.add_argument('--destination',
                         help='Name of printer.')
-    parser.add_argument('--copies', default=1, type=int,
-                        help='Number of printout copies')
     return parser.parse_args()
 
-def main(args,epp_logger):
+def main(args,lims,epp_logger):
+    p = Process(lims,id=args.pid)
     lines = []
-    if args.plateid is not None:
+    if args.label_type == 'container_id':
+        c = p.output_containers()
         logging.info('Constructing container barcode.')
-        lines += makeContainerBarcode(args.plateid, copies=args.copies)
-    if not args.printout:
+        lines += makeContainerBarcode(c.id, copies=args.copies)
+    
+    if not args.use_printer:
         logging.info('Writing to stdout.')
         epp_logger.saved_stdout.write('\n'.join(lines)+'\n')
-    elif lines:
+    elif lines: # Avoid printing empty files
         lp_args = ["lp"]
         if args.hostname:
             lp_args += ["-h",args.hostname]
@@ -102,4 +107,4 @@ if __name__ == '__main__':
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
     with EppLogger(arguments.log,lims=lims,prepend=False) as epp_logger:
-        main(arguments,epp_logger)
+        main(arguments,lims,epp_logger)
