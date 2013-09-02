@@ -96,14 +96,17 @@ class EppLogger(object):
         sys.stdout = self.slo
 
         stderr_logger = logging.getLogger('STDERR')
-        self.sle = self.StreamToLogger(stderr_logger, logging.ERROR)
         self.saved_stderr = sys.stderr
+        # Duplicate stderr stream to log
+        self.sle = self.StreamToLogger(stderr_logger,logging.ERROR,
+                                       self.saved_stderr)
         sys.stderr = self.sle
 
         # Root logger with filehandler(s)
         self.logger = logging.getLogger()
         self.logger.setLevel(self.level)
-        formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
         individual_fh = logging.FileHandler(self.log_file,mode='a')
         individual_fh.setFormatter(formatter)
         self.logger.addHandler(individual_fh)
@@ -152,12 +155,15 @@ class EppLogger(object):
         http://www.electricmonk.nl/log/2011/08/14/
         redirect-stdout-and-stderr-to-a-logger-in-python/
         """
-        def __init__(self, logger, log_level=logging.INFO):
+        def __init__(self, logger, log_level=logging.INFO, stream=None):
             self.logger = logger
             self.log_level = log_level
             self.linebuf = ''
+            self.stream = stream
 
         def write(self, buf):
+            if self.stream:
+                self.stream.write(buf)
             for line in buf.rstrip().splitlines():
                 self.logger.log(self.log_level, line.rstrip())
 
