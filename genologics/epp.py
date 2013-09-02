@@ -86,7 +86,7 @@ class EppLogger(object):
         self.log_file = log_file
         self.level = level
         self.prepend = prepend
-        if prepend:
+        if prepend and not (self.log_file == sys.stdout):
             self.prepend_old_log()
 
         # Loggers that will capture stdout and stderr respectively
