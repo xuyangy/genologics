@@ -58,7 +58,7 @@ def main(lims,args,epp_logger):
     udf_to_check = 'Conc. Units'
     value_to_check = 'ng/ul'
     inputs = p.all_inputs(unique=True)
-    correct_unit_inputs = check_udf(inputs,udf_to_check,value_to_check,exit=True)
+    correct_unit_inputs = check_udf(inputs,udf_to_check,value_to_check)
 
     apply_calculations(lims,correct_unit_inputs,'Concentration','*',
                        'Volume (ul)','Amount (ng)',epp_logger)
