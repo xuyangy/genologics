@@ -678,9 +678,11 @@ class Process(Entity):
 
     def output_containers(self):
         """Retrieve all unique output containers"""
-        ids = map(lambda o_a: o_a.location[0].id, self.all_outputs(unique=True))
-        ids = list(frozenset(ids))
-        return map(lambda id: Container(self.lims,id=id),ids)
+        cs = []
+        for o_a in self.all_outputs(unique=True):
+            if o_a.container:
+                cs.append(o_a.container)
+        return list(frozenset(cs))
 
 class Artifact(Entity):
     "Any process input or output; analyte or file."
@@ -721,6 +723,14 @@ class Artifact(Entity):
         try:
             return params['state'][0]
         except (KeyError, IndexError):
+            return None
+
+    @property
+    def container(self):
+        "The container where the artifact is located, or None"
+        try:
+            return self.location[0]
+        except:
             return None
 
     # XXX set_state ?
