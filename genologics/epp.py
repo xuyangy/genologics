@@ -98,7 +98,7 @@ class EppLogger(object):
         stderr_logger = logging.getLogger('STDERR')
         self.saved_stderr = sys.stderr
         # Duplicate stderr stream to log
-        self.sle = self.StreamToLogger(stderr_logger,logging.ERROR,
+        self.sle = self.StreamToLogger(stderr_logger, logging.INFO,
                                        self.saved_stderr)
         sys.stderr = self.sle
 
