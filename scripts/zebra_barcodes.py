@@ -71,14 +71,18 @@ def getArgs():
                         help='Name of printer.')
     return parser.parse_args()
 
+
 def main(args,lims,epp_logger):
     p = Process(lims,id=args.pid)
     lines = []
     if args.label_type == 'container_id':
-        c = p.output_containers()
-        logging.info('Constructing container barcode.')
-        lines += makeContainerBarcode(c.id, copies=args.copies)
-    
+        cs = p.output_containers()
+        for c in cs:
+            logging.info('Constructing barcode for container {0}.'.format(c.id))
+            lines += makeContainerBarcode(c.id, copies=args.copies)
+    else:
+        logging.info('No recognized label type given, exiting.')
+        sys.exit(-1)
     if not args.use_printer:
         logging.info('Writing to stdout.')
         epp_logger.saved_stdout.write('\n'.join(lines)+'\n')
