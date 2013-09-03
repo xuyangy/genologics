@@ -53,6 +53,8 @@ def check_udf(inputs,udf,value):
                            "undefined/blank, exiting").format(input.id,udf))
             sys.exit(-1)
 
+    return filtered_inputs
+
 def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
     udf_to_check = 'Conc. Units'
@@ -60,9 +62,8 @@ def main(lims,args,epp_logger):
     inputs = p.all_inputs(unique=True)
     correct_unit_inputs = check_udf(inputs,udf_to_check,value_to_check)
 
-    if correct_unit_inputs:
-        apply_calculations(lims,correct_unit_inputs,'Concentration','*',
-                           'Volume (ul)','Amount (ng)',epp_logger)
+    apply_calculations(lims,correct_unit_inputs,'Concentration','*',
+                       'Volume (ul)','Amount (ng)',epp_logger)
 
     abstract = ("Updated {0} artifact(s), skipped {1} artifact(s) with "
                 "wrong 'Conc. Unit'").format(len(correct_unit_inputs),
