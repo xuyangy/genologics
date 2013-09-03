@@ -128,7 +128,10 @@ class EppLogger(object):
         The location of the old log file is retrieved through the REST api. 
         In order to work, the script should be executed on the LIMS server
         since the location on the disk is parsed out from the sftp string
-        and then used for local copy of file. """
+        and then used for local copy of file. 
+
+        This method does not use logging since that could mess up the
+        logging settings, instead warnings are printed to stderr."""
         try:
             log_artifact = Artifact(self.lims,id=self.log_file)
             log_artifact.get()
@@ -141,11 +144,12 @@ class EppLogger(object):
                 with open(destination,'a') as f:
                     f.write('='*80+'\n')
         except HTTPError: # Probably no artifact found, skip prepending
-            logging.warning(('No log file artifact found '
-                            'for id: {0}').format(self.log_file))
+            print >> sys.stderr, ('No log file artifact found '
+                                  'for id: {0}').format(self.log_file)
         except IOError as e: # Probably some path was wrong in copy
-            logging.error(('Log could not be prepended, make sure {0} and {1} '
-                           'are proper paths.').format(log_path,self.log_file))
+            print >> sys.stderr, ('Log could not be prepended, '
+                                  'make sure {0} and {1} are '
+                                  'proper paths.').format(log_path,self.log_file)
             raise e
 
     class StreamToLogger(object):
