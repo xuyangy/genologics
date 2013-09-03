@@ -51,8 +51,9 @@ def check_udf(inputs,udf,value):
             logging.info(("Filtered out artifact with id: {0}"
                           ", due to wrong {1}").format(input.id,udf))
         else:
-            logging.error(("Found input artifact {0} with {1}"
-                           "undefined/blank, exiting").format(input.id,udf))
+            msg = ("Found input artifact {0} with {1} "
+                   "undefined/blank, exiting").format(input.id,udf)
+            print >> sys.stderr, msg
             sys.exit(-1)
 
     return filtered_inputs,incorrect_inputs
@@ -83,9 +84,12 @@ and volume udf:s in Clarity LIMS. """
                         help='Lims id for current Process')
     parser.add_argument('--log',default=sys.stdout,
                         help='Log file')
+    parser.add_argument('--no_prepend',action='store_true',
+                        help="Do not prepend old log file")
     args = parser.parse_args()
 
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
-    with EppLogger(args.log,lims=lims,prepend=True) as epp_logger:
+    prepend = not args.no_prepend
+    with EppLogger(args.log,lims=lims,prepend=prepend) as epp_logger:
         main(lims, args,epp_logger)
