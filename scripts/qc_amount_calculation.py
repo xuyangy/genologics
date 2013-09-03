@@ -60,8 +60,9 @@ def main(lims,args,epp_logger):
     inputs = p.all_inputs(unique=True)
     correct_unit_inputs = check_udf(inputs,udf_to_check,value_to_check)
 
-    apply_calculations(lims,correct_unit_inputs,'Concentration','*',
-                       'Volume (ul)','Amount (ng)',epp_logger)
+    if correct_unit_inputs:
+        apply_calculations(lims,correct_unit_inputs,'Concentration','*',
+                           'Volume (ul)','Amount (ng)',epp_logger)
 
     abstract = ("Updated {0} artifact(s), skipped {1} artifact(s) with "
                 "wrong 'Conc. Unit'").format(len(correct_unit_inputs),
