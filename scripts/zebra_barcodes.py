@@ -3,6 +3,7 @@ import sys
 from argparse import ArgumentParser
 import subprocess
 import logging
+import datetime
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.lims import Lims
 from genologics.epp import EppLogger
@@ -44,9 +45,26 @@ def makeContainerBarcode(plateid,copies=1):
 
     for copy in xrange(copies):
         lines.append("^XA") #start of label format
-        lines.append("^XFFORMAT^FS") #label home posision
+        lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+plateid+"^FS") #this is readable
         lines.append("^FN2^FD"+plateid+"^FS") #this is the barcode
+        lines.append("^XZ")
+    return lines
+
+def makeOperatorAndDateBarcode(operator,date,copies=1):
+    lines = []
+    lines.append("^XA") #start of label
+    lines.append("^DFFORMAT^FS") #download and store format, name of format, end of field data (FS = field stop)
+    lines.append("^LH0,0") # label home position (label home = LH)
+    lines.append("^FO400,15^AFN,60,16^FN1^FS") #AF = assign font F, field number 1 (FN1), print text at position field origin (FO) rel. to home
+    lines.append("^FO20, 15^AFN,60,16^FN2^FS")
+    lines.append("^XZ") #end format
+
+    for copy in xrange(copies):
+        lines.append("^XA") #start of label format
+        lines.append("^XFFORMAT^FS") #label home position
+        lines.append("^FN1^FD"+date+"^FS") #this is readable
+        lines.append("^FN2^FD"+operator+"^FS") #this is the barcode
         lines.append("^XZ")
     return lines
     
@@ -54,7 +72,7 @@ def getArgs():
     description = ("Print barcodes on zebra barcode printer "
                    "for NGI Genomics Projects.")
     parser = ArgumentParser(description=description)
-    parser.add_argument('--label_type', choices=["container_id"],
+    parser.add_argument('--label_type', choices=["container_id","operator_and_date"],
                         help='The type of label that will be printed')
     parser.add_argument('--copies', default=1, type=int,
                         help='Number of printout copies')
@@ -80,6 +98,10 @@ def main(args,lims,epp_logger):
         for c in cs:
             logging.info('Constructing barcode for container {0}.'.format(c.id))
             lines += makeContainerBarcode(c.id, copies=args.copies)
+    elif args.label_type == 'operator_and_date':
+        op = p.technician.name
+        date = str(datetime.date.today())
+        lines += makeOperatorAndDateBarcode(op,date,copies=args.copies)
     else:
         logging.info('No recognized label type given, exiting.')
         sys.exit(-1)
