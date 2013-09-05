@@ -48,11 +48,11 @@ def check_udf(inputs,udf,value):
             filtered_inputs.append(input)
         elif udf in input.udf:
             incorrect_inputs.append(input)
-            logging.info(("Filtered out artifact with id: {0}"
-                          ", due to wrong {1}").format(input.id,udf))
+            logging.info(("Filtered out artifact for sample: {0}"
+                          ", due to wrong {1}").format(input.samples[0].name,udf))
         else:
-            msg = ("Found input artifact {0} with {1} "
-                   "undefined/blank, exiting").format(input.id,udf)
+            msg = ("Found artifact for sample {0} with {1} "
+                   "undefined/blank, exiting").format(input.samples[0].name,udf)
             print >> sys.stderr, msg
             sys.exit(-1)
 
