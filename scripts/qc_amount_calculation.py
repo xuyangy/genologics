@@ -62,8 +62,12 @@ def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
     udf_check = 'Conc. Units'
     value_check = 'ng/ul'
-    inputs = p.all_inputs(unique=True)
-    correct_inputs, incorrect_inputs = check_udf(inputs,udf_check,value_check)
+    if args.aggregate:
+        artifacts = p.all_inputs(unique=True)
+    else:
+        all_artifacts = p.all_outputs(unique=True)
+        artifacts = filter(lambda a: a.type == "ResultFile" ,all_artifacts)
+    correct_artifacts, incorrect_artifacts = check_udf(artifacts,udf_check,value_check)
 
     apply_calculations(lims,correct_inputs,'Concentration','*',
                        'Volume (ul)','Amount (ng)',epp_logger)
@@ -86,6 +90,8 @@ and volume udf:s in Clarity LIMS. """
                         help='Log file')
     parser.add_argument('--no_prepend',action='store_true',
                         help="Do not prepend old log file")
+    parser.add_argument('--aggregate', action='store_true',
+                        help='Current Process is an aggregate QC step')
     args = parser.parse_args()
 
     lims = Lims(BASEURI,USERNAME,PASSWORD)
