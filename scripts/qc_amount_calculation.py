@@ -66,15 +66,16 @@ def main(lims,args,epp_logger):
         artifacts = p.all_inputs(unique=True)
     else:
         all_artifacts = p.all_outputs(unique=True)
-        artifacts = filter(lambda a: a.type == "ResultFile" ,all_artifacts)
+        artifacts = filter(lambda a: a.output_type == "ResultFile" ,all_artifacts)
+
     correct_artifacts, incorrect_artifacts = check_udf(artifacts,udf_check,value_check)
 
-    apply_calculations(lims,correct_inputs,'Concentration','*',
+    apply_calculations(lims,correct_artifacts,'Concentration','*',
                        'Volume (ul)','Amount (ng)',epp_logger)
 
     abstract = ("Updated {0} artifact(s), skipped {1} artifact(s) with "
-                "wrong 'Conc. Unit'.").format(len(correct_inputs),
-                                             len(incorrect_inputs))
+                "wrong 'Conc. Unit'.").format(len(correct_artifacts),
+                                             len(incorrect_artifacts))
     print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
 
