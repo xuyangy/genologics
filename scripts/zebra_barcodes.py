@@ -28,7 +28,7 @@ def makeContainerBarcode(plateid,copies=1):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+plateid+"^FS") #this is readable
-        lines.append("^FN2^FD"+plateid+"^FS") #this is the barcode
+        lines.append("^FN2^FD"+plateid+"^FS") #this is also readable
         lines.append("^XZ")
     return lines
 
@@ -45,11 +45,13 @@ def makeOperatorAndDateBarcode(operator,date,copies=1):
     lines.append("^FO20, 30^ADN,36,20^FN2^FS")
     lines.append("^XZ") #end format
 
+    if len(operator)>19:
+        operator = operator[:19] # If string is longer, it would cover the date
     for copy in xrange(copies):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+date+"^FS") #this is readable
-        lines.append("^FN2^FD"+operator+"^FS") #this is the barcode
+        lines.append("^FN2^FD"+operator+"^FS") #this is also readable
         lines.append("^XZ")
     return lines
     
@@ -57,8 +59,12 @@ def getArgs():
     description = ("Print barcodes on zebra barcode printer "
                    "for NGI Genomics Projects.")
     parser = ArgumentParser(description=description)
-    parser.add_argument('--label_type', choices=["container_id","operator_and_date"],
-                        help='The type of label that will be printed')
+    parser.add_argument('--container_id', action='store_true',
+                        help=('Print container id label in both '
+                        'barcode format and human readable.'))
+    parser.add_argument('--operator_and_date',action='store_true',
+                        help=('Print label with both operator '
+                              'and todays date.'))
     parser.add_argument('--copies', default=1, type=int,
                         help='Number of printout copies')
     parser.add_argument('--pid',
@@ -72,18 +78,20 @@ def getArgs():
                         help='Hostname for lp CUPS server.')
     parser.add_argument('--destination',
                         help='Name of printer.')
+    parser.add_argument('--no_prepend', action='store_true',
+                        help='Do not prepend old log, useful when ran locally')
     return parser.parse_args()
 
 
 def main(args,lims,epp_logger):
     p = Process(lims,id=args.pid)
     lines = []
-    if args.label_type == 'container_id':
+    if args.container_id:
         cs = p.output_containers()
         for c in cs:
             logging.info('Constructing barcode for container {0}.'.format(c.id))
             lines += makeContainerBarcode(c.id, copies=args.copies)
-    elif args.label_type == 'operator_and_date':
+    elif args.operator_and_date:
         op = p.technician.name
         date = str(datetime.date.today())
         lines += makeOperatorAndDateBarcode(op,date,copies=args.copies)
@@ -117,5 +125,6 @@ if __name__ == '__main__':
     arguments = getArgs()
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
-    with EppLogger(arguments.log,lims=lims,prepend=False) as epp_logger:
+    prepend = not arguments.no_prepend
+    with EppLogger(arguments.log,lims=lims,prepend=prepend) as epp_logger:
         main(arguments,lims,epp_logger)
