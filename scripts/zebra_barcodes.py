@@ -12,10 +12,16 @@ from genologics.entities import Process
 def makeContainerBarcode(plateid,copies=1):
     lines = []
     lines.append("^XA") #start of label
-    lines.append("^DFFORMAT^FS") #download and store format, name of format, end of field data (FS = field stop)
+    # download and store format, name of format, 
+    # end of field data (FS = field stop)
+    lines.append("^DFFORMAT^FS") 
     lines.append("^LH0,0") # label home position (label home = LH)
-    lines.append("^FO360,20^AFN,60,20^FN1^FS") #AF = assign font F, field number 1 (FN1), print text at position field origin (FO) rel. to home
-    lines.append("^FO70,5^BCN,70,N,N^FN2^FS") #BC=barcode 128, field number 2, Normal orientation, height 70, no interpreation line. 
+    # AF = assign font F, field number 1 (FN1), 
+    # print text at position field origin (FO) rel. to home
+    lines.append("^FO360,20^AFN 78,39^FN1^FS")
+    # BC=barcode 128, field number 2, Normal orientation, 
+    # height 70, no interpreation line. 
+    lines.append("^FO70,5^BCN,70,N,N^FN2^FS")
     lines.append("^XZ") #end format
 
     for copy in xrange(copies):
@@ -29,10 +35,14 @@ def makeContainerBarcode(plateid,copies=1):
 def makeOperatorAndDateBarcode(operator,date,copies=1):
     lines = []
     lines.append("^XA") #start of label
-    lines.append("^DFFORMAT^FS") #download and store format, name of format, end of field data (FS = field stop)
+    # Download and store format, name of format, 
+    # end of field data (FS = field stop)
+    lines.append("^DFFORMAT^FS") 
     lines.append("^LH0,0") # label home position (label home = LH)
-    lines.append("^FO400,15^AFN,60,16^FN1^FS") #AF = assign font F, field number 1 (FN1), print text at position field origin (FO) rel. to home
-    lines.append("^FO20, 15^AFN,60,16^FN2^FS")
+    # AF = assign font F, field number 1 (FN1), 
+    # print text at position field origin (FO) rel. to home
+    lines.append("^FO460,30^ADN,36,20^FN1^FS")
+    lines.append("^FO20, 30^ADN,36,20^FN2^FS")
     lines.append("^XZ") #end format
 
     for copy in xrange(copies):
