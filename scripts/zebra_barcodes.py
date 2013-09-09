@@ -32,6 +32,31 @@ def makeContainerBarcode(plateid,copies=1):
         lines.append("^XZ")
     return lines
 
+def makeContainerNameBarcode(plate_name,copies=1):
+    lines = []
+    lines.append("^XA") #start of label
+    # download and store format, name of format, 
+    # end of field data (FS = field stop)
+    lines.append("^DFFORMAT^FS") 
+    lines.append("^LH0,0") # label home position (label home = LH)
+    # AF = assign font F, field number 1 (FN1), 
+    # print text at position field origin (FO) rel. to home
+    if len(plate_name)>21:
+        # Use smaller font, fits 28 chars
+        lines.append("^FO20,30^ADN 54,30^FN1^FS")
+    else:
+        # Use larger font, fits 21 chars
+        lines.append("^FO20,20^AFN 78,39^FN1^FS")
+
+    lines.append("^XZ") #end format
+
+    for copy in xrange(copies):
+        lines.append("^XA") #start of label format
+        lines.append("^XFFORMAT^FS") #label home position
+        lines.append("^FN1^FD"+plate_name+"^FS") #this is readable
+        lines.append("^XZ")
+    return lines
+
 def makeOperatorAndDateBarcode(operator,date,copies=1):
     lines = []
     lines.append("^XA") #start of label
