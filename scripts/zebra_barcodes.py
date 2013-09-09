@@ -10,6 +10,7 @@ from genologics.epp import EppLogger
 from genologics.entities import Process
 
 def makeContainerBarcode(plateid,copies=1):
+    """ Construct label with container id as human readable and barcode """
     lines = []
     lines.append("^XA") #start of label
     # download and store format, name of format, 
@@ -33,6 +34,7 @@ def makeContainerBarcode(plateid,copies=1):
     return lines
 
 def makeContainerNameBarcode(plate_name,copies=1):
+    """ Constrcut label with container name as human readable """
     lines = []
     lines.append("^XA") #start of label
     # download and store format, name of format, 
@@ -58,6 +60,7 @@ def makeContainerNameBarcode(plate_name,copies=1):
     return lines
 
 def makeOperatorAndDateBarcode(operator,date,copies=1):
+    """ Construct label with operator name and date in human readable format"""
     lines = []
     lines.append("^XA") #start of label
     # Download and store format, name of format, 
@@ -81,9 +84,10 @@ def makeOperatorAndDateBarcode(operator,date,copies=1):
     return lines
     
 def getArgs():
-    description = ("Print barcodes on zebra barcode printer "
-                   "for NGI Genomics Projects.")
-    parser = ArgumentParser(description=description)
+    desc = (" Print barcodes on zebra barcode printer, "
+            " different label types available. Information "
+            " is fetched from Clarity LIMS.")
+    parser = ArgumentParser(description=desc)
     parser.add_argument('--container_id', action='store_true',
                         help=('Print container id label in both '
                         'barcode format and human readable.'))
