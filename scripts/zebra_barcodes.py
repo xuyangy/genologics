@@ -90,8 +90,14 @@ def getArgs():
     parser.add_argument('--operator_and_date',action='store_true',
                         help=('Print label with both operator '
                               'and todays date.'))
+    parser.add_argument('--container_name',action='store_true',
+                        help=('Print label with human readable'
+                              'container name (user defined)'))
     parser.add_argument('--copies', default=1, type=int,
-                        help='Number of printout copies')
+                        help=('Number of printout copies, only used'
+                              ' if neither container_name nor container_id'
+                              ' type labels are printed. In that case, print'
+                              ' one label of each type for each container.'))
     parser.add_argument('--pid',
                         help='The process LIMS id.')
     parser.add_argument('--log',
@@ -111,16 +117,26 @@ def getArgs():
 def main(args,lims,epp_logger):
     p = Process(lims,id=args.pid)
     lines = []
+    cs = []
     if args.container_id:
         cs = p.output_containers()
         for c in cs:
             logging.info('Constructing barcode for container {0}.'.format(c.id))
-            lines += makeContainerBarcode(c.id, copies=args.copies)
-    elif args.operator_and_date:
+            lines += makeContainerBarcode(c.id, copies=1)
+    if args.container_name:
+        cs = p.output_containers()
+        for c in cs:
+            logging.info('Constructing name label for container {0}.'.format(c.id))
+            lines += makeContainerNameBarcode(c.name,copies=1)
+    if args.operator_and_date:
         op = p.technician.name
         date = str(datetime.date.today())
-        lines += makeOperatorAndDateBarcode(op,date,copies=args.copies)
-    else:
+        if cs: # list of containers
+            copies = len(cs)
+        else:
+            copies = args.copies
+        lines += makeOperatorAndDateBarcode(op,date,copies=copies)
+    if not (args.container_id or args.container_name or args.operator_and_date):
         logging.info('No recognized label type given, exiting.')
         sys.exit(-1)
     if not args.use_printer:
