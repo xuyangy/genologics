@@ -19,7 +19,7 @@ from genologics.epp import EppLogger
 import logging
 import sys
 
-def apply_calculations(lims,artifacts,conc_udf,size_udf,epp_logger):
+def apply_calculations(lims,artifacts,conc_udf,size_udf,unit_udf,epp_logger):
     for artifact in artifacts:
         logging.info(("Updating: Artifact id: {0}, "
                      "Concentration: {1}, Size: {2}, ").format(artifact.id, 
@@ -27,7 +27,7 @@ def apply_calculations(lims,artifacts,conc_udf,size_udf,epp_logger):
                                                         artifact.udf[size_udf]))
         factor = 1e6 / (328.32 * artifact.udf[size_udf])
         artifact.udf[conc_udf] = artifact.udf[conc_udf] * factor
-        artifact.udf[size_udf] = 'nM'
+        artifact.udf[unit_udf] = 'nM'
         artifact.put()
         logging.info('Updated {0} to {1}.'.format(conc_udf,
                                                  artifact.udf[conc_udf]))
@@ -71,7 +71,7 @@ def main(lims,args,epp_logger):
 
     check_udf_is_defined(artifacts,concentration_udf)
     correct_artifacts, incorrect_artifacts = check_udf(artifacts,udf_check,value_check)
-    apply_calculations(lims,correct_artifacts,concentration_udf,size_udf,epp_logger)
+    apply_calculations(lims,correct_artifacts,concentration_udf,size_udf,udf_check,epp_logger)
 
     abstract = ("Updated {0} artifact(s), skipped {1} artifact(s) with "
                 "wrong 'Conc. Unit'.").format(len(correct_artifacts),
