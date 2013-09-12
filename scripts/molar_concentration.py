@@ -70,6 +70,7 @@ def main(lims,args,epp_logger):
         artifacts = filter(lambda a: a.output_type == "File" ,all_artifacts)
 
     check_udf_is_defined(artifacts,concentration_udf)
+    check_udf_is_defined(artifacts,size_udf)
     correct_artifacts, incorrect_artifacts = check_udf(artifacts,udf_check,value_check)
     apply_calculations(lims,correct_artifacts,concentration_udf,size_udf,udf_check,epp_logger)
 
