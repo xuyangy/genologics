@@ -82,6 +82,32 @@ def makeOperatorAndDateBarcode(operator,date,copies=1):
         lines.append("^FN2^FD"+operator+"^FS") #this is also readable
         lines.append("^XZ")
     return lines
+
+def makeProcessNameBarcode(process_name,copies=1):
+    """ Constrcut label with process name as human readable """
+    lines = []
+    lines.append("^XA") #start of label
+    # download and store format, name of format, 
+    # end of field data (FS = field stop)
+    lines.append("^DFFORMAT^FS") 
+    lines.append("^LH0,0") # label home position (label home = LH)
+    # AF = assign font F, field number 1 (FN1), 
+    # print text at position field origin (FO) rel. to home
+    if len(process_name)>21:
+        # Use smaller font, fits 28 chars
+        lines.append("^FO20,30^ADN 54,30^FN1^FS")
+    else:
+        # Use larger font, fits 21 chars
+        lines.append("^FO20,20^AFN 78,39^FN1^FS")
+
+    lines.append("^XZ") #end format
+
+    for copy in xrange(copies):
+        lines.append("^XA") #start of label format
+        lines.append("^XFFORMAT^FS") #label home position
+        lines.append("^FN1^FD"+process_name+"^FS") #this is readable
+        lines.append("^XZ")
+    return lines
     
 def getArgs():
     desc = (" Print barcodes on zebra barcode printer, "
@@ -97,6 +123,9 @@ def getArgs():
     parser.add_argument('--container_name',action='store_true',
                         help=('Print label with human readable'
                               'container name (user defined)'))
+    parser.add_argument('--process_name', action='store_true',
+                        help=('Print label with human readable'
+                              'process name'))
     parser.add_argument('--copies', default=1, type=int,
                         help=('Number of printout copies, only used'
                               ' if neither container_name nor container_id'
@@ -140,7 +169,15 @@ def main(args,lims,epp_logger):
         else:
             copies = args.copies
         lines += makeOperatorAndDateBarcode(op,date,copies=copies)
-    if not (args.container_id or args.container_name or args.operator_and_date):
+    if args.process_name:
+        pn = p.type.name
+        if cs: # list of containers
+            copies = len(cs)
+        else:
+            copies = args.copies
+        lines += makeProcessNameBarcode(pn,copies=copies)
+    if not (args.container_id or args.container_name or 
+            args.operator_and_date or args.process_name):
         logging.info('No recognized label type given, exiting.')
         sys.exit(-1)
     if not args.use_printer:
