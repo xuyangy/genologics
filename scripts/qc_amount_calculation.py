@@ -39,24 +39,23 @@ def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger):
         artifact.put()
         logging.info('Updated {0} to {1}.'.format(result_udf,
                                                  artifact.udf[result_udf]))
-def check_udf(inputs,udf,value):
-    """ Exit if udf is not defined for any of inputs, log if wrong value. """
-    filtered_inputs = []
-    incorrect_inputs = []
-    for input in inputs:
-        if udf in input.udf and (input.udf[udf] == value):
-            filtered_inputs.append(input)
-        elif udf in input.udf:
-            incorrect_inputs.append(input)
+def check_udf(artifacts,udf,value):
+    """ Filter artifacts on undefined udf or if udf has wrong value. """
+    filtered_artifacts = []
+    incorrect_artifacts = []
+    for artifact in artifacts:
+        if udf in artifact.udf and (artifact.udf[udf] == value):
+            filtered_artifacts.append(artifact)
+        elif udf in artifact.udf:
+            incorrect_artifacts.append(artifact)
             logging.info(("Filtered out artifact for sample: {0}"
-                          ", due to wrong {1}").format(input.samples[0].name,udf))
+                          ", due to wrong {1}").format(artifact.samples[0].name,udf))
         else:
-            msg = ("Found artifact for sample {0} with {1} "
-                   "undefined/blank, exiting").format(input.samples[0].name,udf)
-            print >> sys.stderr, msg
-            sys.exit(-1)
+            incorrect_artifacts.append(artifact)
+            logging.info(("Filtered out artifact for sample: {0}"
+                          ", due to undefined/blank {1}").format(artifact.samples[0].name,udf))
 
-    return filtered_inputs,incorrect_inputs
+    return filtered_artifacts,incorrect_artifacts
 
 def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
@@ -74,8 +73,8 @@ def main(lims,args,epp_logger):
                        'Volume (ul)','Amount (ng)',epp_logger)
 
     abstract = ("Updated {0} artifact(s), skipped {1} artifact(s) with "
-                "wrong 'Conc. Unit'.").format(len(correct_artifacts),
-                                             len(incorrect_artifacts))
+                "wrong or blank 'Conc. Unit'.").format(len(correct_artifacts),
+                                                       len(incorrect_artifacts))
     print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
 
