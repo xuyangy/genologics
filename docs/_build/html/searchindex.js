@@ -1,0 +1,1 @@
+Search.setIndex({envversion:42,terms:{index:0,search:0,script:[],modul:0,content:[0,1],packag:[],page:0},objtypes:{},objnames:{},filenames:["index","scripts"],titles:["Welcome to Genologics&#8217;s documentation!","Scripts in the Genologics Package"],objects:{},titleterms:{genolog:[0,1],welcom:0,script:1,indic:0,packag:1,tabl:0,document:0}})
