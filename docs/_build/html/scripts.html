@@ -47,7 +47,41 @@
             
   <div class="section" id="scripts-in-the-genologics-package">
 <h1>Scripts in the Genologics Package<a class="headerlink" href="#scripts-in-the-genologics-package" title="Permalink to this headline">¶</a></h1>
-<p>CONtent content</p>
+<p>Short usage descriptions for the scripts in the Genologics Package.</p>
+<div class="section" id="zebra-barcodes-py">
+<h2>zebra_barcodes.py<a class="headerlink" href="#zebra-barcodes-py" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-text"><div class="highlight"><pre>usage: zebra_barcodes.py [-h] [--container_id] [--operator_and_date]
+                         [--container_name] [--process_name] [--copies COPIES]
+                         [--pid PID] [--log LOG] [--use_printer]
+                         [--hostname HOSTNAME] [--destination DESTINATION]
+                         [--no_prepend]
+
+Print barcodes on zebra barcode printer, different label types available.
+Information is fetched from Clarity LIMS.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --container_id        Print container id label in both barcode format and
+                        human readable.
+  --operator_and_date   Print label with both operator and todays date.
+  --container_name      Print label with human readablecontainer name (user
+                        defined)
+  --process_name        Print label with human readableprocess name
+  --copies COPIES       Number of printout copies, only used if neither
+                        container_name nor container_id type labels are
+                        printed. In that case, print one label of each type
+                        for each container.
+  --pid PID             The process LIMS id.
+  --log LOG             File name to use as log file
+  --use_printer         Print file on default or supplied printer using lp
+                        command.
+  --hostname HOSTNAME   Hostname for lp CUPS server.
+  --destination DESTINATION
+                        Name of printer.
+  --no_prepend          Do not prepend old log, useful when ran locally
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -56,6 +90,14 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Scripts in the Genologics Package</a><ul>
+<li><a class="reference internal" href="#zebra-barcodes-py">zebra_barcodes.py</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Welcome to Genologics&#8217;s documentation!</a></p>

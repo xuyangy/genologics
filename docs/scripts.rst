@@ -1,7 +1,8 @@
 Scripts in the Genologics Package
 =================================
+Short usage descriptions for the scripts in the Genologics Package.
 
-CONtent content
+zebra_barcodes.py
+-----------------
 
-.. program-output::
-   python -V
+.. program-output:: zebra_barcodes.py --help
