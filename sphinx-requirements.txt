@@ -1,3 +1,4 @@
+sphinxcontrib-programoutput==0.8
 MarkupSafe==0.18
 PyYAML==3.10
 Pygments==1.6
@@ -11,6 +12,5 @@ readline==6.2.4.1
 reportlab==2.7
 requests==1.2.3
 rst2pdf==0.93
-sphinxcontrib-programoutput==0.8
 
 
