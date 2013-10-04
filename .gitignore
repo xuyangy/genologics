@@ -10,3 +10,4 @@ docs/_static/
 docs/_sources/
 docs/.doctrees/
 docs/_templates/
+docs/*.html
