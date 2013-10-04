@@ -6,3 +6,6 @@ genologics.egg-info/
 test_data/
 fabfile.py
 docs/_build/
+docs/_static/
+docs/_sources/
+docs/.doctrees

@@ -1,4 +1,0 @@
-Scripts in the Genologics Package
-=================================
-
-CONtent content
