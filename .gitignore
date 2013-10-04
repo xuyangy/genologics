@@ -8,4 +8,5 @@ fabfile.py
 docs/_build/
 docs/_static/
 docs/_sources/
-docs/.doctrees
+docs/.doctrees/
+docs/_templates/
