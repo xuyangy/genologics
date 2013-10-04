@@ -47,7 +47,7 @@ if __name__ == "__main__":
         TEMPLATE += help_doc_rst(script, file_path)
 
     # This script added last:
-        TEMPLATE += help_doc_rst(this_file, file_path)
+    TEMPLATE += help_doc_rst(this_file, file_path)
 
     # Print all help messages to a sphinx (restructured text) markup file
     docs_path = os.path.join(file_path,'..','docs','scripts.rst')
