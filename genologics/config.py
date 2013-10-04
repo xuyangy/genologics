@@ -6,8 +6,8 @@ import ConfigParser
 
 config = ConfigParser.SafeConfigParser()
 try:
-	conf_file = config.read(['genologics.cfg', os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
-				'genologics.conf', '/etc/genologics.conf'])
+	conf_file = config.read([os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
+				'genologics.conf', '/etc/genologics.conf','genologics.cfg' ])
 
 	# First config file found wins
 	config.readfp(open(conf_file[0]))
