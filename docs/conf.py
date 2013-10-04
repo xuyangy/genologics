@@ -270,6 +270,7 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['genologics']
+MOCK_MODULES = ['genologics','genologics.config','genologics.lims',
+                'genologics.entities','genologics.epp']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
