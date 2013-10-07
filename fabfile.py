@@ -1,11 +1,12 @@
 """Fabfile to manage workflow for genologics package
 """
 
-from fabric.api import *
+from fabric.api import local, prefix
+from fabric.context_managers import lcd
 import ConfigParser
 
-CONFIG = ConigParser.SafeConfigParser()
-conf_file = CONFIG.read('.fabfilerc')
+CONFIG = ConfigParser.SafeConfigParser()
+conf_file = '.fabfilerc'
 CONFIG.readfp(open(conf_file))
 
 def get_setting(v):
@@ -16,16 +17,19 @@ PRODUCTION = get_setting('PRODUCTION')
 USER = get_setting('USER')
 CENTRAL = get_setting('CENTRAL')
 REPO = get_setting('REPO')
+LOCAL_REPO_PATH = get_setting('LOCAL_REPO_PATH')
 
+def checkout(branch, path=LOCAL_REPO_PATH):
+    with lcd(path):
+        local("git checkout {0}".format(branch))
 
 def merge():
     pass
 
-def workon():
-    pass
-
 def install_on(venv):
-    pass
+    with lcd(LOCAL_REPO_PATH):
+        with prefix('source ~/.virtualenvs/{0}/bin/activate'.format(venv)):
+            local("python setup.py install")
 
 def pull():
     pass
@@ -38,6 +42,10 @@ def commit(checkout=None):
 
 def push():
     pass
+
+def hello(branch,venv):
+    checkout(branch)
+    install_on(venv)
 
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
