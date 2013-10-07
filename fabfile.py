@@ -4,6 +4,7 @@
 from fabric.api import local, prefix
 from fabric.context_managers import lcd
 from git import Repo
+from contextlib import contextmanager
 import ConfigParser
 
 CONFIG = ConfigParser.SafeConfigParser()
@@ -24,9 +25,13 @@ LOCAL_REPO_PATH = get_setting('LOCAL_REPO_PATH')
 def get_current_branch(repo):
     return repo.head.reference.name
 
+@contextmanager
 def checkout(branch, path=LOCAL_REPO_PATH):
+    original_branch = get_current_branch(get_repo(path))
     with lcd(path):
         local("git checkout {0}".format(branch))
+        yield
+        local("git checkout {0}".format(original_branch))
 
 def merge():
     pass
@@ -52,10 +57,9 @@ def get_repo(path=LOCAL_REPO_PATH):
     return Repo(path)
 
 def hello(branch):
-    cr = get_current_branch(get_repo())
-    checkout(branch)
-    print get_current_branch(get_repo())
-    checkout(cr)
+    with checkout(branch):
+        print get_current_branch(get_repo())
+
 
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
