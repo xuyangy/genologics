@@ -3,6 +3,7 @@
 
 from fabric.api import local, prefix
 from fabric.context_managers import lcd
+from git import Repo
 import ConfigParser
 
 CONFIG = ConfigParser.SafeConfigParser()
@@ -18,6 +19,10 @@ USER = get_setting('USER')
 CENTRAL = get_setting('CENTRAL')
 REPO = get_setting('REPO')
 LOCAL_REPO_PATH = get_setting('LOCAL_REPO_PATH')
+
+
+def get_current_branch(repo):
+    return repo.head.reference.name
 
 def checkout(branch, path=LOCAL_REPO_PATH):
     with lcd(path):
@@ -43,9 +48,14 @@ def commit(checkout=None):
 def push():
     pass
 
-def hello(branch,venv):
+def get_repo(path=LOCAL_REPO_PATH):
+    return Repo(path)
+
+def hello(branch):
+    cr = get_current_branch(get_repo())
     checkout(branch)
-    install_on(venv)
+    print get_current_branch(get_repo())
+    checkout(cr)
 
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
