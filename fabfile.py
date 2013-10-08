@@ -65,15 +65,8 @@ def commit_all(ignore_version=False, msg=None, run_method=local):
 def get_repo(path=LOCAL_REPO_PATH):
     return Repo(path)
 
-def hello(branch):
-    commit_all(ignore_version=True, msg="Testing automated commiting")
 
-
-@hosts(STAGE)
-def hello_remote():
-    localhost(run_method=run)
-
-def test_prepare_for_stage(branch):
+def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
     assert not get_repo().is_dirty()
     with checkout(branch, run_method=local):
@@ -90,33 +83,15 @@ def test_prepare_for_stage(branch):
         # Needed for proper doc generation on readthedocs
         generate_docs(run_method=local)
         commit_all(ignore_version=True, 
-                   msg=("Regenerated doc templates after merging {0} "
+                   msg=("Auto: Regenerated doc templates after merging {0} "
                         "to test_scripts").format(branch),
                    run_method=local)
-
-def prepare_for_stage(branch):
-    """ Prepare on local machine for deployment on remote stage """
-    checkout(branch, run_method=local)
-
-    # sync with user remote git repo
-    pull(USER, branch, run_method=local)
-    push(USER, branch, run_method=local)
-    
-    # Check out the branch used for scripts ready to be tested
-    checkout('test_scripts', run_method=local)
-    pull(USER, 'test_scripts', run_method=local)
-
-    merge(branch, run_method=local)
-
-    # Regenerate documentation
-    install_on('genologics-lims', run_method=local)
-    generate_docs(run_method=local)
-    commit(checkout=['version.py'], run_method=local)
-    push(USER, 'test_scripts', run_method=local)
+        push(USER_GR, 'test_scripts', run_method=local)
 
 @hosts(STAGE)
 def deploy_to_stage():
     """ Deploys branch to stage by merging it to test_scripts branch"""
+    raise NotImplementedError
     assert local_user == 'glsai'
 
     checkout('test_scripts')
@@ -127,17 +102,17 @@ def deploy_to_stage():
 
 def prepare_for_production(branch):
     """ Prepare pull request for production by merging it to master branch"""
+    raise NotImplementedError
     assert hostname not in (STAGE, PRODUCTION)
     checkout(branch)
     pull(USER, 'master')
     merge(branch, 'master')
-    raise NotImplementedError
 
 def deploy_to_production(branch):
     """ Deploys branch to production by merging it to master branch"""
+    raise NotImplementedError
     assert hostname == PRODUCTION
     assert(local_user == 'glsai')
     pull(CENTRAL, 'master')
     merge(branch, 'master')
     install_on('epp_master')
-    raise NotImplementedError
