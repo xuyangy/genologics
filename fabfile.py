@@ -53,21 +53,21 @@ def push(remote, branch, run_method=local):
 def generate_docs(run_method=local):
     run_method("python scripts/generate_script_docs.py")
 
-def commit(checkout=None):
-    pass
+def commit_all(ignore_version=False, msg=None, run_method=local):
+    assert msg is not None
+
+    if ignore_version:
+        run_method("git checkout {0}".format("version.py"))
+
+    run_method('git commit -am "{0}"'.format(msg))
+        
 
 def get_repo(path=LOCAL_REPO_PATH):
     return Repo(path)
 
-def localhost(run_method=local):
-    run_method("hostname")
-
 def hello(branch):
-    with checkout(branch):
-        print get_current_branch(get_repo())
+    commit_all(ignore_version=True, msg="Testing automated commiting")
 
-def hello_local():
-    localhost()
 
 @hosts(STAGE)
 def hello_remote():
@@ -89,7 +89,10 @@ def test_prepare_for_stage(branch):
 
         # Needed for proper doc generation on readthedocs
         generate_docs(run_method=local)
-        
+        commit_all(ignore_version=True, 
+                   msg=("Regenerated doc templates after merging {0} "
+                        "to test_scripts").format(branch),
+                   run_method=local)
 
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
