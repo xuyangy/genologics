@@ -25,32 +25,35 @@ REPO = get_setting('REPO')
 LOCAL_REPO_PATH = get_setting('LOCAL_REPO_PATH')
 
 @contextmanager
-def checkout(branch, path=LOCAL_REPO_PATH,run_method=local):
+def checkout(branch, path=LOCAL_REPO_PATH, run_method=local):
     ob = get_repo(path).head.reference.name     # Save current branch
-
-    with lcd(path):
-        run_method("git checkout {0}".format(branch))
+    if ob == branch:
+        print "{0} already checked out".format(branch)
         yield
-        run_method("git checkout {0}".format(ob))
+    else:
+        with lcd(path):
+            run_method("git checkout {0}".format(branch))
+            yield
+            run_method("git checkout {0}".format(ob))
 
-def merge():
-    pass
+def merge(branch, run_method=local):
+    run_method("git merge {0}".format(branch))
 
-def install_on(venv):
+def install_on(venv, run_method=local):
     with lcd(LOCAL_REPO_PATH):
         with prefix('source ~/.virtualenvs/{0}/bin/activate'.format(venv)):
-            local("python setup.py install")
+            run_method("python setup.py install")
 
 def pull(remote, branch, run_method=local):
-    run_method("git pull {0} {1}".format(remote,branch))
+    run_method("git pull {0} {1}".format(remote, branch))
+
+def push(remote, branch, run_method=local):
+    run_method("git push {0} {1}".format(remote, branch))
 
 def generate_docs():
     pass
 
 def commit(checkout=None):
-    pass
-
-def push():
     pass
 
 def get_repo(path=LOCAL_REPO_PATH):
@@ -72,11 +75,19 @@ def hello_remote():
 
 def test_prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
+    assert not get_repo().is_dirty()
     with checkout(branch, run_method=local):
 
         # sync with user remote git repo
         pull(USER_GR, branch, run_method=local)
+        push(USER_GR, branch, run_method=local)
+
+    with checkout('test_scripts', run_method=local):
+        pull(USER_GR, 'test_scripts', run_method=local)
+
+        merge(branch, run_method=local)
         
+        install_on('genologics-lims', run_method=local)
     
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
