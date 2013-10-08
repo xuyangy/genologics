@@ -50,8 +50,8 @@ def pull(remote, branch, run_method=local):
 def push(remote, branch, run_method=local):
     run_method("git push {0} {1}".format(remote, branch))
 
-def generate_docs():
-    pass
+def generate_docs(run_method=local):
+    run_method("python scripts/generate_script_docs.py")
 
 def commit(checkout=None):
     pass
@@ -84,11 +84,13 @@ def test_prepare_for_stage(branch):
 
     with checkout('test_scripts', run_method=local):
         pull(USER_GR, 'test_scripts', run_method=local)
-
         merge(branch, run_method=local)
-        
         install_on('genologics-lims', run_method=local)
-    
+
+        # Needed for proper doc generation on readthedocs
+        generate_docs(run_method=local)
+        
+
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
     checkout(branch, run_method=local)
