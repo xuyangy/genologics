@@ -1,8 +1,9 @@
 """Fabfile to manage workflow for genologics package
 """
 
-from fabric.api import local, prefix
+from fabric.api import local, prefix, hosts, run
 from fabric.context_managers import lcd
+
 from git import Repo
 from contextlib import contextmanager
 import ConfigParser
@@ -15,23 +16,22 @@ def get_setting(v):
     return CONFIG.get('settings',v).rstrip()
 
 STAGE = get_setting('STAGE')
+STAGE_USER = get_setting('STAGE_USER')
 PRODUCTION = get_setting('PRODUCTION')
-USER = get_setting('USER')
+PRODUCTION_USER = get_setting('PRODUCTION_USER')
+USER_GR = get_setting('USER_GIT_REMOTE_NAME')
 CENTRAL = get_setting('CENTRAL')
 REPO = get_setting('REPO')
 LOCAL_REPO_PATH = get_setting('LOCAL_REPO_PATH')
 
-
-def get_current_branch(repo):
-    return repo.head.reference.name
-
 @contextmanager
-def checkout(branch, path=LOCAL_REPO_PATH):
-    original_branch = get_current_branch(get_repo(path))
+def checkout(branch, path=LOCAL_REPO_PATH,run_method=local):
+    ob = get_repo(path).head.reference.name     # Save current branch
+
     with lcd(path):
-        local("git checkout {0}".format(branch))
+        run_method("git checkout {0}".format(branch))
         yield
-        local("git checkout {0}".format(original_branch))
+        run_method("git checkout {0}".format(ob))
 
 def merge():
     pass
@@ -41,8 +41,8 @@ def install_on(venv):
         with prefix('source ~/.virtualenvs/{0}/bin/activate'.format(venv)):
             local("python setup.py install")
 
-def pull():
-    pass
+def pull(remote, branch, run_method=local):
+    run_method("git pull {0} {1}".format(remote,branch))
 
 def generate_docs():
     pass
@@ -56,35 +56,51 @@ def push():
 def get_repo(path=LOCAL_REPO_PATH):
     return Repo(path)
 
+def localhost(run_method=local):
+    run_method("hostname")
+
 def hello(branch):
     with checkout(branch):
         print get_current_branch(get_repo())
 
+def hello_local():
+    localhost()
 
+@hosts(STAGE)
+def hello_remote():
+    localhost(run_method=run)
+
+def test_prepare_for_stage(branch):
+    """ Prepare on local machine for deployment on remote stage """
+    with checkout(branch, run_method=local):
+
+        # sync with user remote git repo
+        pull(USER_GR, branch, run_method=local)
+        
+    
 def prepare_for_stage(branch):
     """ Prepare on local machine for deployment on remote stage """
-    assert hostname not in (STAGE, PRODUCTION)
-    checkout(branch)
+    checkout(branch, run_method=local)
 
     # sync with user remote git repo
-    pull(USER, branch)
-    push(USER, branch)
+    pull(USER, branch, run_method=local)
+    push(USER, branch, run_method=local)
     
     # Check out the branch used for scripts ready to be tested
-    checkout('test_scripts')
-    pull(USER, 'test_scripts')
+    checkout('test_scripts', run_method=local)
+    pull(USER, 'test_scripts', run_method=local)
 
-    merge(branch)
+    merge(branch, run_method=local)
 
     # Regenerate documentation
-    install_on('genologics-lims')
-    generate_docs()
-    commit(checkout=['version.py'])
-    push(USER, 'test_scripts')
+    install_on('genologics-lims', run_method=local)
+    generate_docs(run_method=local)
+    commit(checkout=['version.py'], run_method=local)
+    push(USER, 'test_scripts', run_method=local)
 
+@hosts(STAGE)
 def deploy_to_stage():
     """ Deploys branch to stage by merging it to test_scripts branch"""
-    assert hostname==STAGE
     assert local_user == 'glsai'
 
     checkout('test_scripts')
