@@ -53,11 +53,11 @@ class Session(object):
 
     def log_before_change(self, artifact, changelog_f=None):
         if changelog_f:
-            d = {'ct' : self.current_time(),
+            d = {'ct' : self._current_time(),
                  'tn' : self.technician.name,
                  'ti' : self.technician.id,
                  'udf': self.udf,
-                 'su' : self.sample_udf(artifact),
+                 'su' : self._sample_udf(artifact),
                  'nv' : artifact.udf[self.udf]
                  }
 
