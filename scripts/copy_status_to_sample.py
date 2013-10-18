@@ -149,7 +149,7 @@ def main(lims,args,epp_logger):
     correct_artifacts, incorrect_udf = check_udf_is_defined(artifacts, update_udf)
 
     if args.status_changelog:
-        prepend_status_changelog(args)
+        prepend_status_changelog(args,lims)
 
     if correct_artifacts:
         session = Session(p,update_udf, changelog=args.status_changelog)
