@@ -89,7 +89,7 @@ class Session(object):
 
     def copy_main(self, artifacts):
         if self.changelog:
-            with open(changelog, 'a') as changelog_f:
+            with open(self.changelog, 'a') as changelog_f:
                 for artifact in artifacts:
                     self.copy_udf(artifact, changelog_f)
         else:
