@@ -131,8 +131,6 @@ def prepend_status_changelog(args, lims):
             dir = os.getcwd()
             destination = os.path.join(dir, args.status_changelog)
             copy(changelog_path,destination)
-            with open(destination, 'a') as f:
-                f.write('='*80+'\n')
     except HTTPError: # Probably no artifact found, skip prepending
         logging.warning(('No changelog file artifact found '
                          'for id: {0}').format(args.status_changelog))
