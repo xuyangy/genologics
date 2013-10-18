@@ -30,15 +30,19 @@ import sys
 from shutil import copy
 import os
 
+from time import strftime, localtime
+from requests import HTTPError
+
 class Session(object):
     def __init__(self, process, udf, changelog=None):
         self.process = process
         self.udf = udf
         self.technician = self.process.technician
         self.changelog = changelog
-    
+        self.used_artifacts = []
+
     def _current_time(self):
-        return strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        return strftime("%Y-%m-%d %H:%M:%S", localtime())
         
     def _sample_udf(self,artifact):
         s = self._sample(artifact)
@@ -57,35 +61,40 @@ class Session(object):
                  'tn' : self.technician.name,
                  'ti' : self.technician.id,
                  'udf': self.udf,
+                 'sn' : self._sample(artifact).name,
+                 'si' : self._sample(artifact).id,
                  'su' : self._sample_udf(artifact),
                  'nv' : artifact.udf[self.udf]
                  }
 
-            changelog_f.write(("{ct}: Technician {tn} (id: {ti}),"
-                               "sample {udf} from "
-                               "{su} to status {nv}").format(d))
+            changelog_f.write(("{ct}: Technician {tn} (id: {ti}), "
+                               "udf: {udf} on {sn} (id: {si}) from "
+                               "{su} to {nv}.\n").format(**d))
 
         logging.info(("Copying from artifact with id: {0} to sample with "
-                      " id: {1}").format(artifact.id, self.sample().id))
+                      " id: {1}").format(artifact.id, self._sample(artifact).id))
 
     def log_after_change(self, artifact, saved_sample_udf):
         d = {'udf': self.udf,
              'su': saved_sample_udf,
-             'nv': artifact.udf[udf]
+             'nv': artifact.udf[self.udf]
              }
 
-        logging.info("Updated Sample {0} from {1} to {2}.".format(d))
+        logging.info("Updated Sample {udf} from {su} to {nv}.".format(**d))
 
     def copy_udf(self,artifact, changelog_f = None):
-        self.log_before_change(artifact, changelog_f)
-        
         saved_sample_udf = self._sample_udf(artifact)
 
-        sample = self._sample(artifact)
-        sample.udf[udf] = artifact.udf[udf]
-        sample.put()
+        if artifact.udf[self.udf] != saved_sample_udf:
+            self.log_before_change(artifact, changelog_f)
 
-        self.log_after_change(artifact, saved_sample_udf)
+            sample = self._sample(artifact)
+            sample.udf[self.udf] = artifact.udf[self.udf]
+            sample.put()
+
+            self.log_after_change(artifact, saved_sample_udf)
+
+            self.used_artifacts.append(artifact)
 
     def copy_main(self, artifacts):
         if self.changelog:
@@ -106,7 +115,7 @@ def check_udf_is_defined(artifacts,udf):
             filtered_artifacts.append(artifact)
         else:
             logging.warning(("Found artifact for sample {0} with {1} "
-                             "undefined/blank, exiting").format(input.samples[0].name,udf))
+                             "undefined/blank, exiting").format(artifact.samples[0].name,udf))
             incorrect_artifacts.append(artifact)
     return filtered_artifacts, incorrect_artifacts
 
@@ -146,13 +155,19 @@ def main(lims,args,epp_logger):
         session = Session(p,update_udf, changelog=args.status_changelog)
         session.copy_main(correct_artifacts)
 
-    d = {'ca': len(correct_artifacts),
-    'ia': len(incorrect_artifacts),
-    'warning' : len(incorrect_artifacts) or "WARNING "
+    if len(incorrect_udf) == 0:
+        warning = "no artifacts"
+    else:
+        warning = "WARNING: skipped {0} artifact(s)".format(len(incorrect_udf))
+        
+    d = {'ua': len(session.used_artifacts),
+         'ca': len(correct_artifacts),
+         'ia': len(incorrect_udf),
+         'warning' : warning
     }
 
-    abstract = ("Updated {ca} artifact(s), {warning} skipped {ia} "
-    "artifact(s) with incorrect udf info.").format(d)
+    abstract = ("Updated {ua} artifact(s), out of {ca} in total, "
+                "{warning} with incorrect udf info.").format(**d)
 
     print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
