@@ -119,7 +119,7 @@ def check_udf_is_defined(artifacts,udf):
             incorrect_artifacts.append(artifact)
     return filtered_artifacts, incorrect_artifacts
 
-def prepend_status_changelog(args):
+def prepend_status_changelog(args, lims):
     """ Prepends old file entries if such exists """
     # Check if a changelog for this process exists: 
     try:
@@ -127,7 +127,7 @@ def prepend_status_changelog(args):
         changelog_artifact.get()
         if changelog_artifact.files:
             changelog_path = changelog_artifact.files[0].content_location.split(
-                self.lims.baseuri.split(':')[1])[1]
+                lims.baseuri.split(':')[1])[1]
             dir = os.getcwd()
             destination = os.path.join(dir, args.status_changelog)
             copy(changelog_path,destination)
