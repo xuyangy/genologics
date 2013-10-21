@@ -149,9 +149,8 @@ def main(lims,args,epp_logger):
     if args.status_changelog:
         prepend_status_changelog(args,lims)
 
-    if correct_artifacts:
-        session = Session(p,update_udf, changelog=args.status_changelog)
-        session.copy_main(correct_artifacts)
+    session = Session(p,update_udf, changelog=args.status_changelog)
+    session.copy_main(correct_artifacts)
 
     if len(incorrect_udf) == 0:
         warning = "no artifacts"
