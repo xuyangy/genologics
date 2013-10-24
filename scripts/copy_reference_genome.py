@@ -99,7 +99,7 @@ def filter_samples(artifacts, projects):
         else:
             logging.warning(("Filtered out sample {0} belonging to project {1} "
                              "without udf defined").format(sample.name,
-                                                           project.name))
+                                                           sample.project.name))
     return return_samples
 
 def main(lims,args,epp_logger):
@@ -111,7 +111,7 @@ def main(lims,args,epp_logger):
     projects = all_projects_for_artifacts(artifacts)
 
     correct_projects, incorrect_udf = check_udf_is_defined(projects, source_udf)
-    correct_samples = filter_samples(artifacts, projects)
+    correct_samples = filter_samples(artifacts, correct_projects)
 
     session = Session(pro, source_udf, destination_udf)
     session.copy_main(correct_samples)
