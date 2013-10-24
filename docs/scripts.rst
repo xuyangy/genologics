@@ -3,6 +3,34 @@ Scripts in the Genologics Package
 =================================
 Short usage descriptions for the scripts in the Genologics Package.
 
+copy_status_to_sample.py
+------------------------
+Automated help message generated from running copy_status_to_sample.py with the --help flag::
+
+	usage: copy_status_to_sample.py [-h] [--pid PID] [--log LOG]
+	                                [--status_changelog STATUS_CHANGELOG]
+	
+	EPP script to copy user defined field 'Status (manual)' from analyte level to
+	submitted sample level in Clarity LIMS. Can be executed in the background or
+	triggered by a user pressing a "blue button". This script can only be applied
+	to processes where ANALYTES are modified in the GUI. The script can output two
+	different logs, where the status_changelog contains notes with the technician,
+	the date and changed status for each copied status. The regular log file
+	contains regular execution information. Error handling: If the udf 'Status
+	(manual)' is blank or not defined for any of the inputs, the script will log
+	this, and not perform any changes for that artifact. Written by Johannes
+	Alneberg, Science for Life Laboratory, Stockholm, Sweden
+	
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --pid PID             Lims id for current Process
+	  --log LOG             File name for standard log file, for runtime
+	                        information and problems.
+	  --status_changelog STATUS_CHANGELOG
+	                        File name for status changelog file, for concise
+	                        information on who, what and when for status change
+	                        events. Prepends the old changelog file by default.
+
 zebra_barcodes.py
 -----------------
 Automated help message generated from running zebra_barcodes.py with the --help flag::
