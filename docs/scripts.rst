@@ -3,6 +3,27 @@ Scripts in the Genologics Package
 =================================
 Short usage descriptions for the scripts in the Genologics Package.
 
+copy_reference_genome.py
+------------------------
+Automated help message generated from running copy_reference_genome.py with the --help flag::
+
+	usage: copy_reference_genome.py [-h] [--pid PID] [--log LOG]
+	
+	EPP script to copy user defined field 'Reference Genome' from project level to
+	submitted sample level for the input artifacts of given process, in Clarity
+	LIMS. Can be executed in the background or triggered by a user pressing a
+	"blue button". The script outputs a regular log file that contains regular
+	execution information. Error handling: If the udf 'Reference Genome' is blank
+	or not defined for any of the input projects, the script will log this, and
+	not perform any changes for that sample. Written by Johannes Alneberg, Science
+	for Life Laboratory, Stockholm, Sweden
+	
+	optional arguments:
+	  -h, --help  show this help message and exit
+	  --pid PID   Lims id for current Process
+	  --log LOG   File name for standard log file, for runtime information and
+	              problems.
+
 copy_status_to_sample.py
 ------------------------
 Automated help message generated from running copy_status_to_sample.py with the --help flag::
