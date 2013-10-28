@@ -136,7 +136,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
     parser.add_argument('--pid',
                         help='Lims id for current Process')
-    parser.add_argument('--log',default=sys.stdout,
+    parser.add_argument('--log',
                         help=('File name for standard log file, '
                               ' for runtime information and problems.'))
     args = parser.parse_args()
