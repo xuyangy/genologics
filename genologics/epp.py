@@ -84,7 +84,7 @@ class EppLogger(object):
         # Do not repress possible exception
         return False
 
-    def __init__(self,log_file,level=logging.INFO,lims=None,prepend=False):
+    def __init__(self,log_file=None,level=logging.INFO,lims=None,prepend=False):
         """ Initialize the logger with custom settings.
 
         Arguments:
@@ -99,7 +99,8 @@ class EppLogger(object):
         self.log_file = log_file
         self.level = level
         self.prepend = prepend
-        if prepend and not (self.log_file == sys.stdout):
+
+        if prepend and self.log_file:
             self.prepend_old_log()
 
         # Loggers that will capture stdout and stderr respectively
@@ -120,9 +121,10 @@ class EppLogger(object):
         self.logger.setLevel(self.level)
         formatter = logging.Formatter(
             '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        individual_fh = logging.FileHandler(self.log_file,mode='a')
-        individual_fh.setFormatter(formatter)
-        self.logger.addHandler(individual_fh)
+        if self.log_file:
+            individual_fh = logging.FileHandler(self.log_file,mode='a')
+            individual_fh.setFormatter(formatter)
+            self.logger.addHandler(individual_fh)
 
         if MAIN_LOG:
             # Rotating file handler, that will create up to 10 backup logs,
