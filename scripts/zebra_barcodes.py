@@ -115,7 +115,7 @@ def getArgs():
             " is fetched from Clarity LIMS.")
     parser = ArgumentParser(description=desc)
     parser.add_argument('--container_id', action='store_true',
-                        help=('Print container id label in both '
+                        help=('Print output container id label in both '
                         'barcode format and human readable.'))
     parser.add_argument('--operator_and_date',action='store_true',
                         help=('Print label with both operator '
