@@ -93,13 +93,14 @@ def filter_samples(artifacts, projects):
     projects = set(projects)
     return_samples = []
     for artifact in artifacts:
-        sample = artifact.samples[0]
-        if sample.project in projects:
-            return_samples.append(sample)
-        else:
-            logging.warning(("Filtered out sample {0} belonging to project {1} "
-                             "without udf defined").format(sample.name,
-                                                           sample.project.name))
+        samples = artifact.samples
+        for sample in samples:
+            if sample.project in projects:
+                return_samples += samples
+            else:
+                logging.warning(("Filtered out sample {0} belonging to project {1} "
+                                 "without udf defined").format(sample.name,
+                                                               sample.project.name))
     return return_samples
 
 def main(lims,args,epp_logger):
