@@ -72,7 +72,8 @@ def all_projects_for_artifacts(artifacts):
     """ get all unique projects associated with a list of artifacts """
     projects = set()
     for artifact in artifacts:
-        projects.add(artifact.samples[0].project)
+        for sample in artifact.samples:
+            projects.add(sample.project)
     return list(projects)
 
 def check_udf_is_defined(projects, udf):
@@ -92,15 +93,17 @@ def filter_samples(artifacts, projects):
     """ All samples belonging to a project in projects """
     projects = set(projects)
     return_samples = []
+    samples = set()
     for artifact in artifacts:
-        samples = artifact.samples
-        for sample in samples:
-            if sample.project in projects:
-                return_samples += samples
-            else:
-                logging.warning(("Filtered out sample {0} belonging to project {1} "
-                                 "without udf defined").format(sample.name,
-                                                               sample.project.name))
+        samples.update(artifact.samples)
+
+    for sample in samples:
+        if sample.project in projects:
+            return_samples.append(sample)
+        else:
+            logging.warning(("Filtered out sample {0} belonging to project {1} "
+                             "without udf defined").format(sample.name,
+                                                           sample.project.name))
     return return_samples
 
 def main(lims,args,epp_logger):
