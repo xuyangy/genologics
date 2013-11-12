@@ -34,9 +34,10 @@ from time import strftime, localtime
 from requests import HTTPError
 
 class Session(object):
-    def __init__(self, process, udf, changelog=None):
+    def __init__(self, process, s_udf, d_udf, changelog=None):
         self.process = process
-        self.udf = udf
+        self.s_udf = s_udf # Source udf
+        self.d_udf = d_udf # Destination udf
         self.technician = self.process.technician
         self.changelog = changelog
         self.used_artifacts = []
@@ -47,8 +48,8 @@ class Session(object):
     def _sample_udf(self,artifact):
         s = self._sample(artifact)
 
-        if self.udf in s.udf:
-            return s.udf[self.udf]
+        if self.d_udf in s.udf:
+            return s.udf[self.d_udf]
         else:
             return "Undefined"
 
@@ -60,36 +61,36 @@ class Session(object):
             d = {'ct' : self._current_time(),
                  'tn' : self.technician.name,
                  'ti' : self.technician.id,
-                 'udf': self.udf,
+                 's_udf' : self.s_udf,
                  'sn' : self._sample(artifact).name,
                  'si' : self._sample(artifact).id,
                  'su' : self._sample_udf(artifact),
-                 'nv' : artifact.udf[self.udf]
+                 'nv' : artifact.udf[self.s_udf]
                  }
 
-            changelog_f.write(("{ct}: Technician {tn} (id: {ti}), "
-                               "udf: {udf} on {sn} (id: {si}) from "
+            changelog_f.write(("{ct}: udf: {s_udf} on {sn} (id: {si}) from "
                                "{su} to {nv}.\n").format(**d))
 
         logging.info(("Copying from artifact with id: {0} to sample with "
                       " id: {1}").format(artifact.id, self._sample(artifact).id))
 
     def log_after_change(self, artifact, saved_sample_udf):
-        d = {'udf': self.udf,
+        d = {'s_udf': self.s_udf,
+             'd_udf': self.d_udf,
              'su': saved_sample_udf,
-             'nv': artifact.udf[self.udf]
+             'nv': artifact.udf[self.s_udf]
              }
 
-        logging.info("Updated Sample {udf} from {su} to {nv}.".format(**d))
+        logging.info("Updated Sample {d_udf} from {su} to {nv}.".format(**d))
 
     def copy_udf(self,artifact, changelog_f = None):
         saved_sample_udf = self._sample_udf(artifact)
 
-        if artifact.udf[self.udf] != saved_sample_udf:
+        if artifact.udf[self.s_udf] != saved_sample_udf:
             self.log_before_change(artifact, changelog_f)
 
             sample = self._sample(artifact)
-            sample.udf[self.udf] = artifact.udf[self.udf]
+            sample.udf[self.d_udf] = artifact.udf[self.s_udf]
             sample.put()
 
             self.log_after_change(artifact, saved_sample_udf)
@@ -142,14 +143,20 @@ def prepend_status_changelog(args, lims):
 
 def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
-    update_udf = 'Status (manual)'
-    artifacts = p.all_inputs(unique=True)
-    correct_artifacts, incorrect_udf = check_udf_is_defined(artifacts, update_udf)
+    source_update_udf = 'Set Status (manual)'
+    dest_update_udf = 'Status (manual)'
+    if args.aggregate:
+        artifacts = p.all_inputs(unique=True)
+    else:
+        artifacts = p.all_outputs(unique=True)
+        artifacts = filter(lambda a: a.type == 'Analyte', artifacts)
+
+    correct_artifacts, incorrect_udf = check_udf_is_defined(artifacts, source_update_udf)
 
     if args.status_changelog:
         prepend_status_changelog(args,lims)
 
-    session = Session(p,update_udf, changelog=args.status_changelog)
+    session = Session(p, source_update_udf, dest_update_udf, changelog=args.status_changelog)
     session.copy_main(correct_artifacts)
 
     if len(incorrect_udf) == 0:
@@ -183,6 +190,12 @@ if __name__ == "__main__":
                               ' for concise information on who, what and '
                               ' when for status change events. '
                               'Prepends the old changelog file by default.'))
+    parser.add_argument('--aggregate', default=False, action="store_true",
+                        help=("Use this tag if your process is aggregating "
+                              "results. The default behaviour assumes it is "
+                              "the output artifact of type analyte that is "
+                              "modified while this tag changes this to using "
+                              "input artifacts instead."))
     args = parser.parse_args()
 
     lims = Lims(BASEURI,USERNAME,PASSWORD)
