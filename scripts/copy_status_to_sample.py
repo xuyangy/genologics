@@ -191,11 +191,11 @@ if __name__ == "__main__":
                               ' when for status change events. '
                               'Prepends the old changelog file by default.'))
     parser.add_argument('--aggregate', default=False, action="store_true",
-                        help=("Use this tag if your process is aggregating"
-                              "results. The default behaviour assumes it is"
-                              "the output artifact of type analyte that is"
-                              "modified while this tag changes this to using"
-                              "input artifacts instead"))
+                        help=("Use this tag if your process is aggregating "
+                              "results. The default behaviour assumes it is "
+                              "the output artifact of type analyte that is "
+                              "modified while this tag changes this to using "
+                              "input artifacts instead."))
     args = parser.parse_args()
 
     lims = Lims(BASEURI,USERNAME,PASSWORD)
