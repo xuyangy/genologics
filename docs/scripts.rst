@@ -30,6 +30,7 @@ Automated help message generated from running copy_status_to_sample.py with the 
 
 	usage: copy_status_to_sample.py [-h] [--pid PID] [--log LOG]
 	                                [--status_changelog STATUS_CHANGELOG]
+	                                [--aggregate]
 	
 	EPP script to copy user defined field 'Status (manual)' from analyte level to
 	submitted sample level in Clarity LIMS. Can be executed in the background or
@@ -51,6 +52,10 @@ Automated help message generated from running copy_status_to_sample.py with the 
 	                        File name for status changelog file, for concise
 	                        information on who, what and when for status change
 	                        events. Prepends the old changelog file by default.
+	  --aggregate           Use this tag if your process is aggregating results.
+	                        The default behaviour assumes it is the output
+	                        artifact of type analyte that is modified while this
+	                        tag changes this to using input artifacts instead.
 
 zebra_barcodes.py
 -----------------
@@ -67,8 +72,8 @@ Automated help message generated from running zebra_barcodes.py with the --help 
 	
 	optional arguments:
 	  -h, --help            show this help message and exit
-	  --container_id        Print container id label in both barcode format and
-	                        human readable.
+	  --container_id        Print output container id label in both barcode format
+	                        and human readable.
 	  --operator_and_date   Print label with both operator and todays date.
 	  --container_name      Print label with human readablecontainer name (user
 	                        defined)
