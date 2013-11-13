@@ -57,6 +57,24 @@ Automated help message generated from running copy_status_to_sample.py with the 
 	                        artifact of type analyte that is modified while this
 	                        tag changes this to using input artifacts instead.
 
+qc_amount_calculation.py
+------------------------
+Automated help message generated from running qc_amount_calculation.py with the --help flag::
+
+	usage: qc_amount_calculation.py [-h] [--pid PID] [--log LOG] [--aggregate]
+	
+	EPP script to calculate amount in ng from concentration and volume udf:s in
+	Clarity LIMS. The script checks that the 'Volume (ul)' and 'Concentration'
+	udf:s are defined and that the udf. 'Conc. Units' have the correct value:
+	'ng/ul', otherwise that artifact is skipped, left unchanged, by the script.
+	Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden
+	
+	optional arguments:
+	  -h, --help   show this help message and exit
+	  --pid PID    Lims id for current Process
+	  --log LOG    Log file for runtime info and errors.
+	  --aggregate  Use this tag if current Process is an aggregate QC step
+
 zebra_barcodes.py
 -----------------
 Automated help message generated from running zebra_barcodes.py with the --help flag::
