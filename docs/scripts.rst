@@ -57,6 +57,29 @@ Automated help message generated from running copy_status_to_sample.py with the 
 	                        artifact of type analyte that is modified while this
 	                        tag changes this to using input artifacts instead.
 
+molar_concentration.py
+----------------------
+Automated help message generated from running molar_concentration.py with the --help flag::
+
+	usage: molar_concentration.py [-h] [--pid PID] [--log LOG] [--aggregate]
+	
+	EPP script to calculate molar concentration given the weight concentration, in
+	Clarity LIMS. Before updating the artifacts, the script verifies that
+	'Concentration' and 'Size (bp)' udf:s are not blank, and that the 'Conc.
+	units' field is 'ng/ul' for each artifact. Artifacts that do not fulfill the
+	requirements, will not be updated. Written by Johannes Alneberg, Science for
+	Life Laboratory, Stockholm, Sweden
+	
+	optional arguments:
+	  -h, --help   show this help message and exit
+	  --pid PID    Lims id for current Process
+	  --log LOG    File name for standard log file, for runtime information and
+	               problems.
+	  --aggregate  Use this tag if your process is aggregating results. The
+	               default behaviour assumes it is the output artifact of type
+	               analyte that is modified while this tag changes this to using
+	               input artifacts instead
+
 qc_amount_calculation.py
 ------------------------
 Automated help message generated from running qc_amount_calculation.py with the --help flag::
