@@ -42,12 +42,7 @@ setup(name='genologics',
       url='https://github.com/scilifelab/genologics',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-<<<<<<< HEAD
-      scripts=["scripts/attach_caliper_files.py"]#, "scripts/LIMS2DB/project_summary_upload_LIMS.py"],
-      #py_modules = ['scripts/LIMS2DB/objectsDB','scripts/LIMS2DB/statusDB_utils','scripts/LIMS2DB/lims_utils','scripts/LIMS2DB/helpers'],
-=======
       scripts=glob.glob("scripts/*.py"),
->>>>>>> 893623dba84fcff24bc072ab0826155737b2b804
       include_package_data=True,
       zip_safe=False,
       install_requires=[

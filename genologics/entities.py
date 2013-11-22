@@ -638,9 +638,9 @@ class Processtype(Entity):
     # XXX
 
 class Udfconfig(Entity):
+    "Instance of field type (cnf namespace)."
     _URI = 'configuration/udfs'
 
-    type = StringDescriptor('type')
     name = StringDescriptor('name')
     attach_to_name = StringDescriptor('attach-to-name')
     attach_to_category = StringDescriptor('attach-to-category')
