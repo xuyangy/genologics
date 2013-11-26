@@ -637,6 +637,14 @@ class Processtype(Entity):
     name              = StringAttributeDescriptor('name')
     # XXX
 
+class Udfconfig(Entity):
+    "Instance of field type (cnf namespace)."
+    _URI = 'configuration/udfs'
+
+    name = StringDescriptor('name')
+    attach_to_name = StringDescriptor('attach-to-name')
+    attach_to_category = StringDescriptor('attach-to-category')
+
 
 class Process(Entity):
     "Process (instance of Processtype) executed producing ouputs from inputs."

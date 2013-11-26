@@ -100,6 +100,21 @@ class Lims(object):
             raise requests.exceptions.HTTPError(message)
         return root
 
+    def get_udfs(self, name = None, attach_to_name = None, attach_to_category = None, start_index = None):
+        """Get a list of udfs, filtered by keyword arguments.
+        name: name of udf
+        attach_to_name: item in the system, to wich the udf is attached, such as 
+            Sample, Project, Container, or the name of a process.
+        attach_to_category: If 'attach_to_name' is the name of a process, such as 'CaliperGX QC (DNA)',
+             then you need to set attach_to_category='ProcessType'. Must not be provided otherwise.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                    attach_to_name=attach_to_name,
+                                    attach_to_category=attach_to_category,
+                                    start_index=start_index)
+        return self._get_instances(Udfconfig, params=params)
+
     def get_labs(self, name=None, last_modified=None,
                  udf=dict(), udtname=None, udt=dict(), start_index=None):
         """Get a list of labs, filtered by keyword arguments.
