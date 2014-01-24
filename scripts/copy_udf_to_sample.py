@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-DESC = """EPP script to copy user defined field 'Status (manual)' from analyte 
+DESC = """EPP script to copy user defined field from analyte 
 level to  submitted sample level in Clarity LIMS. Can be executed in the 
 background or triggered by a user pressing a "blue button".
 
@@ -9,7 +9,7 @@ contains notes with the technician, the date and changed status for each
 copied status. The regular log file contains regular execution information. 
 
 Error handling:
-If the udf 'Status (manual)' is blank or not defined for any of the inputs,
+If the udf given is blank or not defined for any of the inputs,
 the script will log this, and not perform any changes for that artifact.
 
 
@@ -90,11 +90,14 @@ class Session(object):
             self.log_before_change(artifact, changelog_f)
 
             sample = self._sample(artifact)
-            sample.udf[self.d_udf] = artifact.udf[self.s_udf]
-            sample.put()
-
+            try:
+                sample.udf[self.d_udf] = artifact.udf[self.s_udf]
+                sample.put()
+            except (TypeError, HTTPError) as e:
+                print >> sys.stderr, "Error while updating artifact: {0}".format(e)
+                sys.exit(-1)
             self.log_after_change(artifact, saved_sample_udf)
-
+            
             self.used_artifacts.append(artifact)
 
     def copy_main(self, artifacts):
@@ -121,30 +124,40 @@ def check_udf_is_defined(artifacts,udf):
     return filtered_artifacts, incorrect_artifacts
 
 def prepend_status_changelog(args, lims):
-    """ Prepends old file entries if such exists """
+    """ Prepends old file entries if such exists, precedence is given 
+    to file existing on disk, enabling nested scripts."""
     # Check if a changelog for this process exists: 
-    try:
-        changelog_artifact = Artifact(lims, id=args.status_changelog)
-        changelog_artifact.get()
-        if changelog_artifact.files:
-            changelog_path = changelog_artifact.files[0].content_location.split(
-                lims.baseuri.split(':')[1])[1]
-            dir = os.getcwd()
-            destination = os.path.join(dir, args.status_changelog)
-            copy(changelog_path,destination)
-    except HTTPError: # Probably no artifact found, skip prepending
-        logging.warning(('No changelog file artifact found '
-                         'for id: {0}').format(args.status_changelog))
-    except IOError as e: # Probably some path was wrong in copy
-        logging.error(('Changelog could not be prepended, '
-                       'make sure {0} and {1} are '
-                       'proper paths.').format(changelog_path))
-        sys.exit(-1)
 
-def main(lims,args,epp_logger):
+    dir = os.getcwd()
+    destination = os.path.join(dir, args.status_changelog)
+    if not os.path.isfile(destination):
+        try:
+            changelog_artifact = Artifact(lims, id=args.status_changelog)
+            changelog_artifact.get()
+
+            if changelog_artifact.files:
+                changelog_path = changelog_artifact.files[0].content_location.split(
+                    lims.baseuri.split(':')[1])[1]
+                copy(changelog_path,destination)
+        except HTTPError: # Probably no artifact found, skip prepending
+            logging.warning(('No changelog file artifact found '
+                             'for id: {0}').format(args.status_changelog))
+        except IOError as e: # Probably some path was wrong in copy
+            logging.error(('Changelog could not be prepended, '
+                           'make sure {0} is a'
+                           'proper path.').format(changelog_path))
+            sys.exit(-1)
+
+def main(lims, args, epp_logger):
     p = Process(lims,id = args.pid)
-    source_update_udf = 'Set Status (manual)'
-    dest_update_udf = 'Status (manual)'
+    source_update_udf = args.source_udf
+    if args.dest_udf:
+        dest_update_udf = args.dest_udf
+    else:
+        # If destination udf isn't given, the
+        # same name as for the source is used
+        dest_update_udf = args.source_udf
+        
     if args.aggregate:
         artifacts = p.all_inputs(unique=True)
     else:
@@ -185,12 +198,19 @@ if __name__ == "__main__":
     parser.add_argument('--log',
                         help=('File name for standard log file, '
                               ' for runtime information and problems.'))
-    parser.add_argument('--status_changelog',
+    parser.add_argument('-s', '--source_udf', type=str, default=None,
+                        help=('Name of the source user defined field that will'
+                              'be copied.'))
+    parser.add_argument('-d', '--dest_udf', type=str, default=None,
+                        help=('Name of the destination user defined field that will'
+                              'be written to. This argument is optional, if left empty'
+                              'the source_udf argument is used instead.'))
+    parser.add_argument('-c', '--status_changelog',
                         help=('File name for status changelog file, '
                               ' for concise information on who, what and '
                               ' when for status change events. '
                               'Prepends the old changelog file by default.'))
-    parser.add_argument('--aggregate', default=False, action="store_true",
+    parser.add_argument('-a', '--aggregate', default=False, action="store_true",
                         help=("Use this tag if your process is aggregating "
                               "results. The default behaviour assumes it is "
                               "the output artifact of type analyte that is "
@@ -201,5 +221,5 @@ if __name__ == "__main__":
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
 
-    with EppLogger(args.log,lims=lims, prepend=True) as epp_logger:
+    with EppLogger(args.log, lims=lims, prepend=True) as epp_logger:
         main(lims, args, epp_logger)
