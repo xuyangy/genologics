@@ -23,6 +23,9 @@ class CopyField(object):
     d_udf_name      name of destination udf name. If not specifyed
                     s_field_name will be used.
 
+    The copy_udf() function takes a logfile as optional argument.
+    If this is given the changes will be logged there.
+
     Written by Maya Brandi and Johannes Alnberg
     """
     def __init__(self, s_elt, d_elt, s_field_name, d_udf_name = None):
@@ -83,10 +86,6 @@ class CopyField(object):
             self._log_before_change(changelog_f)
             self._set_udf(self.d_elt, self.d_udf_name, self.s_field)
             self._log_after_change()
-
-
-
-
 
 def get_run_info(fc):
 	fc_summary={}

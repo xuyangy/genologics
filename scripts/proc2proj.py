@@ -1,19 +1,15 @@
 #!/usr/bin/env python
-DESC = """EPP script to copy user defined field from analyte 
-level to  submitted sample level in Clarity LIMS. Can be executed in the 
+DESC = """EPP script to copy user defined field from process 
+level to project level in Clarity LIMS. Can be executed in the 
 background or triggered by a user pressing a "blue button".
 
-This script can only be applied to processes where ANALYTES are modified in 
-the GUI. The script can output two different logs, where the status_changelog 
+The script can output two different logs, where the status_changelog 
 contains notes with the technician, the date and changed status for each 
 copied status. The regular log file contains regular execution information. 
 
 Error handling:
-If the udf given is blank or not defined for any of the inputs,
-the script will log this, and not perform any changes for that artifact.
-
-
-Written by Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden
+If the field given is blank or not defined for the proocess,
+the script will log this, and not perform any changes.
 """ 
 
 from argparse import ArgumentParser
