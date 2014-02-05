@@ -137,7 +137,7 @@ class EppLogger(object):
             self.logger.warning('No main log file found.')
 
 
-    def prepend_old_log(self):
+    def prepend_old_log(self, external_log_file = None):
         """Prepend the old log to the new log. 
 
         The location of the old log file is retrieved through the REST api. 
@@ -147,24 +147,28 @@ class EppLogger(object):
 
         This method does not use logging since that could mess up the
         logging settings, instead warnings are printed to stderr."""
+        if external_log_file:
+            log_file = external_log_file
+        else:
+            log_file = self.log_file
         try:
-            log_artifact = Artifact(self.lims,id=self.log_file)
+            log_artifact = Artifact(self.lims,id=log_file)
             log_artifact.get()
             if log_artifact.files:
                 log_path = log_artifact.files[0].content_location.split(
                     self.lims.baseuri.split(':')[1])[1]
                 dir = os.getcwd()
-                destination = os.path.join(dir,self.log_file)
+                destination = os.path.join(dir,log_file)
                 copy(log_path,destination)
                 with open(destination,'a') as f:
                     f.write('='*80+'\n')
         except HTTPError: # Probably no artifact found, skip prepending
             print >> sys.stderr, ('No log file artifact found '
-                                  'for id: {0}').format(self.log_file)
+                                  'for id: {0}').format(log_file)
         except IOError as e: # Probably some path was wrong in copy
             print >> sys.stderr, ('Log could not be prepended, '
                                   'make sure {0} and {1} are '
-                                  'proper paths.').format(log_path,self.log_file)
+                                  'proper paths.').format(log_path,log_file)
             raise e
 
     class StreamToLogger(object):
