@@ -23,7 +23,7 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 
 from genologics.entities import Process, Artifact
 from genologics.epp import EppLogger
-from genologics.lims_utils import CopyField
+from genologics.epp import CopyField
 
 import logging
 import sys
@@ -36,7 +36,7 @@ from requests import HTTPError
 
 
 
-def main(lims, argsi, epp_logger):
+def main(lims, args, epp_logger):
     correct_artifacts = []
     incorrect_artifacts = []
     used_artifacts = []
