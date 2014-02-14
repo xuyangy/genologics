@@ -1,11 +1,15 @@
 #!/usr/bin/env python
-DESC = """EPP script to copy user defined field from process 
-level to project level in Clarity LIMS. Can be executed in the 
-background or triggered by a user pressing a "blue button".
+DESC = """EPP script to copy user defined field from any process to associated 
+project/projects in Clarity LIMS. If the specifyed process handles many artifacts 
+associated to different projects, all these projects will get the specifyed udf.
+ 
+Can be executed in the background or triggered by a user pressing a "blue button".
 
 The script can output two different logs, where the status_changelog 
 contains notes with the technician, the date and changed status for each 
-copied status. The regular log file contains regular execution information. 
+copied status. The regular log file contains regular execution information.
+
+Written by Maya Brandi 
 """ 
 
 from argparse import ArgumentParser
@@ -21,12 +25,12 @@ from time import strftime, localtime
 from requests import HTTPError
 
 def main(lims, args, epp_logger):
+    d_elts = []
     s_elt = Process(lims,id = args.pid)
     for inp in s_elt.all_inputs():
         for samp in inp.samples:
             d_elts.append(samp.project)
     d_elts = list(set(d_elts)) 
-    #d_elt = s_elt.all_inputs()[0].samples[0].project
         
     if args.status_changelog:
         dir = os.getcwd()
