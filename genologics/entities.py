@@ -680,6 +680,31 @@ class Process(Entity):
             ids = list(frozenset(ids))
         return map(lambda id: Artifact(self.lims,id=id),ids)
 
+#    def analytes(self, aggregate):
+#        """Retrieving all processed Analytes. If the process is a 
+#        not producing any output analytes, the input analytes are 
+#        returned.Input/Output is returned as a information string."""
+#        if aggregate:
+#            artifacts = self.all_inputs(unique=True)
+#            type = 'Input'
+#        else:
+#            artifacts = self.all_outputs(unique=True)
+#            type = 'Output'
+#        return filter(lambda a: a.type == 'Analyte', artifacts), type
+
+    def analytes(self):
+        """Retrieving all processed Analytes. If the process is a 
+        not producing any output analytes, the input analytes are 
+        returned.Input/Output is returned as a information string."""
+        type = 'Output'
+        artifacts = self.all_outputs(unique=True)
+        analytes = filter(lambda a: a.type == 'Analyte', artifacts)
+        if len(analytes) == 0:
+            artifacts = self.all_inputs(unique=True)
+            analytes = filter(lambda a: a.type == 'Analyte', artifacts)
+            type = 'Input'
+        return analytes, type
+
     def parent_processes(self):
         """Retrieving all parent processes through the input artifacts"""
         return map(lambda i_a: i_a.parent_process, self.all_inputs(unique=True))

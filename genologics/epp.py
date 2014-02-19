@@ -224,18 +224,21 @@ class CopyField(object):
     def _get_field(self, elt, field):
         if field in elt.udf:
             return elt.udf[field]
-        elif udf_name in dir(elt):
-            return elt.field
         else:
-            return None
+            try:
+                return elt.field
+            except:
+                return None
 
     def _set_udf(self, elt, udf_name, val):
         try:
             elt.udf[udf_name] = val
             elt.put()
+            return True
         except (TypeError, HTTPError) as e:
             print >> sys.stderr, "Error while updating element: {0}".format(e)
             sys.exit(-1)
+            return False
 
     def _log_before_change(self, changelog_f=None):
         if changelog_f:
@@ -264,6 +267,11 @@ class CopyField(object):
     def copy_udf(self, changelog_f = None):
         if self.s_field != self.old_dest_udf:
             self._log_before_change(changelog_f)
-            self._set_udf(self.d_elt, self.d_udf_name, self.s_field)
+            log = self._set_udf(self.d_elt, self.d_udf_name, self.s_field)
             self._log_after_change()
+            return log
+        else:
+            return False
+
+
 

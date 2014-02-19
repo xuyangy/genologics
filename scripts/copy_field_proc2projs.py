@@ -11,24 +11,26 @@ copied status. The regular log file contains regular execution information.
 
 Written by Maya Brandi 
 """ 
+import os
+import sys
+import logging
 
 from argparse import ArgumentParser
+
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
-from genologics.entities import Process, Artifact
+from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import CopyField
-import sys
-from shutil import copy
-import os
-from time import strftime, localtime
-from requests import HTTPError
 
 def main(lims, args, epp_logger):
     d_elts = []
+    no_updated = 0
+    incorect_udfs = 0
     s_elt = Process(lims,id = args.pid)
-    for inp in s_elt.all_inputs():
-        for samp in inp.samples:
+
+    for analyte in s_elt.analytes():
+        for samp in analyte.samples:
             d_elts.append(samp.project)
     d_elts = list(set(d_elts)) 
         
@@ -42,9 +44,24 @@ def main(lims, args, epp_logger):
         with open(args.status_changelog, 'a') as changelog_f:
             if args.source_udf in s_elt.udf:
                 copy_sesion = CopyField(s_elt, d_elt, args.source_udf, args.dest_udf)
-                copy_sesion.copy_udf(changelog_f)
+                if copy_sesion.copy_udf(changelog_f):
+                    no_updated = no_updated + 1
             else:
-                logging.warning(("Udf: {1} in Process {0} is undefined/blank, exiting").format(s_elt.name, args.source_udf))
+                logging.warning(("Udf: {1} in Process {0} is undefined/blank, exiting").format(s_elt.id, args.source_udf))
+                incorect_udfs = incorect_udfs + 1
+
+    if incorect_udfs > 0:
+        warn = "\nFailed to update %s project(s) due to wrong source udf info." %incorect_udfs
+    else:
+        warn = ''
+
+    d = {'up': no_updated,
+         'ap': len(d_elts),
+         'w' : warn}
+
+    abstract = ("Updated {up} projects(s), out of {ap} in total. {w}").format(**d)
+    print >> sys.stderr, abstract 
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
