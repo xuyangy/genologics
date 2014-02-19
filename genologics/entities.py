@@ -681,9 +681,10 @@ class Process(Entity):
         return map(lambda id: Artifact(self.lims,id=id),ids)
 
     def analytes(self):
-        """Retrieving all processed Analytes. If the process is a 
-        not producing any output analytes, the input analytes are 
-        returned.Input/Output is returned as a information string."""
+        """Retreving the output Analytes of the process, if existing. 
+        If the process is not producing any output analytes, the input 
+        analytes are returned. Input/Output is returned as a information string.
+        Makes aggregate processes and normal processes look the same."""
         info = 'Output'
         artifacts = self.all_outputs(unique=True)
         analytes = filter(lambda a: a.type == 'Analyte', artifacts)
