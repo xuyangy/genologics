@@ -51,7 +51,7 @@ def main(lims, args, epp_logger):
                 incorect_udfs = incorect_udfs + 1
 
     if incorect_udfs > 0:
-        warn = "\nFailed to update %s project(s) due to wrong source udf info." %incorect_udfs
+        warn = "Failed to update %s project(s) due to wrong source udf info." %incorect_udfs
     else:
         warn = ''
 

@@ -46,11 +46,8 @@ def main(lims, args, epp_logger):
             if args.source_udf in artifact.udf:
                 correct_artifacts = correct_artifacts +1
                 copy_sesion = CopyField(artifact, artifact.samples[0], args.source_udf, args.dest_udf)
-                try: 
-                    if copy_sesion.copy_udf(changelog_f):
-                        no_updated = no_updated + 1
-                except:
-                    pass
+                if copy_sesion.copy_udf(changelog_f):
+                    no_updated = no_updated + 1
             else:
                 incorrect_artifacts = incorrect_artifacts + 1
                 logging.warning(("Found artifact for sample {0} with {1} "
