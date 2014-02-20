@@ -215,6 +215,7 @@ class CopyField(object):
         self.s_field_name = s_field_name
         self.s_field = self._get_field(s_elt, s_field_name)
         self.d_elt = d_elt
+        self.d_type = d_elt._URI
         self.d_udf_name = d_udf_name
         self.old_dest_udf = self._get_field(d_elt, d_udf_name)
 
@@ -247,12 +248,13 @@ class CopyField(object):
                  'sn' : self.d_elt.name,
                  'si' : self.d_elt.id,
                  'su' : self.old_dest_udf,
-                 'nv' : self.s_field}
+                 'nv' : self.s_field,
+                 'd_elt_type': self.d_type}
 
-            changelog_f.write(("{ct}: udf: {s_udf} on {sn} (id: {si}) from "
-                               "{su} to {nv}.\n").format(**d))
+            changelog_f.write(("{ct}: udf: '{s_udf}' on {d_elt_type}: '{sn}' (id: {si}) is changed from "
+                               "'{su}' to '{nv}'.\n").format(**d))
 
-        logging.info(("Copying from element with id: {0} to sample with "
+        logging.info(("Copying from element with id: {0} to element with "
                       " id: {1}").format(self.s_elt.id, self.d_elt.id))
 
     def _log_after_change(self):
@@ -260,7 +262,7 @@ class CopyField(object):
              'd_udf': self.d_udf_name,
              'su': self.old_dest_udf,
              'nv': self.s_field,
-             'd_elt_type': self.d_elt._URI}
+             'd_elt_type': self.d_type}
 
         logging.info("Updated {d_elt_type} udf: {d_udf}, from {su} to {nv}.".format(**d))
 
