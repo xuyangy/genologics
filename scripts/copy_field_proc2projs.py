@@ -28,8 +28,9 @@ def main(lims, args, epp_logger):
     no_updated = 0
     incorect_udfs = 0
     s_elt = Process(lims,id = args.pid)
+    analytes, inf = s_elt.analytes()
 
-    for analyte in s_elt.analytes():
+    for analyte in analytes:
         for samp in analyte.samples:
             d_elts.append(samp.project)
     d_elts = list(set(d_elts)) 

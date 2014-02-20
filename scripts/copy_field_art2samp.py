@@ -33,7 +33,7 @@ def main(lims, args, epp_logger):
     incorrect_artifacts = 0
     no_updated = 0
     p = Process(lims,id = args.pid)
-    artifacts = p.analytes()
+    artifacts, inf = p.analytes()
 
     if args.status_changelog:
         dir = os.getcwd()
