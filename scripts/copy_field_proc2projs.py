@@ -45,7 +45,8 @@ def main(lims, args, epp_logger):
         with open(args.status_changelog, 'a') as changelog_f:
             if args.source_udf in s_elt.udf:
                 copy_sesion = CopyField(s_elt, d_elt, args.source_udf, args.dest_udf)
-                if copy_sesion.copy_udf(changelog_f):
+                test = copy_sesion.copy_udf(changelog_f) 
+                if test:
                     no_updated = no_updated + 1
             else:
                 logging.warning(("Udf: {1} in Process {0} is undefined/blank, exiting").format(s_elt.id, args.source_udf))
