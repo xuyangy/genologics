@@ -26,7 +26,7 @@ from genologics.epp import CopyField
 def main(lims, args, epp_logger):
     d_elts = []
     no_updated = 0
-    incorect_udfs = 0
+    incorrect_udfs = 0
     s_elt = Process(lims,id = args.pid)
     analytes, inf = s_elt.analytes()
 
@@ -50,10 +50,10 @@ def main(lims, args, epp_logger):
                     no_updated = no_updated + 1
             else:
                 logging.warning(("Udf: {1} in Process {0} is undefined/blank, exiting").format(s_elt.id, args.source_udf))
-                incorect_udfs = incorect_udfs + 1
+                incorrect_udfs = incorrect_udfs + 1
 
-    if incorect_udfs > 0:
-        warn = "Failed to update %s project(s) due to wrong source udf info." %incorect_udfs
+    if incorrect_udfs > 0:
+        warn = "Failed to update %s project(s) due to wrong source udf info." %incorrect_udfs
     else:
         warn = ''
 
