@@ -10,11 +10,12 @@ contains notes with the technician, the date and changed status for each
 copied status. The regular log file contains regular execution information.
 
 Written by Maya Brandi 
-""" 
+"""
 import os
 import sys
 import logging
 
+from ast import literal_eval
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -23,35 +24,19 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import CopyField
 
-def main(lims, args, epp_logger):
-    d_elts = []
-    no_updated = 0
+def copy_fields(s_elt, d_elts, s_udf, d_udf, changelog):
     incorrect_udfs = 0
-    s_elt = Process(lims,id = args.pid)
-    analytes, inf = s_elt.analytes()
-
-    for analyte in analytes:
-        for samp in analyte.samples:
-            d_elts.append(samp.project)
-    d_elts = list(set(d_elts)) 
-        
-    if args.status_changelog:
-        dir = os.getcwd()
-        destination = os.path.join(dir, args.status_changelog)
-        if not os.path.isfile(destination):
-            epp_logger.prepend_old_log(args.status_changelog)
-    
+    no_updated = 0
     for d_elt in d_elts:
-        with open(args.status_changelog, 'a') as changelog_f:
-            if args.source_udf in s_elt.udf:
-                copy_sesion = CopyField(s_elt, d_elt, args.source_udf, args.dest_udf)
-                test = copy_sesion.copy_udf(changelog_f) 
+        with open(changelog, 'a') as changelog_f:
+            if s_udf in s_elt.udf:
+                copy_sesion = CopyField(s_elt, d_elt, s_udf, d_udf)
+                test = copy_sesion.copy_udf(changelog_f)
                 if test:
                     no_updated = no_updated + 1
             else:
                 logging.warning(("Udf: {1} in Process {0} is undefined/blank, exiting").format(s_elt.id, args.source_udf))
                 incorrect_udfs = incorrect_udfs + 1
-
     if incorrect_udfs > 0:
         warn = "Failed to update %s project(s) due to wrong source udf info." %incorrect_udfs
     else:
@@ -60,9 +45,34 @@ def main(lims, args, epp_logger):
     d = {'up': no_updated,
          'ap': len(d_elts),
          'w' : warn}
+    return ("Updated {up} projects(s), out of {ap} in total. {w}").format(**d)
 
-    abstract = ("Updated {up} projects(s), out of {ap} in total. {w}").format(**d)
-    print >> sys.stderr, abstract 
+
+def main(lims, args, epp_logger):
+    d_elts = []
+    s_elt = Process(lims,id = args.pid)
+    analytes, inf = s_elt.analytes()
+    changelog = args.status_changelog
+
+    for analyte in analytes:
+        for samp in analyte.samples:
+            d_elts.append(samp.project)
+    d_elts = list(set(d_elts))
+
+    if changelog:
+        dir = os.getcwd()
+        destination = os.path.join(dir, changelog)
+        if not os.path.isfile(destination):
+            epp_logger.prepend_old_log(changelog)
+
+    if args.source_udf:
+        abstract = copy_fields(s_elt, d_elts, args.source_udf, args.dest_udf, changelog)
+        print >> sys.stderr, abstract
+    elif args.field_dict:
+        field_dict = literal_eval(args.field_dict)
+        for s_udf, d_udf in field_dict.items():
+            abstract = copy_fields(s_elt, d_elts, s_udf, d_udf, changelog)
+            print >> sys.stderr, abstract
 
 
 if __name__ == "__main__":
@@ -73,18 +83,21 @@ if __name__ == "__main__":
                         help=('File name for standard log file, '
                               'for runtime information and problems.'))
     parser.add_argument('-s', '--source_udf', type=str, default=None,
-                        help=('Name of the source user defined field' 
+                        help=('Name of the source user defined field'
                                'that will be copied.'))
     parser.add_argument('-d', '--dest_udf', type=str, default=None,
-                        help=('Name of the destination user defined' 
-                              'field that will be written to. This' 
+                        help=('Name of the destination user defined'
+                              'field that will be written to. This'
                               'argument is optional, if left empty'
                               'the source_udf argument is used instead.'))
     parser.add_argument('-c', '--status_changelog',
-                        help=('File name for status changelog file, for' 
-                              'concise information on who, what and when' 
+                        help=('File name for status changelog file, for'
+                              'concise information on who, what and when'
                               'for status change events. '
                               'Prepends the old changelog file by default.'))
+    parser.add_argument('-f', '--field_dict',
+                        help=('Specify a dict of fields that will be copied all at once.'
+                               'Keys will be used as source udf. Values as target udf'))
 
     args = parser.parse_args()
 
@@ -93,3 +106,4 @@ if __name__ == "__main__":
 
     with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
         main(lims, args, epp_logger)
+
