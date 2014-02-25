@@ -14,6 +14,7 @@ Written by Maya Brandi
 import os
 import sys
 import logging
+import ConfigParser
 
 from ast import literal_eval
 from argparse import ArgumentParser
@@ -23,6 +24,24 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import CopyField
+
+config = ConfigParser.SafeConfigParser()
+config.readfp(open('~/.genologicsargsrc'))
+CONFSECTION = 'FieldProc2ProjArgs'
+
+def pars_conf():
+    config = ConfigParser.SafeConfigParser()
+    config.readfp(open('~/.genologicsargsrc'))
+    UDFS = config.get('FieldProc2ProjArgs', 'UDFS').rstrip()
+
+except:
+    warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
+    sys.exit(-1)
+
+if config.has_section('logging') and config.has_option('logging','MAIN_LOG'):
+    MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
+else:
+    MAIN_LOG = None
 
 def copy_fields(s_elt, d_elts, s_udf, d_udf, changelog):
     incorrect_udfs = 0
@@ -48,6 +67,7 @@ def copy_fields(s_elt, d_elts, s_udf, d_udf, changelog):
     return ("Updated {up} projects(s), out of {ap} in total. {w}").format(**d)
 
 
+
 def main(lims, args, epp_logger):
     d_elts = []
     s_elt = Process(lims,id = args.pid)
@@ -68,8 +88,9 @@ def main(lims, args, epp_logger):
     if args.source_udf:
         abstract = copy_fields(s_elt, d_elts, args.source_udf, args.dest_udf, changelog)
         print >> sys.stderr, abstract
-    elif args.field_dict:
-        field_dict = literal_eval(args.field_dict)
+    elif args.conf_args:
+        field_dict = config.get(CONFSECTION, args.conf_args).rstrip()
+        field_dict = literal_eval(field_dict)
         for s_udf, d_udf in field_dict.items():
             abstract = copy_fields(s_elt, d_elts, s_udf, d_udf, changelog)
             print >> sys.stderr, abstract
@@ -98,6 +119,8 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--field_dict',
                         help=('Specify a dict of fields that will be copied all at once.'
                                'Keys will be used as source udf. Values as target udf'))
+    parser.add_argument('-a', '--conf_arg',
+                        help=('Argument in CONFSECTION specifyed in configfile.'))
 
     args = parser.parse_args()
 
