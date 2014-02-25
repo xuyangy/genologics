@@ -1,8 +1,15 @@
 #!/usr/bin/env python
-from genologics.lims import *
-from genologics.config import BASEURI, USERNAME, PASSWORD
-lims = Lims(BASEURI, USERNAME, PASSWORD)
 
+from genologics.epp import EppLogger
+
+import logging
+import sys
+
+from shutil import copy
+import os
+
+from time import strftime, localtime
+from requests import HTTPError
 
 def get_run_info(fc):
 	fc_summary={}
@@ -12,4 +19,10 @@ def get_run_info(fc):
 		if not fc_summary.has_key(lane):
      			fc_summary[lane]= dict(art.udf.items()) #"%.2f" % val ----round??
 	return fc_summary
+
+
+
+
+
+
 
