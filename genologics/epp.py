@@ -264,7 +264,7 @@ class CopyField(object):
              'nv': self.s_field,
              'd_elt_type': self.d_type}
 
-        logging.info("Updated {d_elt_type} udf: {d_udf}, from {su} to {nv}.".format(**d))
+        logging.info("Updated {d_elt_type} udf: '{d_udf}', from '{su}' to '{nv}'.".format(**d))
 
     def copy_udf(self, changelog_f = None):
         if self.s_field != self.old_dest_udf:
