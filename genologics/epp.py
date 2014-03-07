@@ -17,6 +17,7 @@ from genologics.entities import Artifact
 from genologics.config import MAIN_LOG
 from logging.handlers import RotatingFileHandler
 from time import strftime, localtime
+import csv
 
 def attach_file(src,resource):
     """Attach file at src to given resource
@@ -148,28 +149,29 @@ class EppLogger(object):
         This method does not use logging since that could mess up the
         logging settings, instead warnings are printed to stderr."""
         if external_log_file:
-            log_file = external_log_file
+            log_file_name = external_log_file
         else:
-            log_file = self.log_file
-        try:
-            log_artifact = Artifact(self.lims,id=log_file)
-            log_artifact.get()
-            if log_artifact.files:
-                log_path = log_artifact.files[0].content_location.split(
-                    self.lims.baseuri.split(':')[1])[1]
-                dir = os.getcwd()
-                destination = os.path.join(dir,log_file)
-                copy(log_path,destination)
-                with open(destination,'a') as f:
-                    f.write('='*80+'\n')
-        except HTTPError: # Probably no artifact found, skip prepending
-            print >> sys.stderr, ('No log file artifact found '
-                                  'for id: {0}').format(log_file)
-        except IOError as e: # Probably some path was wrong in copy
-            print >> sys.stderr, ('Log could not be prepended, '
-                                  'make sure {0} and {1} are '
-                                  'proper paths.').format(log_path,log_file)
-            raise e
+            log_file_name = self.log_file
+
+        local_log_path = os.path.join(os.getcwd(), log_file_name)
+        if not os.path.isfile(local_log_path):
+            try:
+                log_artifact = Artifact(self.lims,id = log_file_name)
+                log_artifact.get()
+                if log_artifact.files:
+                    log_path = log_artifact.files[0].content_location.split(
+                        self.lims.baseuri.split(':')[1])[1]
+                    copy(log_path, local_log_path)
+                    with open(local_log_path,'a') as f:
+                        f.write('='*80+'\n')
+            except HTTPError: # Probably no artifact found, skip prepending
+                print >> sys.stderr, ('No log file artifact found '
+                                      'for id: {0}').format(log_file_name)
+            except IOError as e: # Probably some path was wrong in copy
+                print >> sys.stderr, ('Log could not be prepended, '
+                                      'make sure {0} and {1} are '
+                                      'proper paths.').format(log_path, log_file_name)
+                raise e
 
     class StreamToLogger(object):
         """Fake file-like stream object that redirects writes to a logger instance.
@@ -264,7 +266,7 @@ class CopyField(object):
              'nv': self.s_field,
              'd_elt_type': self.d_type}
 
-        logging.info("Updated {d_elt_type} udf: '{d_udf}', from '{su}' to '{nv}'.".format(**d))
+        logging.info("Updated {d_elt_type} udf: {d_udf}, from {su} to {nv}.".format(**d))
 
     def copy_udf(self, changelog_f = None):
         if self.s_field != self.old_dest_udf:
