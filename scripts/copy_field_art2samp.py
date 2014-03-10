@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-DESC = """EPP script to copy user defined field from analyte 
-level to  submitted sample level in Clarity LIMS. Can be executed in the 
-background or triggered by a user pressing a "blue button".
+DESC = """EPP script to copy user defined fields from analyte level to 
+submitted sample level in Clarity LIMS. Can be executed in the background 
+or triggered by a user pressing a "blue button".
 
-This script can only be applied to processes where ANALYTES are modified in 
-the GUI. The script can output two different logs, where the status_changelog 
-contains notes with the technician, the date and changed status for each 
-copied status. The regular log file contains regular execution information. 
+This script can only be applied to processes where ANALYTES are modified 
+in the GUI. The script can output two different logs, where the 
+status_changelog contains notes with the technician, the date and changed 
+status for each copied status. The regular log file contains regular 
+execution information. 
 
 Error handling:
 If the udf given is blank or not defined for any of the inputs,
@@ -29,41 +30,49 @@ from genologics.epp import CopyField
 
 
 def main(lims, args, epp_logger):
+    source_udfs = args.source_udf
+    dest_udfs = args.dest_udf
     correct_artifacts = 0
     incorrect_artifacts = 0
     no_updated = 0
     p = Process(lims,id = args.pid)
     artifacts, inf = p.analytes()
 
-    if args.status_changelog:
-        dir = os.getcwd()
-        destination = os.path.join(dir, args.status_changelog)
-        if not os.path.isfile(destination):
-            epp_logger.prepend_old_log(args.status_changelog)
 
-    with open(args.status_changelog, 'a') as changelog_f:
-        for artifact in artifacts:
-            if args.source_udf in artifact.udf:
-                correct_artifacts = correct_artifacts +1
-                copy_sesion = CopyField(artifact, artifact.samples[0], args.source_udf, args.dest_udf)
-                test = copy_sesion.copy_udf(changelog_f)
-                if test:
-                    no_updated = no_updated + 1
-            else:
-                incorrect_artifacts = incorrect_artifacts + 1
-                logging.warning(("Found artifact for sample {0} with {1} "
-                                "undefined/blank, exiting").format(artifact.samples[0].name,args.source_udf))
+    if args.status_changelog:
+        epp_logger.prepend_old_log(args.status_changelog)
+
+    if not dest_udfs:
+        dest_udfs = source_udfs
+    elif len(dest_udfs) != len(source_udfs):
+        logging.error("source_udfs and dest_udfs lists of arguments are uneven.")
+        sys.exit(-1)
+    for i in range(len(source_udfs)):
+        source_udf = source_udfs[i]
+        dest_udf = dest_udfs[i]
+        with open(args.status_changelog, 'a') as changelog_f:
+            for artifact in artifacts:
+                if source_udf in artifact.udf:
+                    correct_artifacts = correct_artifacts +1
+                    copy_sesion = CopyField(artifact, artifact.samples[0], source_udf, dest_udf)
+                    test = copy_sesion.copy_udf(changelog_f)
+                    if test:
+                        no_updated = no_updated + 1
+                else:
+                    incorrect_artifacts = incorrect_artifacts + 1
+                    logging.warning(("Found artifact for sample {0} with {1} "
+                                   "undefined/blank, exiting").format(artifact.samples[0].name, source_udf))
 
     if incorrect_artifacts == 0:
         warning = "no artifacts"
     else:
-        warning = "WARNING: skipped {0} artifact(s)".format(incorrect_artifacts)
+        warning = "WARNING: skipped {0} udfs(s)".format(incorrect_artifacts)
     d = {'ua': no_updated,
          'ca': correct_artifacts,
          'ia': incorrect_artifacts,
          'warning' : warning}
 
-    abstract = ("Updated {ua} artifact(s), out of {ca} in total, "
+    abstract = ("Updated {ua} udf(s), out of {ca} in total, "
                 "{warning} with incorrect udf info.").format(**d)
 
     print >> sys.stderr, abstract # stderr will be logged and printed in GUI
@@ -76,13 +85,18 @@ if __name__ == "__main__":
     parser.add_argument('--log',
                         help=('File name for standard log file, '
                               ' for runtime information and problems.'))
-    parser.add_argument('-s', '--source_udf', type=str, default=None,
-                        help=('Name of the source user defined field that will'
-                              'be copied.'))
-    parser.add_argument('-d', '--dest_udf', type=str, default=None,
-                        help=('Name of the destination user defined field that will'
-                              'be written to. This argument is optional, if left empty'
-                              'the source_udf argument is used instead.'))
+    parser.add_argument('-s', '--source_udf', type=str, default=None, nargs='*',
+                        help=('Name(s) of the source user defined field(s) '
+                               'that will be copied. One or many udf-names '
+                               'can be given.'))
+    parser.add_argument('-d', '--dest_udf', type=str, default=None, nargs='*',
+                        help=('Name(s) of the destination user defined '
+                              'field(s) that will be written to. This '
+                              'argument is optional, if left empty '
+                              'the source_udf argument is used instead. '
+                              'Zero or many udf-names can be given. If '
+                              'more than zero, the numer of udfs needs '
+                              'to be the same as number of source_udfs'))
     parser.add_argument('-c', '--status_changelog',
                         help=('File name for status changelog file, '
                               ' for concise information on who, what and '
