@@ -247,7 +247,7 @@ class ReadResultFiles():
                     for col in range(len(keys)):
                         if keys[col] != '' and len(line)>col:
                             file_info[root_key][keys[col]] = line[col]
-                        else:
+                        elif len(line)>col:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
             if first_header and line[0] and line[0].strip() == first_header:
                 keys = line
