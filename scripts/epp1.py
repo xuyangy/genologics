@@ -24,11 +24,12 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
-process = Process(lims,id ='24-38862')
-file_handler = ReadResultFiles(process)
-quantit_result_file = file_handler.shared_files['Standards File (.txt)']
-result_file, warn = file_handler.format_file(quantit_result_file,header_row = 20)
-
+#process = Process(lims,id ='24-38862')
+#file_handler = ReadResultFiles(process)
+#quantit_result_file = file_handler.shared_files['Standards File (.txt)']
+#result_file, warn = file_handler.format_file(quantit_result_file,header_row = 26)
+#X=make_standards_list(result_file)
+#Y=make_nuclear_acid_amount_in_standards(10, 3, 'BR conc (ng/uL)')
 def make_standards_list(quantit_result_file):
     standards_dict = {}
     standards_list = np.ones(8)
@@ -51,17 +52,17 @@ def make_nuclear_acid_amount_in_standards(standard_volume, standard_dilution, as
 def linear_regression(X,Y):
     "Returns slope and intersect of linear regression on lists X and Y"
     A = np.array([ X, np.ones(len(X))])
-    W = np.linalg.lstsq(A.T,Y)[0]
-    return W
+    mod, resid = np.linalg.lstsq(A.T,Y)[:2]
+    R2 = 1 - resid / (Y.size * Y.var())
+    return R2
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
 
     file_handler = ReadResultFiles(process)
     quantit_result_file = file_handler.shared_files['Standards File (.txt)']
-    quantit_result_file, warn = file_handler.format_file(quantit_result_file,first_header = 'Well')
+    result_file, warn = file_handler.format_file(quantit_result_file,header_row = 26)
 
-    R2 = Pearson correlation coefficient
     assay_type = process.udf.items()['Assay Type']
     standard_volume = process.udf.items()['Standard volume']
     linearity_of_standards = process.udf.items()['Linearity of standards']
@@ -69,7 +70,7 @@ def main(lims, pid, epp_logger):
     
     X = make_standards_dict(quantit_result_file)
     Y = make_nuclear_acid_amount_in_standards(standard_volume, standard_dilution, assay_type)
-    slope, intersect = linear_regression(X,Y)
+    R2 = linear_regression(X,Y)
 
     if R2 >= slope:
         abstract = "Standards OK. Upload input file(s) for samples" 
