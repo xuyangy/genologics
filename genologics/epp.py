@@ -253,6 +253,7 @@ class ReadResultFiles():
             if first_header and line[0] and line[0].strip() == first_header:
                 keys = line
             elif header_row and row == header_row:
+                print line
                 keys = line
         if warn:
             warn = 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
