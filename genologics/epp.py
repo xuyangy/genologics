@@ -218,7 +218,7 @@ class ReadResultFiles():
                     if file_ext == 'csv':
                         parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
                     elif file_ext == 'txt':
-                        parsed_files[f.name] = [row.split() for row in opened_file.readlines()]
+                        parsed_files[f.name] = [row.strip().split('\t') for row in opened_file.readlines()]
                     opened_file.close()
                     
         return parsed_files
