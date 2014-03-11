@@ -218,7 +218,7 @@ class ReadResultFiles():
                     if file_ext == 'csv':
                         parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
                     elif file_ext == 'txt':
-                        parsed_files[f.name] = [row.strip().split('\t') for row in opened_file.readlines()]
+                        parsed_files[f.name] = [row.strip().strip('\\').split('\t') for row in opened_file.readlines()]
                     opened_file.close()
                     
         return parsed_files
@@ -245,11 +245,10 @@ class ReadResultFiles():
                 else:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
-                        if keys[col] != '':
+                        if keys[col] != '' and len(line)>col:
                             file_info[root_key][keys[col]] = line[col]
                         else:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
-
             if first_header and line[0] and line[0].strip() == first_header:
                 keys = line
             elif header_row and row == header_row:
