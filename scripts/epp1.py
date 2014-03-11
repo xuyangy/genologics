@@ -62,12 +62,16 @@ def main(lims, pid, epp_logger):
     file_handler = ReadResultFiles(process)
     quantit_result_file = file_handler.shared_files['Standards File (.txt)']
     result_file, warn = file_handler.format_file(quantit_result_file,header_row = 26)
-
-    assay_type = process.udf.items()['Assay Type']
-    standard_volume = process.udf.items()['Standard volume']
-    linearity_of_standards = process.udf.items()['Linearity of standards']
-    standard_dilution = process.udf.items()['Standard dilution']    
     
+    try:
+        assay_type = process.udf.items()['Assay type']
+        standard_volume = process.udf.items()['Standard volume']
+        linearity_of_standards = process.udf.items()['Linearity of standards']
+        standard_dilution = process.udf.items()['Standard dilution']    
+    except:
+        abstract = "process udfs missing. Please make sure 'Assay type', 'Standard volume', 'Linearity of standards' and 'Standard dilution' are well defined."
+        
+
     X = make_standards_dict(quantit_result_file)
     Y = make_nuclear_acid_amount_in_standards(standard_volume, standard_dilution, assay_type)
     R2 = linear_regression(X,Y)
