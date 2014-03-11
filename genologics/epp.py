@@ -223,7 +223,7 @@ class ReadResultFiles():
                     
         return parsed_files
 
-    def format_file(self, parsed_file, first_header = 'Sample'):
+    def format_file(self, parsed_file, first_header = None, header_row =None):
         """Function to formate a parsed csv or txt file.
 
         Arguments and Output:
@@ -237,7 +237,7 @@ class ReadResultFiles():
         file_info = {}
         keys = []
         warn = []
-        for line in parsed_file:
+        for row, line in enumerate(parsed_file):
             if keys:
                 root_key = line[0]
                 if file_info.has_key(root_key):
@@ -249,7 +249,10 @@ class ReadResultFiles():
                             file_info[root_key][keys[col]] = line[col]
                         else:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
-            if line[0].strip() == first_header:
+
+            if first_header and line[0] and line[0].strip() == first_header:
+                keys = line
+            elif header_row and row == header_row:
                 keys = line
         if warn:
             warn = 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
