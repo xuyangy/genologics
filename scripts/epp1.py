@@ -30,7 +30,7 @@ lims = Lims(BASEURI,USERNAME,PASSWORD)
 #result_file, warn = file_handler.format_file(quantit_result_file,header_row = 26)
 #X=make_standards_list(result_file)
 #Y=make_nuclear_acid_amount_in_standards(10, 3, 'BR conc (ng/uL)')
-def make_standards_list(quantit_result_file):
+def make_standards_list(result_file):
     standards_dict = {}
     standards_list = np.ones(8)
     for k,v in result_file.items():
