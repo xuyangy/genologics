@@ -64,10 +64,10 @@ def main(lims, pid, epp_logger):
     result_file, warn = file_handler.format_file(quantit_result_file,header_row = 26)
     
     #try:
-    assay_type = process.udf.items()['Assay type']
-    standard_volume = process.udf.items()['Standard volume']
-    linearity_of_standards = process.udf.items()['Linearity of standards']
-    standard_dilution = process.udf.items()['Standard dilution']    
+    assay_type = process.udf['Assay type']
+    standard_volume = process.udf['Standard volume']
+    linearity_of_standards = process.udf['Linearity of standards']
+    standard_dilution = process.udf['Standard dilution']    
     #except:
     #    abstract = "process udfs missing. Please make sure 'Assay type', 'Standard volume', 'Linearity of standards' and 'Standard dilution' are well defined."
         
