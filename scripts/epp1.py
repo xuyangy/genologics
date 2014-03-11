@@ -24,26 +24,34 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
+process = Process(lims,id ='24-38862')
+file_handler = ReadResultFiles(process)
+quantit_result_file = file_handler.shared_files['Standards File (.txt)']
+result_file, warn = file_handler.format_file(quantit_result_file,header_row = 20)
 
-def make_standards_dict(quantit_result_file):
-    ... 'End RFU'
+def make_standards_list(quantit_result_file):
     standards_dict = {}
-    standard - 'Standard 1'....
-    return standards_dict
+    standards_list = np.ones(8)
+    for k,v in result_file.items():
+        if set(['Sample','End RFU']).issubset(v) and v['Sample'].split()[0]=='Standard':
+            standard = int(v['Sample'].split()[1])
+            standards_dict[standard] = float(v['End RFU'])
+    for k,v in standards_dict.items():
+        standards_list[k-1] = v - standards_dict[1]
+    return standards_list
 
 def make_nuclear_acid_amount_in_standards(standard_volume, standard_dilution, assay_type):
-    nuclear_acid_amount = {}
+    nuclear_acid_amount = np.ones(8)
     supp_conc_stds = {'BR conc (ng/uL)':[0,5,10,20,40,60,80,100],
                       'HS conc (ng/uL)':[0,5,10,20,40,60,80,100]}    
     for standard in range(8):
-        nuclear_acid_amount[standard] = supp_conc_stds[assay_type][standard] * standard_volume / standard_dilution
+        nuclear_acid_amount[standard] = np.true_divide(supp_conc_stds[assay_type][standard]*standard_volume, standard_dilution)
     return nuclear_acid_amount
 
 def linear_regression(X,Y):
     "Returns slope and intersect of linear regression on lists X and Y"
-    A = array([ X, ones(len(X))])
-    Y = [19, 20, 20.5, 21.5, 22, 23, 23, 25.5, 24]
-    W = linalg.lstsq(A.T,Y)[0]
+    A = np.array([ X, np.ones(len(X))])
+    W = np.linalg.lstsq(A.T,Y)[0]
     return W
 
 def main(lims, pid, epp_logger):
@@ -51,7 +59,7 @@ def main(lims, pid, epp_logger):
 
     file_handler = ReadResultFiles(process)
     quantit_result_file = file_handler.shared_files['Standards File (.txt)']
-    quantit_result_file, warn = file_handler.format_file(quantit_result_file)
+    quantit_result_file, warn = file_handler.format_file(quantit_result_file,first_header = 'Well')
 
     R2 = Pearson correlation coefficient
     assay_type = process.udf.items()['Assay Type']
@@ -72,7 +80,7 @@ def main(lims, pid, epp_logger):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
-    parser.add_argument('--pid', default = '24-38458', dest = 'pid',
+    parser.add_argument('--pid', default = '24-38862', dest = 'pid',
                         help='Lims id for current Process')
     parser.add_argument('--log', dest = 'log',
                         help=('File name for standard log file, '
