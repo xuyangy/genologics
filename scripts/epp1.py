@@ -43,8 +43,8 @@ def make_standards_list(result_file):
 
 def make_nuclear_acid_amount_in_standards(standard_volume, standard_dilution, assay_type):
     nuclear_acid_amount = np.ones(8)
-    supp_conc_stds = {'BR conc (ng/uL)':[0,5,10,20,40,60,80,100],
-                      'HS conc (ng/uL)':[0,5,10,20,40,60,80,100]}    
+    supp_conc_stds = {'RNA BR':[0,5,10,20,40,60,80,100],
+                      'RNA HS':[0,5,10,20,40,60,80,100]}    
     for standard in range(8):
         nuclear_acid_amount[standard] = np.true_divide(supp_conc_stds[assay_type][standard]*standard_volume, standard_dilution)
     return nuclear_acid_amount
