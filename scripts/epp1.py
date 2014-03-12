@@ -85,7 +85,7 @@ def main(lims, pid, epp_logger):
     for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
         if file_handler.shared_files.has_key(f_name):
             quantit_result_file = file_handler.shared_files[f_name]
-            result_files[f_name] = file_handler.format_file(quantit_result_file, header_row = 26, root_key_col = 1)
+            result_files[f_name] = file_handler.format_file(quantit_result_file, first_header = 'Sample', root_key_col = 1)
     target_files = process.result_files()
     result_files = {}
     
