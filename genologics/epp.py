@@ -251,7 +251,7 @@ class ReadResultFiles():
                             file_info[root_key][keys[col]] = line[col]
                         elif len(line)>col:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
-            if first_header and line[root_key_col] and line[root_key_col].strip() == first_header:
+            if first_header and len(line)>root_key_col and line[root_key_col].strip() == first_header:
                 keys = line
             elif header_row and row == header_row:
                 print line
