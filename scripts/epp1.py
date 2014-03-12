@@ -62,12 +62,7 @@ def verify_standards(standards_file, udfs):
     else: 
         return mod, "R2 = {0}. Problem with standards! Redo measurement!".format(R2)
 
-def calculate_concentration(mod, target_file, sample_volume):
-    for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
-        if file_handler.shared_files.has_key(f_name):
-            quantit_result_file = file_handler.shared_files[f_name]
-            result_files[f_name] = file_handler.format_file(quantit_result_file, header_row = 26, root_key_col = 1)
-
+def calculate_concentration(mod, target_file, sample_volume, result_files):
     sample = target_file.samples[0].name
     fluor_int = []
     for f_name ,formated_file in result_files.items():
@@ -87,6 +82,10 @@ def main(lims, pid, epp_logger):
     file_handler = ReadResultFiles(process)
     standards_file = file_handler.shared_files['Standards File (.txt)']
     standards_file_formated, warn = file_handler.format_file(standards_file,header_row = 26)
+    for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
+        if file_handler.shared_files.has_key(f_name):
+            quantit_result_file = file_handler.shared_files[f_name]
+            result_files[f_name] = file_handler.format_file(quantit_result_file, header_row = 26, root_key_col = 1)
     target_files = process.result_files()
     result_files = {}
     
@@ -103,7 +102,7 @@ def main(lims, pid, epp_logger):
     if udfs:
         mod, abstract = verify_standards(standards_file_formated, udfs)
         for target_file in target_files:
-            target_file = calculate_concentration(mod, target_file, udfs['sample_volume'])
+            target_file = calculate_concentration(mod, target_file, udfs['sample_volume'], result_files)
             try:
                 target_file.put()
             except (TypeError, HTTPError) as e:
