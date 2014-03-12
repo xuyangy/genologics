@@ -223,13 +223,15 @@ class ReadResultFiles():
                     
         return parsed_files
 
-    def format_file(self, parsed_file, first_header = None, header_row =None):
+    def format_file(self, parsed_file, first_header = None, header_row = None, root_key_col = 0):
         """Function to formate a parsed csv or txt file.
 
         Arguments and Output:
             parsed_file     A list of lists where sublists are rows of the csv.
             first_header    First column of the heather section in the file. 
-                            default value is 'Sample'
+                            default value is 'None'
+            root_key_col
+            header_row
             file_info      dict of dicts. Keys of root dict are the first 
                             column in the csv starting from the line after the 
                             heather line. Keys of sub dicts are the columns of 
@@ -239,7 +241,7 @@ class ReadResultFiles():
         warn = []
         for row, line in enumerate(parsed_file):
             if keys:
-                root_key = line[0]
+                root_key = line[root_key_col]
                 if file_info.has_key(root_key):
                     warn.append(root_key)
                 else:
@@ -249,7 +251,7 @@ class ReadResultFiles():
                             file_info[root_key][keys[col]] = line[col]
                         elif len(line)>col:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
-            if first_header and line[0] and line[0].strip() == first_header:
+            if first_header and line[root_key_col] and line[root_key_col].strip() == first_header:
                 keys = line
             elif header_row and row == header_row:
                 print line
