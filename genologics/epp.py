@@ -240,21 +240,20 @@ class ReadResultFiles():
         keys = []
         warn = []
         for row, line in enumerate(parsed_file):
-            if keys:
+            if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
                     warn.append(root_key)
                 else:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
-                        if keys[col] != '' and len(line)>col:
+                        if keys[col] != '':
                             file_info[root_key][keys[col]] = line[col]
-                        elif len(line)>col:
+                        else:
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
             if first_header and len(line)>root_key_col and line[root_key_col].strip() == first_header:
                 keys = line
             elif header_row and row == header_row:
-                print line
                 keys = line
         if warn:
             warn = 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
