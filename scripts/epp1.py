@@ -79,6 +79,7 @@ def calculate_concentration(mod, target_file, sample_volume, result_files):
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     udfs = {}
+    result_files = {}
     file_handler = ReadResultFiles(process)
     standards_file = file_handler.shared_files['Standards File (.txt)']
     standards_file_formated, warn = file_handler.format_file(standards_file,header_row = 26)
