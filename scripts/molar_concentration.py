@@ -74,7 +74,7 @@ def main(lims, args, epp_logger):
         artifacts = p.all_inputs(unique=True)
     else:
         all_artifacts = p.all_outputs(unique=True)
-        artifacts = filter(lambda a: a.output_type == "File", all_artifacts)
+        artifacts = filter(lambda a: a.output_type == "ResultFile", all_artifacts)
 
     correct_artifacts, no_concentration = check_udf_is_defined(artifacts, concentration_udf)
     correct_artifacts, no_size = check_udf_is_defined(correct_artifacts, size_udf)
