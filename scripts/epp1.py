@@ -94,7 +94,7 @@ class QunatiT():
         sample = target_file.samples[0].name
         slope = self.mod[0]
         intersect = self.mod[1]
-        print mod
+        print self.mod
         fluor_int = []
         for f_name ,formated_file in result_files.items():
             if sample in formated_file:
