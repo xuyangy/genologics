@@ -72,7 +72,6 @@ class QunatiT():
             return None
 
     def _linear_regression(self, X,Y):
-        "Returns slope and intersect of linear regression on lists X and Y"
         A = np.array([ X, np.ones(len(X))])
         mod, resid = np.linalg.lstsq(A.T,Y)[:2]
         R2 = 1 - resid / (Y.size * Y.var())
@@ -84,14 +83,6 @@ class QunatiT():
             relative_standards[k-1] = v - self.standards[1]
         amount_in_standards = self._amount_in_standards()
         R2, mod = self._linear_regression(relative_standards, amount_in_standards)
-        if 'Linearity of standards' in self.udfs.keys():
-            if R2 >= self.udfs['Linearity of standards']:
-                self.abstract.append("R2 = {0}. Standards OK. Upload input file(s) for samples".format(R2))
-            else:  
-                self.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(R2))
-            return mod, R2
-        else:
-            self.abstract.append("Kould not verify standards. Please set 'Linearity of standards'.")
         return mod, R2
 
     def calculate_concentration(self, target_file, target_analyte):
@@ -123,21 +114,25 @@ def main(lims, pid, epp_logger):
     target_files = dict((r.samples[0].name, r) for r in process.result_files())
     target_analytes = dict((a.name, a) for a in process.analytes()[0])
 
-    if 'Sample volume' in qunatit.udfs.keys(): #and result files....
-        for sample, target_file in target_files.items():
-            target_analyte = target_analytes[sample]
-            target_file, target_analyte = qunatit.calculate_concentration(target_file, target_analyte)
-            try:
-                target_file.put()
-            except (TypeError, HTTPError) as e:
-                logging.warning("Error while updating element: {0}".format(e))
-            try:
-                target_analyte.put()
-            except (TypeError, HTTPError) as e:
-                logging.warning("Error while updating element: {0}".format(e))
+    if 'Linearity of standards' in qunatit.udfs.keys():
+        if qunatit.R2 >= qunatit.udfs['Linearity of standards']:
+            qunatit.abstract.append("R2 = {0}. Standards OK.".format(qunatit.R2))
+            for sample, target_file in target_files.items():
+                target_analyte = target_analytes[sample]
+                target_file, target_analyte = qunatit.calculate_concentration(target_file, target_analyte)
+                try:
+                    target_file.put()
+                except (TypeError, HTTPError) as e:
+                    logging.warning("Error while updating element: {0}".format(e))
+                try:
+                    target_analyte.put()
+                except (TypeError, HTTPError) as e:
+                    logging.warning("Error while updating element: {0}".format(e))
+        else:
+            qunatit.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(qunatit.R2))
     else:
         qunatit.abstract.append("Kould not calculate concentration. Please set 'Linearity of standards'.")
-    
+
     if qunatit.missing_udfs:
         qunatit.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(qunatit.missing_udfs)))
     
