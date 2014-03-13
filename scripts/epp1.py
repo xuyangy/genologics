@@ -104,7 +104,6 @@ class QunatiT():
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
             else:
                 self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
-        print fluor_int
         mean_fluor_int = np.mean(fluor_int)
         rel_fluor_int = mean_fluor_int - self.standards[1]
         if 'Sample volume' in self.udfs.keys():
@@ -124,6 +123,8 @@ def main(lims, pid, epp_logger):
     if 'Sample volume' in qunatit.udfs.keys(): #and result files....
         for target_file in target_files:
             target_file = qunatit.calculate_concentration(target_file)
+            print target_file.udf.items()
+            print target_file
             try:
                 target_file.put()
             except (TypeError, HTTPError) as e:
