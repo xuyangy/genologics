@@ -240,6 +240,7 @@ class ReadResultFiles():
         keys = []
         warn = []
         for row, line in enumerate(parsed_file):
+            print line
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
@@ -260,6 +261,7 @@ class ReadResultFiles():
             logging.info(warn)
         else:
             warn =''
+        print file_info
         return file_info, warn
 
 
