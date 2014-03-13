@@ -100,9 +100,8 @@ class QunatiT():
         fluor_int = []
         print sample
         for f_name ,formated_file in result_files.items():
-            print formated_file
             if sample in formated_file.keys():
-                fluo r_int.append(formated_file[sample]['End RFU'])
+                fluor_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
         mean_fluor_int = np.mean(fluor_int)
         print fluor_int
