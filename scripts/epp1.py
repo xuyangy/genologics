@@ -37,10 +37,12 @@ class QunatiT():
 
     def _formated_result_files_dict(self):
         result_files = {}
-        for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
+        file_names = {'Quant-iT Result File 1':'Fluorescence intensity 1',
+                    'Quant-iT Result File 2':'Fluorescence intensity 2'}
+        for f_name, udf_name in file_names:
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
-                result_files[f_name], warn = self.file_handler.format_file(result_file,
+                result_files[udf_name], warn = self.file_handler.format_file(result_file,
                                                         first_header = 'Sample', root_key_col = 1)
                 if warn:
                     self.abstract.append(' '.join([warn, f_name]))
@@ -98,12 +100,12 @@ class QunatiT():
         slope = self.mod[0]
         intersect = self.mod[1]
         fluor_int = []
-        for f_name ,formated_file in result_files.items():
+        for udf_name ,formated_file in result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
-                target_file.udf[f_name] = formated_file[sample]['End RFU']  
+                target_file.udf[udf_name] = formated_file[sample]['End RFU']  
             else:
-                self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
+                self.abstract.append("Sample {0} is not represented in Result File for filed {1}.".format(sample, udf_name))
         mean_fluor_int = np.mean(fluor_int)
         rel_fluor_int = mean_fluor_int - self.standards[1]
         if 'Sample volume' in self.udfs.keys():
