@@ -87,7 +87,6 @@ class QunatiT():
             return mod, R2
         else:
             self.abstract.append("Kould not verify standards. Please set 'Linearity of standards'.")
-            self.missing_udfs.append('Linearity of standards')
         return mod, R2
 
     def calculate_concentration(self, target_file):
@@ -107,7 +106,7 @@ class QunatiT():
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
         else:
-            self.missing_udfs.append('Linearity of standards')
+            self.missing_udfs.append('Sample volume')
         return target_file
 
 
