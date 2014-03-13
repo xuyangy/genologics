@@ -100,7 +100,7 @@ class QunatiT():
         fluor_int = []
         for f_name ,formated_file in result_files.items():
             if sample in formated_file.keys():
-                fluor_int.append(formated_file[sample]['End RFU'])
+                fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
             else:
                 self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
