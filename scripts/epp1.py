@@ -118,7 +118,7 @@ def main(lims, pid, epp_logger):
 
     if 'Sample volume' in qunatit.udfs.keys(): #and result files....
         for target_file in target_files:
-            target_file = qunatit.calculate_concentration(mod, target_file)
+            target_file = qunatit.calculate_concentration(target_file)
             try:
                 target_file.put()
             except (TypeError, HTTPError) as e:
