@@ -32,6 +32,7 @@ class QunatiT():
         self.abstract = []
         self.missing_udfs = []
         self.standards = self._make_standards_list()
+        print self.standards
         self.mod, self.R2 = self._verify_standards()
 
     def _formated_result_files_dict(self):
@@ -98,7 +99,6 @@ class QunatiT():
         intersect = self.mod[1]
         fluor_int = []
         for f_name ,formated_file in result_files.items():
-            print formated_file
             if sample in formated_file.keys():
                 fluor_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  

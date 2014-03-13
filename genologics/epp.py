@@ -218,14 +218,8 @@ class ReadResultFiles():
                     if file_ext == 'csv':
                         parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
                     elif file_ext == 'txt':
-                        ddd=opened_file.readlines()
-                        print ddd
-                        parsed_files[f.name] = [row.strip().split('\t') for row in ddd]
-                        for r in ddd:
-                            print r.split('\t')
-                        print 'HJKHKJHJKHK'
+                        parsed_files[f.name] = [row.strip().strip('\\').split('\t') for row in opened_file.readlines()]
                     opened_file.close()
-                    
         return parsed_files
 
     def format_file(self, parsed_file, first_header = None, header_row = None, root_key_col = 0):
@@ -245,7 +239,6 @@ class ReadResultFiles():
         keys = []
         warn = ''
         for row, line in enumerate(parsed_file):
-            print line
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
