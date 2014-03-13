@@ -104,6 +104,7 @@ class QunatiT():
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
             else:
                 self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
+        print fluor_int
         mean_fluor_int = np.mean(fluor_int)
         rel_fluor_int = mean_fluor_int - self.standards[1]
         if 'Sample volume' in self.udfs.keys():
