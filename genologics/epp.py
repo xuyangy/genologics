@@ -218,8 +218,12 @@ class ReadResultFiles():
                     if file_ext == 'csv':
                         parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
                     elif file_ext == 'txt':
-                        print row
-                        parsed_files[f.name] = [row.strip().split('\t') for row in opened_file.readlines()]
+                        ddd=opened_file.readlines()
+                        print ddd
+                        parsed_files[f.name] = [row.strip().split('\t') for row in ddd]
+                        for r in ddd:
+                            print r.split('\t')
+                        print 'HJKHKJHJKHK'
                     opened_file.close()
                     
         return parsed_files
