@@ -131,7 +131,6 @@ def main(lims, pid, epp_logger):
     
     abstract = ' '.join(qunatit.abstract)
 
-    logging.info(abstract)
     print >> sys.stderr, abstract
 
 if __name__ == "__main__":
