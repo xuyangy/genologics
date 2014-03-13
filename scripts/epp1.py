@@ -39,8 +39,10 @@ class QunatiT():
         for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
-                result_files[f_name] = self.file_handler.format_file(result_file,
+                result_files[f_name], warn = self.file_handler.format_file(result_file,
                                                         first_header = 'Sample', root_key_col = 1)
+                if warn:
+                    self.abstract.append(' '.join([warn, f_name]))
         return result_files
  
     def _make_standards_list(self):
@@ -100,7 +102,7 @@ class QunatiT():
         for f_name ,formated_file in result_files.items():
             print formated_file
             if sample in formated_file.keys():
-                fluor_int.append(formated_file[sample]['End RFU'])
+                fluo r_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
         mean_fluor_int = np.mean(fluor_int)
         print fluor_int
