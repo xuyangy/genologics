@@ -131,6 +131,10 @@ def main(lims, pid, epp_logger):
                 target_file.put()
             except (TypeError, HTTPError) as e:
                 logging.warning("Error while updating element: {0}".format(e))
+            try:
+                target_analyte.put()
+            except (TypeError, HTTPError) as e:
+                logging.warning("Error while updating element: {0}".format(e))
     else:
         qunatit.abstract.append("Kould not calculate concentration. Please set 'Linearity of standards'.")
     
