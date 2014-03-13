@@ -96,8 +96,10 @@ class QunatiT():
         intersect = self.mod[1]
         print self.mod
         fluor_int = []
+        print sample
         for f_name ,formated_file in result_files.items():
-            if sample in formated_file:
+            print formated_file
+            if sample in formated_file.keys():
                 fluor_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
         mean_fluor_int = np.mean(fluor_int)
