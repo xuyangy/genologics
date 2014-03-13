@@ -38,7 +38,7 @@ class QunatiT():
         result_files = {}
         for f_name in ['Quant-iT Result File 1','Quant-iT Result File 2']:
             if self.file_handler.shared_files.has_key(f_name):
-                result_file = file_handler.shared_files[f_name]
+                result_file = self.file_handler.shared_files[f_name]
                 result_files[f_name] = self.file_handler.format_file(result_file,
                                                         first_header = 'Sample', root_key_col = 1)
         return result_files
