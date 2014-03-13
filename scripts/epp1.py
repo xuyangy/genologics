@@ -94,7 +94,7 @@ class QunatiT():
             self.abstract.append("Kould not verify standards. Please set 'Linearity of standards'.")
         return mod, R2
 
-    def calculate_concentration(self, target_file):
+    def calculate_concentration(self, target_file, target_analyte):
         result_files = self._formated_result_files_dict()
         sample = target_file.samples[0].name
         slope = self.mod[0]
@@ -103,7 +103,7 @@ class QunatiT():
         for udf_name ,formated_file in result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
-                target_file.udf[udf_name] = formated_file[sample]['End RFU']  
+                target_analyte.udf[udf_name] = formated_file[sample]['End RFU']  
             else:
                 self.abstract.append("Sample {0} is not represented in Result File for filed {1}.".format(sample, udf_name))
         mean_fluor_int = np.mean(fluor_int)
@@ -114,19 +114,19 @@ class QunatiT():
             target_file.udf['Conc. Units'] = 'ng/ul'
         else:
             self.missing_udfs.append('Sample volume')
-        return target_file
+        return target_file, target_analyte
 
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     qunatit = QunatiT(process)
-    target_files = process.result_files()
+    target_files = dict((r.samples[0].name, r) for r in process.result_files())
+    target_analytes = dict((a.name, a) for a in process.analytes()[0])
 
     if 'Sample volume' in qunatit.udfs.keys(): #and result files....
-        for target_file in target_files:
-            target_file = qunatit.calculate_concentration(target_file)
-            print target_file.udf.items()
-            print target_file
+        for sample, target_file in target_files.items():
+            target_analyte = target_analytes[sample]
+            target_file, target_analyte = qunatit.calculate_concentration(target_file, target_analyte)
             try:
                 target_file.put()
             except (TypeError, HTTPError) as e:
