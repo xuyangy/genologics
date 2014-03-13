@@ -218,7 +218,8 @@ class ReadResultFiles():
                     if file_ext == 'csv':
                         parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
                     elif file_ext == 'txt':
-                        parsed_files[f.name] = [row.strip().strip('\\').split('\t') for row in opened_file.readlines()]
+                        print row
+                        parsed_files[f.name] = [row.strip().split('\t') for row in opened_file.readlines()]
                     opened_file.close()
                     
         return parsed_files
@@ -238,7 +239,7 @@ class ReadResultFiles():
                             the heather line."""
         file_info = {}
         keys = []
-        warn = []
+        warn = ''
         for row, line in enumerate(parsed_file):
             print line
             if keys and len(line)==len(keys):
@@ -256,12 +257,13 @@ class ReadResultFiles():
                 keys = line
             elif header_row and row == header_row:
                 keys = line
+
+        if not file_info:
+            warn = 'Could not formate parsed file.'
         if warn:
-            warn = 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
-            logging.info(warn)
-        else:
-            warn =''
-        print file_info
+            warn += 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
+        logging.info(warn)
+
         return file_info, warn
 
 
