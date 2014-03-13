@@ -129,7 +129,7 @@ def main(lims, pid, epp_logger):
     if qunatit.missing_udfs:
         qunatit.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(qunatit.missing_udfs)))
     
-    abrtract = ' '.join(qunatit.abstract)
+    abstract = ' '.join(qunatit.abstract)
 
     logging.info(abstract)
     print >> sys.stderr, abstract
