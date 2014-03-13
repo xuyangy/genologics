@@ -98,20 +98,16 @@ class QunatiT():
         intersect = self.mod[1]
         fluor_int = []
         for f_name ,formated_file in result_files.items():
-            print formated_file.keys()
+            print formated_file
             if sample in formated_file.keys():
                 fluor_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
             else:
                 self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
         mean_fluor_int = np.mean(fluor_int)
-        print fluor_int
-        print mean_fluor_int
         rel_fluor_int = mean_fluor_int - self.standards[1]
-        print rel_fluor_int
         if 'Sample volume' in self.udfs.keys():
             conc = np.true_divide((slope * rel_fluor_int + intersect) , self.udfs['Sample volume'])
-            print conc
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
         else:
