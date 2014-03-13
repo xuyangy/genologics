@@ -82,7 +82,7 @@ class QunatiT():
             relative_standards[k-1] = v - self.standards[1]
         amount_in_standards = self._amount_in_standards()
         R2, mod = self._linear_regression(relative_standards, amount_in_standards)
-        if 'Linearity of standardse' in self.udfs.keys():
+        if 'Linearity of standards' in self.udfs.keys():
             if R2 >= self.udfs['Linearity of standards']:
                 self.abstract.append("R2 = {0}. Standards OK. Upload input file(s) for samples".format(R2))
             else:  
