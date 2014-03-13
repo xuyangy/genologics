@@ -39,7 +39,7 @@ class QunatiT():
         result_files = {}
         file_names = {'Quant-iT Result File 1':'Fluorescence intensity 1',
                     'Quant-iT Result File 2':'Fluorescence intensity 2'}
-        for f_name, udf_name in file_names:
+        for f_name, udf_name in file_names.items():
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
                 result_files[udf_name], warn = self.file_handler.format_file(result_file,
