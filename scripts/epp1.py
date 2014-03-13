@@ -103,7 +103,7 @@ class QunatiT():
                 fluor_int.append(formated_file[sample]['End RFU'])
                 target_file.udf[f_name] = formated_file[sample]['End RFU']  
             else:
-                self.abstract.append("Sample {0} is not represented in {1}.".format([sample, f_name]))
+                self.abstract.append("Sample {0} is not represented in {1}.".format(sample, f_name))
         mean_fluor_int = np.mean(fluor_int)
         print fluor_int
         print mean_fluor_int
