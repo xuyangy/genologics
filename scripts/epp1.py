@@ -57,7 +57,7 @@ class QunatiT():
         nuclear_acid_amount = np.ones(8)
         supp_conc_stds = {'RNA BR':[0,5,10,20,40,60,80,100],
                           'RNA':[0,5,10,20,40,60,80,100]}    
-        if set(['Standard volume','Assay type','Standard dilution']).issubset(self.udfs.keys())
+        if set(['Standard volume','Assay type','Standard dilution']).issubset(self.udfs.keys()):
             for standard in range(8):
                 nuclear_acid_amount[standard] = np.true_divide(supp_conc_stds[self.udf['Assay type']][standard] * 
                     self.udfs['Standard volume'], self.udfs['Standard dilution'])
