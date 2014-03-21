@@ -67,9 +67,9 @@ class QunatiT():
                 nuclear_acid_amount[standard] = np.true_divide(supp_conc_stds[self.udfs['Assay type']][standard] * 
                     self.udfs['Standard volume'], self.udfs['Standard dilution'])
             return nuclear_acid_amount
-        else:
+        elif not set(['Standard volume','Assay type','Standard dilution']).issubset(self.missing_udfs):
             self.missing_udfs += ['Standard volume','Assay type','Standard dilution']
-            return None
+        return None
 
     def _linear_regression(self, X,Y):
         A = np.array([ X, np.ones(len(X))])
@@ -103,7 +103,7 @@ class QunatiT():
             conc = np.true_divide((slope * rel_fluor_int + intersect) , self.udfs['Sample volume'])
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
-        else:
+        elif not 'Sample volume' in self.missing_udfs:
             self.missing_udfs.append('Sample volume')
         return target_file, target_analyte
 
