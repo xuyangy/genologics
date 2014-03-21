@@ -50,7 +50,7 @@ class QunatiT():
  
     def _make_standards_list(self):
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
-        standards_file_formated, warn = self.file_handler.format_file(standards_file, header_row = 26)
+        standards_file_formated, warn = self.file_handler.format_file(standards_file, header_row = 19)
         standards_dict = {}
         for k,v in standards_file_formated.items():
             if set(['Sample','End RFU']).issubset(v) and v['Sample'].split()[0]=='Standard':
