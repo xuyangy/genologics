@@ -127,7 +127,7 @@ class QunatiT():
         Y = Nuclear acid amount in standards 
         Y = slope*X + intersect; R2=Pearson correlation coefficient."""
         amount_in_standards = self._nuclear_acid_amount_in_standards()
-        if amount_in_standards not None:
+        if amount_in_standards is not None:
             relative_standards = np.ones(8)
             for k,v in self.standards.items(): 
                 relative_standards[k-1] = v - self.standards[1]
