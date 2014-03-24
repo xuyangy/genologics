@@ -46,6 +46,11 @@ def unique_check(l,msg):
     elif len(l)!=1:
         raise NotUniqueError("Multiple items found for {0}".format(msg))
 
+def set_field(element):    
+     try:
+        element.put()
+    except (TypeError, HTTPError) as e:
+        logging.warning("Error while updating element: {0}".format(e))
     
 class EppLogger(object):
 
@@ -237,18 +242,19 @@ class ReadResultFiles():
                             the heather line."""
         file_info = {}
         keys = []
+        dupl_rownames = []
         warn = ''
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
-                    warn.append(root_key)
+                    dupl_rownames.append(root_key)
                 else:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':
                             file_info[root_key][keys[col]] = line[col]
-                        else:
+                        elif keys[col-1] != '':
                             file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
             if first_header and len(line)>root_key_col and line[root_key_col].strip() == first_header:
                 keys = line
@@ -258,7 +264,7 @@ class ReadResultFiles():
         if not file_info:
             warn = 'Could not formate parsed file.'
         if warn:
-            warn += 'Row names: {0}, occurs more than once in file'.format(', '.join(warn))
+            warn += 'Row names: {0}, occurs more than once in file'.format(', '.join(dupl_rownames))
         logging.info(warn)
 
         return file_info, warn
