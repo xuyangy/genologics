@@ -72,15 +72,15 @@ class QunatiT():
         if flour_int_1:
             if (flour_int_1 >= treshold) or (flour_int_1 >= treshold):
                 input_analyte.udf["Intensity check"] = "Saturated" 
-                input_analyte.qc_flag = "Fail"
+                input_analyte.qc_flag = "FAILED"
             else:
                 input_analyte.udf["Intensity check"] = "OK"
-                input_analyte.qc_flag = "Pass"
+                input_analyte.qc_flag = "PASSED"
                 if flour_int_2:
                     procent_CV = np.std([flour_int_1, flour_int_2])/np.mean([flour_int_1, flour_int_2])
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
-                        input_analyte.qc_flag = "Fail"
+                        input_analyte.qc_flag = "FAILED"
         set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
