@@ -66,6 +66,7 @@ class QunatiT():
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
+        self.no_samps
         self.standards = self._make_standards_dict()
         self.model = self._verify_standards()
         self.result_files = self._formated_result_files_dict()
@@ -164,6 +165,7 @@ class QunatiT():
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
+            self.no_samps +=1
         elif not 'Sample volume' in self.missing_udfs:
             self.missing_udfs.append('Sample volume')
 
@@ -181,6 +183,7 @@ def main(lims, pid, epp_logger):
                 for sample, target_file in target_files.items():
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_analytes[sample])
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
+                QiT.abstract.append("Concentrations uploaded for {0} samples.".format(QiT.no_samps))
             else:
                 QiT.abstract.append("Upload input file(s) for samples.")
         else:
