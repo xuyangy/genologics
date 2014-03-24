@@ -67,7 +67,7 @@ class QunatiT():
         self.abstract = []
         self.missing_udfs = []
         self.standards = self._make_standards_dict()
-        self.R2, self.slope, self.intersect = self._verify_standards()
+        self.model = self._verify_standards()
 
     def _formated_result_files_dict(self):
         """"Quant-iT Result File 1" and "Quant-iT Result File 2" (the second is optional) 
@@ -83,7 +83,7 @@ class QunatiT():
                 if warn:
                     self.abstract.append(' '.join([warn, f_name]))
         return result_files_dict
- 
+
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored in a dict"""
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
@@ -132,7 +132,7 @@ class QunatiT():
             for k,v in self.standards.items(): 
                 relative_standards[k-1] = v - self.standards[1]
             R2, slope, intersect = self._linear_regression(relative_standards, amount_in_standards)
-            return R2, slope, intersect
+            return set([R2, slope, intersect])
         else:
             return None
 
@@ -158,8 +158,8 @@ class QunatiT():
     def calc_and_set_conc(self, target_file, rel_fluor_int):
         """Concentrations are calculated based on the linear regression parametersand copied to 
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
-        if 'Sample volume' in self.udfs.keys():
-            conc = np.true_divide((self.slope * rel_fluor_int + self.intersect), 
+        if 'Sample volume' in self.udfs.keys() and self.model:
+            conc = np.true_divide((self.model[1] * rel_fluor_int + self.model[2]), 
                                                                         self.udfs['Sample volume'])
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
@@ -172,16 +172,19 @@ def main(lims, pid, epp_logger):
     QiT = QunatiT(process)
     target_files = dict((r.samples[0].name, r) for r in process.result_files())
     target_analytes = dict((a.name, a) for a in process.analytes()[0])
-    if 'Linearity of standards' in QiT.udfs.keys():
-        if QiT.R2 >= QiT.udfs['Linearity of standards']:
-            QiT.abstract.append("R2 = {0}. Standards OK.".format(QiT.R2))
+
+    if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
+        R2 = QiT.model[0]
+        if R2 >= QiT.udfs['Linearity of standards']:
+            QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
             for sample, target_file in target_files.items():
                 rel_fluor_int = QiT.get_and_set_fluor_int(target_analytes[sample])
                 QiT.calc_and_set_conc(target_file, rel_fluor_int)
         else:
-            QiT.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(QiT.R2))
+            QiT.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(R2))
     else:
-        QiT.abstract.append("Kould not calculate concentration. Please set 'Linearity of standards'.")
+        QiT.missing_udfs.append('Linearity of standards')
+
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
     
