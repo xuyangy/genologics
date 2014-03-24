@@ -47,7 +47,7 @@ def unique_check(l,msg):
         raise NotUniqueError("Multiple items found for {0}".format(msg))
 
 def set_field(element):    
-     try:
+    try:
         element.put()
     except (TypeError, HTTPError) as e:
         logging.warning("Error while updating element: {0}".format(e))
