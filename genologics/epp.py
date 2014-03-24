@@ -264,7 +264,7 @@ class ReadResultFiles():
         if not file_info:
             warn = 'Could not formate parsed file.'
         if warn:
-            warn += 'Row names: {0}, occurs more than once in file'.format(', '.join(dupl_rownames))
+            warn += 'Row names: {0}, occurs more than once in file!'.format(', '.join(dupl_rownames))
         logging.info(warn)
 
         return file_info, warn
