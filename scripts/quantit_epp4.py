@@ -82,8 +82,8 @@ class QunatiT():
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
                         input_analyte.qc_flag = "FAILED"
-        self.abstract.append("""Fluorescence intensity missing. Have youe uploaded a 
-                                                            Quant-iT Resultfile?""")
+        else:
+            self.abstract.append("Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?")
         set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
