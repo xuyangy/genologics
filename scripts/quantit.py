@@ -177,7 +177,9 @@ def main(lims, pid, epp_logger):
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
             QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
+            print target_files
             if target_files:
+                print 'dd'
                 for sample, target_file in target_files.items():
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_analytes[sample])
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
