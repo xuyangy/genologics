@@ -56,6 +56,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import Process
 from genologics.epp import EppLogger
+from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
@@ -147,10 +148,7 @@ class QunatiT():
             else:
                 self.abstract.append("""Sample {0} is not represented in Result File for filed 
                                                                 {1}.""".format(sample, udf_name))
-        try:
-            target_analyte.put()
-        except (TypeError, HTTPError) as e:
-            logging.warning("Error while updating element: {0}".format(e))
+        set_field(target_analyte)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
         return rel_fluor_int
 
@@ -162,10 +160,7 @@ class QunatiT():
                                                                         self.udfs['Sample volume'])
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
-            try:
-                target_file.put()
-            except (TypeError, HTTPError) as e:
-                logging.warning("Error while updating element: {0}".format(e))
+            set_field(target_file)
         elif not 'Sample volume' in self.missing_udfs:
             self.missing_udfs.append('Sample volume')
 
