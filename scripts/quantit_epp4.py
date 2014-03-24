@@ -102,7 +102,7 @@ def main(lims, pid, epp_logger):
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
-        missing_udfs = ', '.join(QiT.missing_udfs
+        missing_udfs = ', '.join(QiT.missing_udfs)
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(missing_udfs))
     QiT.abstract.append("Uploaded QC-flagg for {0} samples.".format(QiT.no_samples))
     QiT.abstract = list(set(QiT.abstract))
