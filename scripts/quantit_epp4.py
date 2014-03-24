@@ -65,36 +65,34 @@ class QunatiT():
         self.abstract = []
         self.missing_udfs = []
 
-    def assign_QC_flag(self, input_analyte, target_file, treshold, allowed_dupl):
+    def assign_QC_flag(self, input_analyte, treshold, allowed_dupl):
         analyte_udfs = input_analyte.udf.items()
         flour_int_1 = input_analyte.udf["Fluorescence intensity 1"]
         flour_int_2 = input_analyte.udf["Fluorescence intensity 2"] 
         if flour_int_1:
-            if flour_int_1 >= treshold or flour_int_1 >= treshold:
+            if (flour_int_1 >= treshold) or (flour_int_1 >= treshold):
                 input_analyte.udf["Intensity check"] = "Saturated" 
-                input_analyte.qc_flagg = "Fail"
+                input_analyte.qc_flag = "Fail"
             else:
                 input_analyte.udf["Intensity check"] = "OK"
-                input_analyte.qc_flagg = "Pass"
+                input_analyte.qc_flag = "Pass"
                 if flour_int_2:
                     procent_CV = np.std([flour_int_1, flour_int_2])/np.mean([flour_int_1, flour_int_2])
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
-                        input_analyte.qc_flagg = "Fail"
+                        input_analyte.qc_flag = "Fail"
         set_field(input_analyte)
-        #set_field(target_file)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
-    target_files = dict((r.samples[0].name, r) for r in process.result_files())
     input_analytes = dict((a.name, a) for a in process.analytes()[0])
     requiered_udfs = set(["Saturation threshold of fluorescence intensity", "Allowed %CV of duplicates"])
     if requiered_udfs.issubset(QiT.udfs.keys()):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
         for sample, input_analyte in input_analytes.items():
-            QiT.assign_QC_flag(input_analyte, target_files[sample], treshold, allowed_dupl)
+            QiT.assign_QC_flag(input_analyte, treshold, allowed_dupl)
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
