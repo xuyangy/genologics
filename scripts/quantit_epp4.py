@@ -64,6 +64,7 @@ class QunatiT():
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
+        self.no_samples = 0
 
     def assign_QC_flag(self, input_analyte, treshold, allowed_dupl):
         analyte_udfs = input_analyte.udf.items()
@@ -82,9 +83,10 @@ class QunatiT():
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
                         input_analyte.qc_flag = "FAILED"
+            set_field(input_analyte)
+            self.no_samples += 1
         else:
             self.abstract.append("Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?")
-        set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
@@ -100,8 +102,9 @@ def main(lims, pid, epp_logger):
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
-        QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(
-                                                        ', '.join(QiT.missing_udfs)))
+        missing_udfs = ', '.join(QiT.missing_udfs
+        QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(missing_udfs))
+    QiT.abstract.append("Uploaded QC-flagg for {0} samples.".format(QiT.no_samples))
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
