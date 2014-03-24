@@ -126,16 +126,15 @@ class QunatiT():
         X = Relative fluorescence intensities of 8 standards 
         Y = Nuclear acid amount in standards 
         Y = slope*X + intersect; R2=Pearson correlation coefficient."""
-        relative_standards = np.ones(8)
-        for k,v in self.standards.items(): 
-            print k
-            print v
-            relative_standards[k-1] = v - self.standards[1]
         amount_in_standards = self._nuclear_acid_amount_in_standards()
-        print amount_in_standards
-        print relative_standards
-        R2, slope, intersect = self._linear_regression(relative_standards, amount_in_standards)
-        return R2, slope, intersect
+        if amount_in_standards:
+            relative_standards = np.ones(8)
+            for k,v in self.standards.items(): 
+                relative_standards[k-1] = v - self.standards[1]
+            R2, slope, intersect = self._linear_regression(relative_standards, amount_in_standards)
+            return R2, slope, intersect
+        else:
+            return None
 
     def get_and_set_fluor_int(self, target_analyte):
         """Copies "End RFU" values from "Quant-iT Result File 1" and "Quant-iT Result File 2"
