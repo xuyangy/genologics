@@ -132,7 +132,7 @@ class QunatiT():
             for k,v in self.standards.items(): 
                 relative_standards[k-1] = v - self.standards[1]
             R2, slope, intersect = self._linear_regression(relative_standards, amount_in_standards)
-            return set([R2, slope, intersect])
+            return [R2, slope, intersect]
         else:
             return None
 
