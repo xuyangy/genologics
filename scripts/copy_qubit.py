@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 DESC = """EPP script to copy 'concentration' and 'concentration unit' for each 
 sample sample in the 'Qubit Result File' to the 'Concentration' and 'Conc. Units' 
 fields of the output analytes of the process.
@@ -34,7 +35,7 @@ def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     file_handler = ReadResultFiles(process)
     qubit_result_file = file_handler.shared_files['Qubit Result File']
-    qubit_result_file, warn = file_handler.format_file(qubit_result_file)
+    qubit_result_file, warn = file_handler.format_file(qubit_result_file, first_header = 'Sample')
     target_files = process.result_files()
     abstract = ''
     logg = {'sucsessfully_copied' : {'samples':[],
@@ -73,7 +74,7 @@ def main(lims, pid, epp_logger):
                     logg['sucsessfully_copied']['samples'].append(sample)
                 except (TypeError, HTTPError) as e:
                     logg['un_sucsessfully_copied']['samples'].append(sample)
-                    print >> sys.stderr, "Error while updating element: {0}".format(e)    
+                    print >> sys.stderr, "Error while updating element: {0}".format(e)
         else:
             logg['missing']['samples'].append(sample)
 
@@ -81,6 +82,7 @@ def main(lims, pid, epp_logger):
         if inf['samples']:
             logging.info( '{0} {1}.'.format(inf['log_string'], ', '.join(inf['samples'])))
             abstract = ' '.join([abstract, inf['user_string']])
+
     print >> sys.stderr, ' '.join([abstract, warn])
 
 if __name__ == "__main__":
