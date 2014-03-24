@@ -77,18 +77,21 @@ class QunatiT():
                 input_analyte.udf["Intensity check"] = "OK"
                 input_analyte.qc_flag = "PASSED"
                 if flour_int_2:
-                    procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),np.mean([flour_int_1, flour_int_2]))
+                    procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),
+                                                np.mean([flour_int_1, flour_int_2]))
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
                         input_analyte.qc_flag = "FAILED"
-        self.abstract.append('Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?')
+        self.abstract.append("""Fluorescence intensity missing. Have youe uploaded a 
+                                                            Quant-iT Resultfile?""")
         set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
     input_analytes = dict((a.name, a) for a in process.analytes()[0])
-    requiered_udfs = set(["Saturation threshold of fluorescence intensity", "Allowed %CV of duplicates"])
+    requiered_udfs = set(["Saturation threshold of fluorescence intensity", 
+                                                        "Allowed %CV of duplicates"])
     if requiered_udfs.issubset(QiT.udfs.keys()):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
@@ -97,7 +100,8 @@ def main(lims, pid, epp_logger):
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
-        QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
+        QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(
+                                                        ', '.join(QiT.missing_udfs)))
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
