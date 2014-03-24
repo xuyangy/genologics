@@ -66,7 +66,7 @@ class QunatiT():
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
-        self.no_samps
+        self.no_samps = 0
         self.standards = self._make_standards_dict()
         self.model = self._verify_standards()
         self.result_files = self._formated_result_files_dict()
