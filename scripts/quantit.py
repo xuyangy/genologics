@@ -68,6 +68,7 @@ class QunatiT():
         self.missing_udfs = []
         self.standards = self._make_standards_dict()
         self.model = self._verify_standards()
+        self.result_files = self._formated_result_files_dict()
 
     def _formated_result_files_dict(self):
         """"Quant-iT Result File 1" and "Quant-iT Result File 2" (the second is optional) 
@@ -141,10 +142,9 @@ class QunatiT():
         (if provided) to udfs "Fluorescence intentisy 1" and "Fluorescence intensity 2.
         Calculates and returns Relative fluorescence intensitiy standards:
         rel_fluor_int = The End RFU of standards - Background fluorescence intensity"""
-        result_files = self._formated_result_files_dict()
         sample = target_analyte.samples[0].name
         fluor_int = []
-        for udf_name ,formated_file in result_files.items():
+        for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_analyte.udf[udf_name] = int(formated_file[sample]['End RFU']) 
@@ -177,9 +177,7 @@ def main(lims, pid, epp_logger):
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
             QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
-            print target_files
-            if target_files:
-                print 'dd'
+            if QiT.result_files:
                 for sample, target_file in target_files.items():
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_analytes[sample])
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
