@@ -81,7 +81,7 @@ class QunatiT():
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
                         input_analyte.qc_flag = "FAILED"
-        self.abstract.append('Fluorescence intensity files are missing')
+        self.abstract.append('Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?')
         set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
@@ -98,7 +98,7 @@ def main(lims, pid, epp_logger):
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
-    
+    QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
 if __name__ == "__main__":
