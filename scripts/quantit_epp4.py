@@ -77,12 +77,11 @@ class QunatiT():
                 input_analyte.udf["Intensity check"] = "OK"
                 input_analyte.qc_flag = "PASSED"
                 if flour_int_2:
-                    print np.std([flour_int_1, flour_int_2])
-                    print np.mean([flour_int_1, flour_int_2])
                     procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),np.mean([flour_int_1, flour_int_2]))
                     input_analyte.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
                         input_analyte.qc_flag = "FAILED"
+        self.abstract.append('Fluorescence intensity files are missing')
         set_field(input_analyte)
 
 def main(lims, pid, epp_logger):
