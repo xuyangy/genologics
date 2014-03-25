@@ -98,6 +98,7 @@ def main(lims, pid, epp_logger):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
         for sample, target_file in target_files.items():
+            print target_file
             QiT.assign_QC_flag(target_file, treshold, allowed_dupl)
     else:
         QiT.missing_udfs.append(requiered_udfs)
