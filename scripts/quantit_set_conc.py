@@ -80,8 +80,7 @@ class QunatiT():
         for f_name, udf_name in file_names.items():
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
-                result_files_dict[udf_name], warn = self.file_handler.format_file(result_file,
-                                                first_header = 'Sample', root_key_col = 1)
+                result_files_dict[udf_name], warn = self.file_handler.format_file(result_file, header_row = 19)
                 if warn:
                     self.abstract.append(' '.join([warn, f_name]))
         return result_files_dict
@@ -147,7 +146,6 @@ class QunatiT():
         fluor_int = []
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
-                print formated_file[sample]
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_analyte.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
