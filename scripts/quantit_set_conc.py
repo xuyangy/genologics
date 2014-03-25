@@ -190,7 +190,8 @@ def main(lims, pid, epp_logger):
     else:
         QiT.missing_udfs.append('Linearity of standards')
     if QiT.missing_samps:
-        QiT.abstract.append("""The folowing samples are missing in Quant-iT result File 1 or 2: {0}.""".format(', '.join(QiT.missing_samps))
+        QiT.abstract.append("The folowing samples are missing in Quant-iT result File 1 or 2: {0}.".format(', '.join(QiT.missing_samps)))
+
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
     
