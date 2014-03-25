@@ -145,6 +145,7 @@ class QunatiT():
         rel_fluor_int = The End RFU of standards - Background fluorescence intensity"""
         sample = target_analyte.samples[0].name
         fluor_int = []
+        print formated_file
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
