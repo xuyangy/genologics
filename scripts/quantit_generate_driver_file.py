@@ -38,11 +38,12 @@ class QunatiT():
         self.no_samples = 0
         self.drivf = drivf
 
-    def make_location_dict(self, input_analytes):
+    def make_location_dict(self, io_filtered):
         location_dict = {}
-        for sample, input_analyte in input_analytes.items():
+        for input, output in io_filtered:
             try:
-                well = input_analyte.location[1]
+                well = output['uri'].location[1]
+                sample = input['uri'].name
                 row, col = well.split(':')
                 location_dict[well] = ','.join([row, col,'', sample])
             except:
@@ -58,15 +59,16 @@ class QunatiT():
             print >> f ,location_dict[key]
         f.close()
 
-
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process, drivf)
-    input_analytes = dict((a.name, a) for a in process.analytes()[0])
-    location_dict = QiT.make_location_dict(input_analytes)
+    io = process.input_output_maps
+    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
+    io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
+    location_dict = QiT.make_location_dict(io_filtered)
     if QiT.no_samples:
         QiT.abstract.append("Could not get location for {0} samples.".format(QiT.no_samples))
-    return QiT.make_file(location_dict)
+    QiT.make_file(location_dict)
 
     print >> sys.stderr, ' '.join(QiT.abstract)
 
