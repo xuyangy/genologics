@@ -32,10 +32,11 @@ from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
 class QunatiT():
-    def __init__(self, process):
+    def __init__(self, process, drivf):
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.no_samples = 0
+        self.drivf = drivf
 
     def make_location_dict(self, input_analytes):
         location_dict = {}
@@ -51,21 +52,21 @@ class QunatiT():
     def make_file(self, location_dict):
         keylist = location_dict.keys()
         keylist.sort()
-        f = open('QuantiT_driver_file_exported_from_LIMS.csv','a')
+        f = open( self.drivf, 'a')
         print >> f , 'Row,Column,*Target Name,*Sample Name'
         for key in keylist:
             print >> f ,location_dict[key]
         f.close()
 
 
-def main(lims, pid, epp_logger):
+def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiT(process)
+    QiT = QunatiT(process, drivf)
     input_analytes = dict((a.name, a) for a in process.analytes()[0])
     location_dict = QiT.make_location_dict(input_analytes)
     if QiT.no_samples:
         QiT.abstract.append("Could not get location for {0} samples.".format(QiT.no_samples))
-    QiT.make_file(location_dict)
+    return QiT.make_file(location_dict)
 
     print >> sys.stderr, ' '.join(QiT.abstract)
 
@@ -76,11 +77,13 @@ if __name__ == "__main__":
     parser.add_argument('--log', dest = 'log',
                         help=('File name for standard log file, '
                               'for runtime information and problems.'))
+    parser.add_argument('--drivf', dest = 'drivf', default = 'QuantiT_driver_file_exported_from_LIMS.csv',
+                            help=('File name for Driver file to be generated'))
 
     args = parser.parse_args()
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     lims.check_version()
 
     with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
-        main(lims, args.pid, epp_logger)
+        main(lims, args.pid, args.drivf, epp_logger)
 
