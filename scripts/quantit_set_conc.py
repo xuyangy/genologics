@@ -66,6 +66,7 @@ class QunatiT():
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
+        self.missing_samps =[]
         self.no_samps = 0
         self.standards = self._make_standards_dict()
         self.model = self._verify_standards()
@@ -88,7 +89,7 @@ class QunatiT():
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored in a dict"""
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
-        standards_file_formated, warn = self.file_handler.format_file(standards_file, 
+        standards_file_formated, warn = self.file_handler.format_file(standards_file, root_key_col = 1, 
                                                                             header_row = 19)
         standards_dict = {}
         for k,v in standards_file_formated.items():
@@ -149,8 +150,7 @@ class QunatiT():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_analyte.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
-                self.abstract.append("""Sample {0} is not represented in Result File for filed 
-                                                                {1}.""".format(sample, udf_name))
+                self.missing_samps.append(sample)
         set_field(target_analyte)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
         return rel_fluor_int
@@ -189,7 +189,8 @@ def main(lims, pid, epp_logger):
             QiT.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(R2))
     else:
         QiT.missing_udfs.append('Linearity of standards')
-
+    if QiT.missing_samps:
+        QiT.abstract.append("""The folowing samples are missing in Quant-iT result File 1 or 2: {0}.""".format(', '.join(QiT.missing_samps))
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
     
