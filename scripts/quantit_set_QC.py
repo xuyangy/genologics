@@ -67,7 +67,7 @@ class QunatiT():
         self.no_samples = 0
 
     def assign_QC_flag(self, input_analyte, treshold, allowed_dupl):
-        analyte_udfs = input_analyte.udf.items()
+        analyte_udfs = dict(input_analyte.udf.items())
         if "Fluorescence intensity 1" in analyte_udfs.keys():
             flour_int_1 = input_analyte.udf["Fluorescence intensity 1"]
             if (flour_int_1 >= treshold) or (flour_int_1 >= treshold):
