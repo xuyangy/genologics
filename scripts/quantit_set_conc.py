@@ -89,7 +89,7 @@ class QunatiT():
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored in a dict"""
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
-        standards_file_formated, warn = self.file_handler.format_file(standards_file, root_key_col = 1, 
+        standards_file_formated, warn = self.file_handler.format_file(standards_file, root_key_col = 2, 
                                                                             header_row = 19)
         standards_dict = {}
         for k,v in standards_file_formated.items():
