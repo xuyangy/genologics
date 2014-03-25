@@ -66,24 +66,24 @@ class QunatiT():
         self.missing_udfs = []
         self.no_samples = 0
 
-    def assign_QC_flag(self, input_analyte, treshold, allowed_dupl):
-        analyte_udfs = dict(input_analyte.udf.items())
+    def assign_QC_flag(self, result_file, treshold, allowed_dupl):
+        analyte_udfs = dict(result_file.udf.items())
         if "Fluorescence intensity 1" in analyte_udfs.keys():
-            flour_int_1 = input_analyte.udf["Fluorescence intensity 1"]
+            flour_int_1 = result_file.udf["Fluorescence intensity 1"]
             if (flour_int_1 >= treshold) or (flour_int_1 >= treshold):
-                input_analyte.udf["Intensity check"] = "Saturated" 
-                input_analyte.qc_flag = "FAILED"
+                result_file.udf["Intensity check"] = "Saturated" 
+                result_file.qc_flag = "FAILED"
             else:
-                input_analyte.udf["Intensity check"] = "OK"
-                input_analyte.qc_flag = "PASSED"
+                result_file.udf["Intensity check"] = "OK"
+                result_file.qc_flag = "PASSED"
                 if "Fluorescence intensity 2" in analyte_udfs.keys():
-                    flour_int_2 = input_analyte.udf["Fluorescence intensity 2"]
+                    flour_int_2 = result_file.udf["Fluorescence intensity 2"]
                     procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),
                                                 np.mean([flour_int_1, flour_int_2]))
-                    input_analyte.udf["%CV"] = procent_CV
+                    result_file.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
-                        input_analyte.qc_flag = "FAILED"
-            set_field(input_analyte)
+                        result_file.qc_flag = "FAILED"
+            set_field(result_file)
             self.no_samples += 1
         else:
             self.abstract.append("Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?")
@@ -91,15 +91,14 @@ class QunatiT():
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
-    target_files = dict((r.samples[0].name, r) for r in process.result_files())
+    result_files = [r: for r in process.result_files()]
     requiered_udfs = set(["Saturation threshold of fluorescence intensity", 
                                                         "Allowed %CV of duplicates"])
     if requiered_udfs.issubset(QiT.udfs.keys()):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
-        for sample, target_file in target_files.items():
-            print target_file
-            QiT.assign_QC_flag(target_file, treshold, allowed_dupl)
+        for result_file in result_files:
+            QiT.assign_QC_flag(result_file, treshold, allowed_dupl)
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:
