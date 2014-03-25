@@ -91,14 +91,14 @@ class QunatiT():
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
-    input_analytes = dict((a.name, a) for a in process.analytes()[0])
+    target_files = dict((r.samples[0].name, r) for r in process.result_files())
     requiered_udfs = set(["Saturation threshold of fluorescence intensity", 
                                                         "Allowed %CV of duplicates"])
     if requiered_udfs.issubset(QiT.udfs.keys()):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
-        for sample, input_analyte in input_analytes.items():
-            QiT.assign_QC_flag(input_analyte, treshold, allowed_dupl)
+        for sample, target_file in target_files.items():
+            QiT.assign_QC_flag(target_file, treshold, allowed_dupl)
     else:
         QiT.missing_udfs.append(requiered_udfs)
     if QiT.missing_udfs:

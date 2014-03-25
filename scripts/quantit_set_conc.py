@@ -139,21 +139,21 @@ class QunatiT():
         else:
             return None
 
-    def get_and_set_fluor_int(self, target_analyte):
+    def get_and_set_fluor_int(self, target_file):
         """Copies "End RFU" values from "Quant-iT Result File 1" and "Quant-iT Result File 2"
         (if provided) to udfs "Fluorescence intentisy 1" and "Fluorescence intensity 2.
         Calculates and returns Relative fluorescence intensitiy standards:
         rel_fluor_int = The End RFU of standards - Background fluorescence intensity"""
-        sample = target_analyte.samples[0].name
+        sample = target_file.samples[0].name
         fluor_int = []
         for udf_name ,formated_file in self.result_files.items():
             print formated_file
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
-                target_analyte.udf[udf_name] = int(formated_file[sample]['End RFU']) 
+                target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
                 self.missing_samps.append(sample)
-        set_field(target_analyte)
+        set_field(target_file)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
         return rel_fluor_int
 
@@ -174,15 +174,13 @@ def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
     target_files = dict((r.samples[0].name, r) for r in process.result_files())
-    target_analytes = dict((a.name, a) for a in process.analytes()[0])
-
     if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
             QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
             if QiT.result_files:
                 for sample, target_file in target_files.items():
-                    rel_fluor_int = QiT.get_and_set_fluor_int(target_analytes[sample])
+                    rel_fluor_int = QiT.get_and_set_fluor_int(target_file)
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
                 QiT.abstract.append("Concentrations uploaded for {0} samples.".format(QiT.no_samps))
             else:
