@@ -68,16 +68,16 @@ class QunatiT():
 
     def assign_QC_flag(self, input_analyte, treshold, allowed_dupl):
         analyte_udfs = input_analyte.udf.items()
-        flour_int_1 = input_analyte.udf["Fluorescence intensity 1"]
-        flour_int_2 = input_analyte.udf["Fluorescence intensity 2"] 
-        if flour_int_1:
+        if "Fluorescence intensity 1" in analyte_udfs.keys():
+            flour_int_1 = input_analyte.udf["Fluorescence intensity 1"]
             if (flour_int_1 >= treshold) or (flour_int_1 >= treshold):
                 input_analyte.udf["Intensity check"] = "Saturated" 
                 input_analyte.qc_flag = "FAILED"
             else:
                 input_analyte.udf["Intensity check"] = "OK"
                 input_analyte.qc_flag = "PASSED"
-                if flour_int_2:
+                if "Fluorescence intensity 2" in analyte_udfs.keys():
+                    flour_int_2 = input_analyte.udf["Fluorescence intensity 2"]
                     procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),
                                                 np.mean([flour_int_1, flour_int_2]))
                     input_analyte.udf["%CV"] = procent_CV
