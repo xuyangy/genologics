@@ -147,6 +147,7 @@ class QunatiT():
         fluor_int = []
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
+                print formated_file[sample]
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_analyte.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
