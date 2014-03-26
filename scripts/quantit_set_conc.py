@@ -119,6 +119,8 @@ class QunatiT():
         return None
 
     def _linear_regression(self, X,Y):
+        print X
+        print Y
         A = np.array([ X, np.ones(len(X))])
         mod, resid = np.linalg.lstsq(A.T,Y)[:2]
         R2 = 1 - resid / (Y.size * Y.var())
@@ -162,11 +164,6 @@ class QunatiT():
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
         requiered_udfs = set(['Sample volume','Standard dilution','WS volume'])
         if requiered_udfs.issubset(self.udfs.keys()) and self.model:
-            print self.model[1]
-            print rel_fluor_int
-            print self.udfs['WS volume']
-            print self.udfs['Sample volume']
-            print self.udfs['Standard dilution']
             conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + self.udfs['Sample volume'])),(self.udfs['WS volume'] + self.udfs['Standard dilution']))
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
