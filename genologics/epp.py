@@ -249,7 +249,7 @@ class ReadResultFiles():
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
                     dupl_rownames.append(root_key)
-                else:
+                elif root_key != 'Sample':
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':
@@ -264,7 +264,7 @@ class ReadResultFiles():
         if not file_info:
             warn = 'Could not formate parsed file.'
         if dupl_rownames:
-            warn += 'Row names: {0}, occurs more than once in file!'.format(', '.join(dupl_rownames))
+            warn += 'Row names: {0}, occurs more than once in file!'.format(', '.join(set(dupl_rownames)))
         logging.info(warn)
 
         return file_info, warn
