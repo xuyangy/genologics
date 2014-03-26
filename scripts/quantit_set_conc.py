@@ -119,12 +119,14 @@ class QunatiT():
         return None
 
     def _linear_regression(self, X,Y):
-        print X
-        print Y
+        X = np.array(X)
+        X_force_zero = X[:,np.newaxis]
+        slope = np.linalg.lstsq(X_force_zero, Y)[0]
+
         A = np.array([ X, np.ones(len(X))])
-        mod, resid = np.linalg.lstsq(A.T,Y)[:2]
+        resid = np.linalg.lstsq(A.T,Y)[1]
         R2 = 1 - resid / (Y.size * Y.var())
-        return R2, mod[0], mod[1]
+        return R2, slope
 
     def _verify_standards(self):
         """Performing linear regresion on standards.
@@ -136,8 +138,8 @@ class QunatiT():
             relative_standards = np.ones(8)
             for k,v in self.standards.items(): 
                 relative_standards[k-1] = v - self.standards[1]
-            R2, slope, intersect = self._linear_regression(relative_standards, amount_in_standards)
-            return [R2, slope, intersect]
+            R2, slope = self._linear_regression(relative_standards, amount_in_standards)
+            return [R2, slope]
         else:
             return None
 
@@ -164,6 +166,7 @@ class QunatiT():
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
         requiered_udfs = set(['Sample volume','Standard dilution','WS volume'])
         if requiered_udfs.issubset(self.udfs.keys()) and self.model:
+            print self.model[1]
             conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + self.udfs['Sample volume'])),(self.udfs['WS volume'] + self.udfs['Standard dilution']))
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
