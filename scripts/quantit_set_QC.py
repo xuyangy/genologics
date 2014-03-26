@@ -114,10 +114,10 @@ def main(lims, pid, epp_logger):
     if QiT.missing_udfs:
         missing_udfs = ', '.join(QiT.missing_udfs)
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(missing_udfs))
-    if self.hig_CV_fract:
-        QiT.abstract.append("No samples failed due to high %CV: {0}".format(self.hig_CV_fract))
-    if self.saturated:
-        QiT.abstract.append("No samples failed due to high flourecence intensity: {0}".format(self.saturated))
+    if QiT.hig_CV_fract:
+        QiT.abstract.append("No samples failed due to high %CV: {0}".format(QiT.hig_CV_fract))
+    if QiT.saturated:
+        QiT.abstract.append("No samples failed due to high flourecence intensity: {0}".format(QiT.saturated))
 
     QiT.abstract.append("Uploaded QC-flagg for {0} samples.".format(QiT.no_samples))
     QiT.abstract = list(set(QiT.abstract))
