@@ -106,7 +106,9 @@ class QunatiT():
         assays and Quant-iT HS assays."""
         requiered_udfs = set(['Standard volume','Assay type','Standard dilution'])
         supp_conc_stds = {'RNA BR':[0,5,10,20,40,60,80,100],
-                          'RNA':[0,5,10,20,40,60,80,100]}    
+                          'DNA BR':[0,5,10,20,40,60,80,100],
+                          'RNA':[0,0.5,1,2,4,6,8,10],
+                          'DNA HS':[0,0.5,1,2,4,6,8,10]}    
         if requiered_udfs.issubset(self.udfs.keys()):
             nuclear_acid_amount = np.ones(8)
             for standard in range(8):
