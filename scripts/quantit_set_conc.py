@@ -161,8 +161,7 @@ class QunatiT():
         """Concentrations are calculated based on the linear regression parametersand copied to 
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
         if 'Sample volume' in self.udfs.keys() and self.model:
-            conc = np.true_divide((self.model[1] * rel_fluor_int + self.model[2]), 
-                                                                        self.udfs['Sample volume'])
+            conc = np.true_divide((self.model[1] * rel_fluor_int),self.udfs['Sample volume'])
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
