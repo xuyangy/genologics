@@ -160,14 +160,15 @@ class QunatiT():
     def calc_and_set_conc(self, target_file, rel_fluor_int):
         """Concentrations are calculated based on the linear regression parametersand copied to 
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
-        if 'Sample volume' in self.udfs.keys() and self.model:
-            conc = np.true_divide((self.model[1] * rel_fluor_int),self.udfs['Sample volume'])
+        requiered_udfs = set(['Sample volume','Standard dilution','WS Volume'])
+        if requiered_udfs.issubset(self.udfs.keys()) and self.model:
+            conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS Volume'] + self.udfs['Sample volume'])),(self.udfs['WS Volume'] + self.udfs['Standard dilution']))
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
             self.no_samps +=1
-        elif not 'Sample volume' in self.missing_udfs:
-            self.missing_udfs.append('Sample volume')
+        elif not requiered_udfs.issubset(self.udfs.keys()):
+            self.missing_udfs += requiered_udfs
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
