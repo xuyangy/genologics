@@ -84,7 +84,7 @@ class QunatiT():
                 result_files_dict[udf_name], warn = self.file_handler.format_file(result_file, 
                                                                 root_key_col = 1, header_row = 19)
                 if warn:
-                    self.abstract.append(' '.join([warn, f_name]))
+                    self.abstract.append(warn)
         return result_files_dict
 
     def _make_standards_dict(self):
