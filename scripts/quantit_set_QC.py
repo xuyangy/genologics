@@ -64,9 +64,10 @@ class QunatiT():
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
-        self.no_samples = 0
         self.hig_CV_fract = 0
         self.saturated = 0
+        self.flour_int_missing = 0
+        self.no_failed = 0
 
     def assign_QC_flag(self, result_file, treshold, allowed_dupl):
         analyte_udfs = dict(result_file.udf.items())
@@ -95,15 +96,16 @@ class QunatiT():
                         result_file.qc_flag = "FAILED"
                         self.hig_CV_fract +=1
             set_field(result_file)
-            self.no_samples += 1
         else:
-            self.abstract.append("Fluorescence intensity missing. Have youe uploaded a Quant-iT Resultfile?")
+            self.flour_int_missing +=1
+        if result_file.qc_flag == "FAILED":
+            self.no_failed +=1 
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
     requiered_udfs = set(["Saturation threshold of fluorescence intensity", 
-                                                        "Allowed %CV of duplicates"])
+                                                "Allowed %CV of duplicates"])
     if requiered_udfs.issubset(QiT.udfs.keys()):
         treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
@@ -111,15 +113,21 @@ def main(lims, pid, epp_logger):
             QiT.assign_QC_flag(result_file, treshold, allowed_dupl)
     else:
         QiT.missing_udfs.append(requiered_udfs)
+
+    
     if QiT.missing_udfs:
         missing_udfs = ', '.join(QiT.missing_udfs)
-        QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(missing_udfs))
-    if QiT.hig_CV_fract:
-        QiT.abstract.append("No samples failed due to high %CV: {0}".format(QiT.hig_CV_fract))
-    if QiT.saturated:
-        QiT.abstract.append("No samples failed due to high flourecence intensity: {0}".format(QiT.saturated))
+        QiT.abstract.append("Some of the folowing requiered udfs seems to be missing: {0}.".format(missing_udfs))
 
-    QiT.abstract.append("Uploaded QC-flagg for {0} samples.".format(QiT.no_samples))
+    if QiT.flour_int_missing:
+        QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
+    QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
+    if QiT.saturated:
+        QiT.abstract.append("{0} samples failed due to saturated fluorescence intensity.".format(QiT.saturated))
+    if QiT.hig_CV_fract:
+        QiT.abstract.append("{0} samples failed due to high %CV.".format(QiT.hig_CV_fract))
+
+ 
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
