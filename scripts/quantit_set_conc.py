@@ -126,7 +126,7 @@ class QunatiT():
         A = np.array([ X, np.ones(len(X))])
         resid = np.linalg.lstsq(A.T,Y)[1]
         R2 = 1 - resid / (Y.size * Y.var())
-        return R2, slope
+        return float(R2), float(slope)
 
     def _verify_standards(self):
         """Performing linear regresion on standards.
@@ -168,6 +168,7 @@ class QunatiT():
         if requiered_udfs.issubset(self.udfs.keys()) and self.model:
             print self.model[1]
             conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + self.udfs['Sample volume'])),(self.udfs['WS volume'] + self.udfs['Standard dilution']))
+            print conc
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
