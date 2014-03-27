@@ -121,6 +121,8 @@ class QunatiT():
         return None
 
     def _linear_regression(self, X,Y):
+        """Perform linear regression with intersect forced to origin. And calculates 
+        Pearson correlation coefficient R2. """
         X = np.array(X)
         X_force_zero = X[:,np.newaxis]
         slope = np.linalg.lstsq(X_force_zero, Y)[0]
@@ -153,7 +155,6 @@ class QunatiT():
         sample = target_file.samples[0].name
         fluor_int = []
         for udf_name ,formated_file in self.result_files.items():
-            print formated_file
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
@@ -168,9 +169,9 @@ class QunatiT():
         the "Concentration"-udf of the target_file. The "Conc. Units"-udf is set to "ng/ul"""
         requiered_udfs = set(['Sample volume','Standard dilution','WS volume'])
         if requiered_udfs.issubset(self.udfs.keys()) and self.model:
-            print self.model[1]
-            conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + self.udfs['Sample volume'])),self.udfs['Sample volume']*(self.udfs['WS volume'] + self.udfs['Standard dilution']))
-            print conc
+            conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + 
+            self.udfs['Sample volume'])),self.udfs['Sample volume']*(self.udfs['WS volume'] + 
+                                                                self.udfs['Standard dilution']))
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
@@ -188,7 +189,6 @@ def main(lims, pid, epp_logger):
             QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
             if QiT.result_files:
                 for sample, target_file in target_files.items():
-                    print sample
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_file)
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
                 QiT.abstract.append("Concentrations uploaded for {0} samples.".format(QiT.no_samps))
@@ -199,7 +199,8 @@ def main(lims, pid, epp_logger):
     else:
         QiT.missing_udfs.append('Linearity of standards')
     if QiT.missing_samps:
-        QiT.abstract.append("The folowing samples are missing in Quant-iT result File 1 or 2: {0}.".format(', '.join(QiT.missing_samps)))
+        QiT.abstract.append("The folowing samples are missing in Quant-iT result File 1 or 2: {0}.".format(
+                                                                            ', '.join(QiT.missing_samps)))
 
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the folowing udfs set? : {0}".format(', '.join(QiT.missing_udfs)))
