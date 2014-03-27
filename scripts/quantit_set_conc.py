@@ -171,7 +171,7 @@ class QunatiT():
         if requiered_udfs.issubset(self.udfs.keys()) and self.model:
             conc = np.true_divide((self.model[1] * rel_fluor_int * (self.udfs['WS volume'] + 
             self.udfs['Sample volume'])),self.udfs['Sample volume']*(self.udfs['WS volume'] + 
-                                                                self.udfs['Standard dilution']))
+                                                                self.udfs['Standard volume']))
             target_file.udf['Concentration'] = conc
             target_file.udf['Conc. Units'] = 'ng/ul'
             set_field(target_file)
