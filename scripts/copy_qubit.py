@@ -35,7 +35,8 @@ def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     file_handler = ReadResultFiles(process)
     qubit_result_file = file_handler.shared_files['Qubit Result File']
-    qubit_result_file, warn = file_handler.format_file(qubit_result_file, first_header = 'Sample')
+    qubit_result_file, warn = file_handler.format_file(qubit_result_file,name = 'Qubit Result File' ,
+                                                                                first_header = 'Sample')
     target_files = process.result_files()
     abstract = ''
     logg = {'sucsessfully_copied' : {'samples':[],

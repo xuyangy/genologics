@@ -82,7 +82,7 @@ class QunatiT():
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
                 result_files_dict[udf_name], warn = self.file_handler.format_file(result_file, 
-                                                                root_key_col = 1, header_row = 19)
+                                            name = f_name, root_key_col = 1, header_row = 19)
                 if warn:
                     self.abstract.append(warn)
         return result_files_dict
@@ -90,8 +90,8 @@ class QunatiT():
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored in a dict"""
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
-        standards_file_formated, warn = self.file_handler.format_file(standards_file, root_key_col = 1, 
-                                                                            header_row = 19)
+        standards_file_formated, warn = self.file_handler.format_file(standards_file, 
+                            name = 'Standards File (.txt)', root_key_col = 1, header_row = 19)
         standards_dict = {}
         for k,v in standards_file_formated.items():
             if set(['Sample','End RFU']).issubset(v) and v['Sample'].split()[0]=='Standard':
@@ -186,7 +186,7 @@ def main(lims, pid, epp_logger):
     if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
-            QiT.abstract.append("R2 = {0}. Standards OK.".format(R2))
+            QiT.abstract.insert(0,"R2 = {0}. Standards OK.".format(R2))
             if QiT.result_files:
                 for sample, target_file in target_files.items():
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_file)
@@ -195,7 +195,7 @@ def main(lims, pid, epp_logger):
             else:
                 QiT.abstract.append("Upload input file(s) for samples.")
         else:
-            QiT.abstract.append("R2 = {0}. Problem with standards! Redo measurement!".format(R2))
+            QiT.abstract.insert(0, "R2 = {0}. Problem with standards! Redo measurement!".format(R2))
     else:
         QiT.missing_udfs.append('Linearity of standards')
     if QiT.missing_samps:

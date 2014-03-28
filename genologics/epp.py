@@ -204,7 +204,6 @@ class ReadResultFiles():
 
     def __init__(self, process):
         self.process = process
-        self.file = file
         self.shared_files = self._pars_file('SharedResultFile')
         self.perinput_files = self._pars_file('ResultFile')
 
@@ -227,7 +226,7 @@ class ReadResultFiles():
                     opened_file.close()
         return parsed_files
 
-    def format_file(self, parsed_file, first_header = None, header_row = None, root_key_col = 0):
+    def format_file(self, parsed_file, name = '',first_header = None, header_row = None, root_key_col = 0):
         """Function to formate a parsed csv or txt file.
 
         Arguments and Output:
@@ -262,9 +261,9 @@ class ReadResultFiles():
                 keys = line
 
         if not file_info:
-            warn = 'Could not formate parsed file.'
+            warn = "Could not formate parsed file {0}.".format(name)
         if dupl_rownames:
-            warn += 'Row names: {0}, occurs more than once in file!'.format(', '.join(set(dupl_rownames)))
+            warn += "Row names: {0}, occurs more than once in file {1}!".format(', '.join(set(dupl_rownames)),name)
         logging.info(warn)
 
         return file_info, warn
