@@ -81,17 +81,15 @@ class QunatiT():
         for f_name, udf_name in file_names.items():
             if self.file_handler.shared_files.has_key(f_name):
                 result_file = self.file_handler.shared_files[f_name]
-                result_files_dict[udf_name], warn = self.file_handler.format_file(result_file, 
+                result_files_dict[udf_name] = self.file_handler.format_file(result_file, 
                                             name = f_name, root_key_col = 1, header_row = 19)
-                if warn:
-                    self.abstract.append(warn)
         return result_files_dict
 
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored in a dict"""
         standards_file = self.file_handler.shared_files['Standards File (.txt)']
-        standards_file_formated, warn = self.file_handler.format_file(standards_file, 
-                            name = 'Standards File (.txt)', root_key_col = 1, header_row = 19)
+        standards_file_formated = self.file_handler.format_file(standards_file, 
+                        name = 'Standards File (.txt)', root_key_col = 1, header_row = 19)
         standards_dict = {}
         for k,v in standards_file_formated.items():
             if set(['Sample','End RFU']).issubset(v) and v['Sample'].split()[0]=='Standard':

@@ -241,13 +241,13 @@ class ReadResultFiles():
                             the heather line."""
         file_info = {}
         keys = []
-        dupl_rownames = []
-        warn = ''
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
-                    dupl_rownames.append(root_key)
+                    print >> sys.stderr, """Row names {0} occurs more than once in file {1}. 
+                                            Fix the file to continue.""".format(root_key, neame)
+                    sys.exit(-1)
                 elif root_key != 'Sample':
                     file_info[root_key] = {}
                     for col in range(len(keys)):
@@ -259,14 +259,10 @@ class ReadResultFiles():
                 keys = line
             elif header_row and row == header_row:
                 keys = line
-
         if not file_info:
-            warn = "Could not formate parsed file {0}.".format(name)
-        if dupl_rownames:
-            warn += "Row names: {0}, occurs more than once in file {1}!".format(', '.join(set(dupl_rownames)),name)
-        logging.info(warn)
-
-        return file_info, warn
+            print >> sys.stderr,"Could not formate parsed file {0}.".format(name)
+            sys.exit(-1)
+        return file_info
 
 
 class CopyField(object):
