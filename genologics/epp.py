@@ -245,8 +245,7 @@ class ReadResultFiles():
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
                 if file_info.has_key(root_key):
-                    print >> sys.stderr, """Row names {0} occurs more than once in file {1}. 
-                                            Fix the file to continue.""".format(root_key, name)
+                    print >> sys.stderr, "Row names {0} occurs more than once in file {1}. Fix the file to continue.".format(root_key, name)
                     sys.exit(-1)
                 elif root_key != 'Sample':
                     file_info[root_key] = {}
