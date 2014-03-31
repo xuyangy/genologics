@@ -115,6 +115,8 @@ class QunatiTQC():
                 QC = self.concentration_QC(result_file, result_file_udfs)
                 QC = self.saturation_QC(result_file, result_file_udfs)
                 self.no_failed +=1 if QC == "FAILED" else 0
+                print QC
+                print result_file.name
                 if QC:
                     result_file.qc_flagg = QC
                     set_field(result_file)
