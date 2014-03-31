@@ -163,9 +163,11 @@ class QunatiT():
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
+                print udf_name
                 target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
                 self.missing_samps.append(sample)
+        print target_file.udf.items()
         set_field(target_file)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
         return rel_fluor_int
