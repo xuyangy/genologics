@@ -69,7 +69,7 @@ class QunatiT():
         self.missing_udfs = []
         self.hig_CV_fract = 0
         self.saturated = 0
-        self.low_conc
+        self.low_conc = 0
         self.flour_int_missing = 0
         self.no_failed = 0
 
