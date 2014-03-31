@@ -152,11 +152,12 @@ class QunatiT():
         rel_fluor_int = The End RFU of standards - Background fluorescence intensity"""
         sample = target_file.samples[0].name
         fluor_int = []
-        target_udfs = dict(target_file.udf.items())
-        print target_file.udf.items()
-        if target_udfs.has_key("Fluorescence intentisy 1"): del target_file.udf["Fluorescence intentisy 1"]
-        if target_udfs.has_key("Fluorescence intentisy 2"): del target_file.udf["Fluorescence intentisy 2"]
-        print target_file.udf.items()
+        target_udfs = target_file.udf.items()
+        if dict(target_udfs).has_key("Fluorescence intentisy 1"): 
+            del target_udfs["Fluorescence intentisy 1"]
+        if dict(target_udfs).has_key("Fluorescence intentisy 2"): 
+            del target_udfs["Fluorescence intentisy 2"]
+        target_file.udf = target_udfs
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
