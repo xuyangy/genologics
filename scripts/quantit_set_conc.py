@@ -153,11 +153,13 @@ class QunatiT():
         sample = target_file.samples[0].name
         fluor_int = []
         target_udfs = target_file.udf
+        print target_file.udf.items()
         if dict(target_udfs.items()).has_key("Fluorescence intentisy 1"): 
             del target_udfs["Fluorescence intentisy 1"]
         if dict(target_udfs.items()).has_key("Fluorescence intentisy 2"): 
             del target_udfs["Fluorescence intentisy 2"]
         target_file.udf = target_udfs
+        print target_file.udf.items()
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
