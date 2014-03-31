@@ -157,6 +157,7 @@ class QunatiT():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
                 target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
+                target_file.udf.pop(udf_name, None)
                 self.missing_samps.append(sample)
         set_field(target_file)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
