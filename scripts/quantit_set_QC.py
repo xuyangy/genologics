@@ -59,8 +59,9 @@ from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
-class QunatiT():
+class QunatiTQC():
     def __init__(self, process):
+        self.result_files = process.result_files()
         self.udfs = dict(process.udf.items())
         self.requiered_udfs = set(["Allowed %CV of duplicates",
             "Saturation threshold of fluorescence intensity",
@@ -107,10 +108,10 @@ class QunatiT():
         else:
             return "PASSED"
 
-    def assign_QC_flag(self, process):
+    def assign_QC_flag(self):
         analyte_udfs = dict(result_file.udf.items())
         if self.requiered_udfs.issubset(self.udfs.keys()):
-            for result_file in process.result_files():
+            for result_file in self.result_files:
                 result_file_udfs = dict(result_file.udf.items())
                 QC = self.concentration_QC(result_file, result_file_udfs)
                 QC = self.saturation_QC(result_file, result_file_udfs)
@@ -123,7 +124,7 @@ class QunatiT():
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiT(process)
+    QiT = QunatiTQC(process)
     QiT.assign_QC_flag()
     if QiT.missing_udfs:
         missing_udfs = ', '.join(QiT.missing_udfs)
