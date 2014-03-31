@@ -62,72 +62,82 @@ lims = Lims(BASEURI,USERNAME,PASSWORD)
 class QunatiT():
     def __init__(self, process):
         self.udfs = dict(process.udf.items())
+        self.requiered_udfs = set(["Allowed %CV of duplicates",
+            "Saturation threshold of fluorescence intensity",
+            "Minimum required concentration (ng/ul)"])
         self.abstract = []
         self.missing_udfs = []
         self.hig_CV_fract = 0
         self.saturated = 0
+        self.low_conc
         self.flour_int_missing = 0
         self.no_failed = 0
 
-    def assign_QC_flag(self, result_file, treshold, allowed_dupl):
-        analyte_udfs = dict(result_file.udf.items())
-        if "Fluorescence intensity 2" in analyte_udfs.keys():
-            flour_int_2 = result_file.udf["Fluorescence intensity 2"]
-        else:
-            flour_int_2 = None
-
-        if "Fluorescence intensity 1" in analyte_udfs.keys():
-            flour_int_1 = result_file.udf["Fluorescence intensity 1"]
-        else:
-            flour_int_1 = None
-        if flour_int_1 or flour_int_2:
-            if (flour_int_1 >= treshold) or (flour_int_2 >= treshold):
-                result_file.udf["Intensity check"] = "Saturated" 
-                result_file.qc_flag = "FAILED"
+    def saturation_QC(self, result_file, udfs):
+        treshold = self.udfs["Saturation threshold of fluorescence intensity"]
+        allowed_dupl = self.udfs["Allowed %CV of duplicates"]
+        fint_2 = udfs["Fluorescence intensity 2"] if udfs.has_key("Fluorescence intensity 2") else None
+        fint_1 = udfs["Fluorescence intensity 1"] if udfs.has_key("Fluorescence intensity 1") else None
+        if fint_1 or fint_2:
+            qc_flag = "PASSED"
+            if (fint_1 >= treshold) or (fint_2 >= treshold):
+                result_file.udf["Intensity check"] = "Saturated"
+                qc_flag = "FAILED"
                 self.saturated +=1
             else:
                 result_file.udf["Intensity check"] = "OK"
-                result_file.qc_flag = "PASSED"
-                if flour_int_1 and flour_int_2:
-                    procent_CV = np.true_divide(np.std([flour_int_1, flour_int_2]),
-                                                np.mean([flour_int_1, flour_int_2]))
+                if fint_1 and fint_2:
+                    std = np.std([fint_1, fint_2]
+                    mean = np.mean([fint_1, fint_2])
+                    procent_CV = np.true_divide(std,mean)
                     result_file.udf["%CV"] = procent_CV
                     if procent_CV >= allowed_dupl:
-                        result_file.qc_flag = "FAILED"
+                        qc_flag = "FAILED"
                         self.hig_CV_fract +=1
-            set_field(result_file)
+            return qc_flag
         else:
             self.flour_int_missing +=1
-        if result_file.qc_flag == "FAILED":
-            self.no_failed +=1 
+            return None
+
+    def concentration_QC(self, result_file, result_file_udfs):
+        min_conc = self.udfs["Minimum required concentration (ng/ul)"]
+        if result_file_udfs['Concentration'] < min_conc:
+            return "FAILED"
+            self.low_conc +=1
+        else:
+            return "PASSED"
+
+    def assign_QC_flag(self, process):
+        analyte_udfs = dict(result_file.udf.items())
+        if self.requiered_udfs.issubset(self.udfs.keys()):
+            for result_file in process.result_files():
+                result_file_udfs = dict(result_file.udf.items())
+                QC = self.concentration_QC(result_file, result_file_udfs)
+                QC = self.saturation_QC(result_file, result_file_udfs)
+                self.no_failed +=1 if QC == "FAILED" else 0
+                if QC:
+                    result_file.qc_flagg = QC
+                    set_field(result_file)
+        else:
+            QiT.missing_udfs.append(requiered_udfs)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiT(process)
-    requiered_udfs = set(["Saturation threshold of fluorescence intensity", 
-                                                "Allowed %CV of duplicates"])
-    if requiered_udfs.issubset(QiT.udfs.keys()):
-        treshold = QiT.udfs["Saturation threshold of fluorescence intensity"]
-        allowed_dupl = QiT.udfs["Allowed %CV of duplicates"]
-        for result_file in process.result_files():
-            QiT.assign_QC_flag(result_file, treshold, allowed_dupl)
-    else:
-        QiT.missing_udfs.append(requiered_udfs)
-
-    
+    QiT.assign_QC_flag()
     if QiT.missing_udfs:
         missing_udfs = ', '.join(QiT.missing_udfs)
         QiT.abstract.append("Some of the folowing requiered udfs seems to be missing: {0}.".format(missing_udfs))
-
     if QiT.flour_int_missing:
         QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
     QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
     if QiT.saturated:
-        QiT.abstract.append("{0} samples failed due to saturated fluorescence intensity.".format(QiT.saturated))
+        QiT.abstract.append("{0} samples had saturated fluorescence intensity.".format(QiT.saturated))
     if QiT.hig_CV_fract:
-        QiT.abstract.append("{0} samples failed due to high %CV.".format(QiT.hig_CV_fract))
+        QiT.abstract.append("{0} samples had high %CV.".format(QiT.hig_CV_fract))
+    if QiT.low_conc:
+        QiT.abstract.append("{0} samples had high low concentration.".format(QiT.low_conc))
 
- 
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
