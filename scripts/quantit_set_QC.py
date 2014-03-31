@@ -119,7 +119,7 @@ class QunatiTQC():
                     result_file.qc_flagg = QC
                     set_field(result_file)
         else:
-            self.missing_udfs.append(requiered_udfs)
+            self.missing_udfs.append(self.requiered_udfs)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
