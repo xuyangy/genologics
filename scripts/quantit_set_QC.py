@@ -119,18 +119,19 @@ class QunatiTQC():
                     result_file.qc_flagg = QC
                     set_field(result_file)
         else:
-            self.missing_udfs = list(self.requiered_udfs)
+            self.missing_udfs = ', '.join(list(self.requiered_udfs))
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     QiT = QunatiTQC(process)
     QiT.assign_QC_flag()
-    if QiT.missing_udfs:
-        missing_udfs = ', '.join(QiT.missing_udfs)
-        QiT.abstract.append("Some of the folowing requiered udfs seems to be missing: {0}.".format(missing_udfs))
     if QiT.flour_int_missing:
         QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
-    QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
+    if QiT.missing_udfs:
+        QiT.abstract.append("Some of the folowing requiered udfs seems to be missing: {0}. Could not set QC flaggs.".format(QiT.missing
+        _udfs))
+    else:
+        QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
     if QiT.saturated:
         QiT.abstract.append("{0} samples had saturated fluorescence intensity.".format(QiT.saturated))
     if QiT.hig_CV_fract:
