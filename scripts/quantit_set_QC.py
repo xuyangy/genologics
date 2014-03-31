@@ -87,7 +87,7 @@ class QunatiT():
             else:
                 result_file.udf["Intensity check"] = "OK"
                 if fint_1 and fint_2:
-                    std = np.std([fint_1, fint_2]
+                    std = np.std([fint_1, fint_2])
                     mean = np.mean([fint_1, fint_2])
                     procent_CV = np.true_divide(std,mean)
                     result_file.udf["%CV"] = procent_CV
