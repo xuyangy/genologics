@@ -109,7 +109,6 @@ class QunatiTQC():
             return "PASSED"
 
     def assign_QC_flag(self):
-        analyte_udfs = dict(result_file.udf.items())
         if self.requiered_udfs.issubset(self.udfs.keys()):
             for result_file in self.result_files:
                 result_file_udfs = dict(result_file.udf.items())
