@@ -106,6 +106,7 @@ class QunatiTQC():
         print self.udfs["Minimum required concentration (ng/ul)"]
         print result_file_udfs['Concentration']
         if result_file_udfs['Concentration'] < min_conc:
+            print 'Faikl'
             return "FAILED"
             self.low_conc +=1
         else:
@@ -115,9 +116,9 @@ class QunatiTQC():
         if self.requiered_udfs.issubset(self.udfs.keys()):
             for result_file in self.result_files:
                 result_file_udfs = dict(result_file.udf.items())
-                print result_file
-                QC = self.concentration_QC(result_file, result_file_udfs)
-                QC = self.saturation_QC(result_file, result_file_udfs)
+                QC_conc = self.concentration_QC(result_file, result_file_udfs)
+                QC_sat = self.saturation_QC(result_file, result_file_udfs)
+                QC = QC_sat if QC_conc == QC_sat else "FAILED"
                 self.no_failed +=1 if QC == "FAILED" else 0
                 if QC:
                     result_file.qc_flag = QC
