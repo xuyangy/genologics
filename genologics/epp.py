@@ -247,7 +247,7 @@ class ReadResultFiles():
                 if file_info.has_key(root_key):
                     print >> sys.stderr, "Row names {0} occurs more than once in file {1}. Fix the file to continue.".format(root_key, name)
                     sys.exit(-1)
-                elif root_key != 'Sample':
+                elif root_key not in ['Sample','Fail']:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':
