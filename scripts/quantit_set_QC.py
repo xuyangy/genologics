@@ -101,12 +101,8 @@ class QunatiTQC():
             return None
 
     def concentration_QC(self, result_file, result_file_udfs):
-        print 'hej'
         min_conc = self.udfs["Minimum required concentration (ng/ul)"]
-        print self.udfs["Minimum required concentration (ng/ul)"]
-        print result_file_udfs['Concentration']
         if result_file_udfs['Concentration'] < min_conc:
-            print 'Faikl'
             return "FAILED"
             self.low_conc +=1
         else:
@@ -141,6 +137,7 @@ def main(lims, pid, epp_logger):
         QiT.abstract.append("{0} samples had saturated fluorescence intensity.".format(QiT.saturated))
     if QiT.hig_CV_fract:
         QiT.abstract.append("{0} samples had high %CV.".format(QiT.hig_CV_fract))
+    print QiT.low_conc
     if QiT.low_conc:
         QiT.abstract.append("{0} samples had high low concentration.".format(QiT.low_conc))
 
