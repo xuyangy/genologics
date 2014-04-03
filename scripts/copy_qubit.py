@@ -29,28 +29,26 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import ReadResultFiles
+from genologics.epp import set_field
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    file_handler = ReadResultFiles(process)
-    qubit_result_file = file_handler.shared_files['Qubit Result File']
-    qubit_result_file = file_handler.format_file(qubit_result_file,name = 'Qubit Result File' ,
-                                                                        first_header = 'Sample')
     target_files = process.result_files()
-    abstract = ''
-    logg = {'sucsessfully_copied' : {'samples':[],
-                'log_string':'Qubit mesurements were copied sucsessfully for samples:',
-                'user_string': ''},
-            'un_sucsessfully_copied' : {'samples':[],
-                'log_string':'Qubit mesurements were found but not sucsessfully copied for samples:',
-                'user_string': 'Qubit mesurements were found but not successfully copied for some samples.'},
-            'missing' : {'samples':[],
-                'log_string':'Samples missing in Qubit Result File:',
-                'user_string': 'Some samples are missing in Qubit Result File, and were not copied.'},
-            'missing_info' : {'samples':[],
-                'log_string':'Sample Concentration missing in Qubit Result File for Samples:',
-                'user_string': 'Some Samples had missing or bad formated info in Qubit Result File and were not copied.'}}
+    file_handler = ReadResultFiles(process)
+    files = file_handler.shared_files['Qubit Result File']
+    qubit_result_file = file_handler.format_file(files, 
+                                                 name = 'Qubit Result File',
+                                                 first_header = 'Sample')
+    missing_samples = []
+    bad_formated = []
+    abstract = []
+    udfs = dict(process.udfs.items())
+    if udfs.has_key("Minimum required concentration (ng/ul)"):
+        min_conc = udfs["Minimum required concentration (ng/ul)"]
+    else:
+        min_conc = None
+        abstract.append("Set 'Minimum required concentration (ng/ul)' for receving qc-flaggs")
 
     for target_file in target_files:
         sample = target_file.samples[0].name
@@ -63,26 +61,28 @@ def main(lims, pid, epp_logger):
                 else:
                     try:
                         conc = float(conc)
-                        target_file.qc_flag = "PASSED"
+                        if min_conc:
+                            if conc < min_conc:
+                                target_file.qc_flag = "FAILED"
+                                self.low_conc +=1
+                            else:
+                                target_file.qc_flag = "PASSED"
                         if unit == 'ng/mL':
                             conc = np.true_divide(conc, 1000)
                         target_file.udf['Concentration'] = conc
                         target_file.udf['Conc. Units'] = 'ng/ul'
                     except:
-                        logg['missing_info']['samples'].append(sample)
-                try:
-                    target_file.put()
-                    logg['sucsessfully_copied']['samples'].append(sample)
-                except (TypeError, HTTPError) as e:
-                    logg['un_sucsessfully_copied']['samples'].append(sample)
-                    print >> sys.stderr, "Error while updating element: {0}".format(e)
+                        bad_formated.append(sample)
+                set_field(target_file)
         else:
-            logg['missing']['samples'].append(sample)
+            missing_samples.append(sample)
 
-    for subj, inf in logg.items():
-        if inf['samples']:
-            logging.info( '{0} {1}.'.format(inf['log_string'], ', '.join(inf['samples'])))
-            abstract = ' '.join([abstract, inf['user_string']])
+    if missing_samples:
+        missing_samples = ', '.join(missing_samples)
+        abstract.append('The folowing samples are missing in Qubit Result File: {0}'.format(missing_samples))
+    if bad_formated:
+        bad_formated = ', '.join(bad_formated)
+        abstract.append('The folowing samples have badly formated info in Qubit Result File: {0}'.format(bad_formated))
 
     print >> sys.stderr, abstract
 
