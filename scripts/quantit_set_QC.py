@@ -101,6 +101,7 @@ class QunatiTQC():
             return None
 
     def concentration_QC(self, result_file, result_file_udfs):
+        print 'hej'
         min_conc = self.udfs["Minimum required concentration (ng/ul)"]
         print self.udfs["Minimum required concentration (ng/ul)"]
         print result_file_udfs['Concentration']
@@ -114,6 +115,7 @@ class QunatiTQC():
         if self.requiered_udfs.issubset(self.udfs.keys()):
             for result_file in self.result_files:
                 result_file_udfs = dict(result_file.udf.items())
+                print result_file
                 QC = self.concentration_QC(result_file, result_file_udfs)
                 QC = self.saturation_QC(result_file, result_file_udfs)
                 self.no_failed +=1 if QC == "FAILED" else 0
