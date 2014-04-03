@@ -102,6 +102,8 @@ class QunatiTQC():
 
     def concentration_QC(self, result_file, result_file_udfs):
         min_conc = self.udfs["Minimum required concentration (ng/ul)"]
+        print self.udfs["Minimum required concentration (ng/ul)"]
+        print result_file_udfs['Concentration']
         if result_file_udfs['Concentration'] < min_conc:
             return "FAILED"
             self.low_conc +=1
