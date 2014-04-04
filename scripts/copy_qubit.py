@@ -42,16 +42,15 @@ def main(lims, pid, epp_logger):
                                                  name = 'Qubit Result File',
                                                  first_header = 'Sample',
                                                  find_keys = sample_names)
-    missing_samples = []
-    bad_formated = []
+    missing_samples = 0
+    bad_formated = 0
     abstract = []
     udfs = dict(process.udf.items())
     if udfs.has_key("Minimum required concentration (ng/ul)"):
         min_conc = udfs["Minimum required concentration (ng/ul)"]
     else:
         min_conc = None
-        abstract.append("Set 'Minimum required concentration (ng/ul)' for receving qc-flaggs")
-
+        abstract.append("Set 'Minimum required concentration (ng/ul)' for receving qc-flaggs!")
     for target_file in target_files:
         sample = target_file.samples[0].name
         if qubit_result_file.has_key(sample):
@@ -74,17 +73,15 @@ def main(lims, pid, epp_logger):
                         target_file.udf['Concentration'] = conc
                         target_file.udf['Conc. Units'] = 'ng/ul'
                     except:
-                        bad_formated.append(sample)
+                        bad_formated += 1
                 set_field(target_file)
         else:
-            missing_samples.append(sample)
+            missing_samples += 1
 
     if missing_samples:
-        missing_samples = ', '.join(missing_samples)
-        abstract.append('The folowing samples are missing in Qubit Result File: {0}'.format(missing_samples))
+        abstract.append('There are {0} out of {1} samples missing in Qubit Result File!'.format(missing_samples, len(target_files)))
     if bad_formated:
-        bad_formated = ', '.join(bad_formated)
-        abstract.append('The folowing samples have badly formated info in Qubit Result File: {0}'.format(bad_formated))
+        abstract.append('There are {0} badly formated samples in Qubit Result File. Please fix these to get proper results.'.format(bad_formated))
 
     print >> sys.stderr, ' '.join(abstract)
 
