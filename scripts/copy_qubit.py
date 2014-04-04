@@ -43,6 +43,7 @@ def main(lims, pid, epp_logger):
                                                  first_header = 'Sample',
                                                  find_keys = sample_names)
     missing_samples = 0
+    low_conc 0
     bad_formated = 0
     abstract = []
     udfs = dict(process.udf.items())
@@ -59,28 +60,26 @@ def main(lims, pid, epp_logger):
                 conc, unit = sample_mesurements["Sample Concentration"]
                 if conc == 'Out Of Range':
                     target_file.qc_flag = "FAILED"
+                elif conc.replace('.','').isdigit():
+                    conc = float(conc)
+                    if min_conc:
+                        if conc < min_conc:
+                            target_file.qc_flag = "FAILED"
+                            low_conc +=1
+                        else:
+                            target_file.qc_flag = "PASSED"
+                    if unit == 'ng/mL':
+                        conc = np.true_divide(conc, 1000)
+                    target_file.udf['Concentration'] = conc
+                    target_file.udf['Conc. Units'] = 'ng/ul'
                 else:
-                    #try:
-                    if 1==1:
-                        print sample_mesurements
-                        conc = float(conc)
-                        if min_conc:
-                            if conc < min_conc:
-                                target_file.qc_flag = "FAILED"
-                                self.low_conc +=1
-                            else:
-                                target_file.qc_flag = "PASSED"
-                        if unit == 'ng/mL':
-                            conc = np.true_divide(conc, 1000)
-                        target_file.udf['Concentration'] = conc
-                        target_file.udf['Conc. Units'] = 'ng/ul'
-                    #except:
-                    #    print 'bad'
-                    #    bad_formated += 1
+                    bad_formated += 1
                 set_field(target_file)
         else:
             missing_samples += 1
 
+    if low_conc:
+        abstract.append('There are {0} out of {1} samples had low concentration.'.format(low_conc, len(target_files)))
     if missing_samples:
         abstract.append('There are {0} out of {1} samples missing in Qubit Result File.'.format(missing_samples, len(target_files)))
     if bad_formated:
