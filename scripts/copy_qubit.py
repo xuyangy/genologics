@@ -43,7 +43,7 @@ def main(lims, pid, epp_logger):
                                                  first_header = 'Sample',
                                                  find_keys = sample_names)
     missing_samples = 0
-    low_conc 0
+    low_conc = 0
     bad_formated = 0
     abstract = []
     udfs = dict(process.udf.items())
