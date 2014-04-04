@@ -79,9 +79,9 @@ def main(lims, pid, epp_logger):
             missing_samples += 1
 
     if low_conc:
-        abstract.append('There are {0} out of {1} samples had low concentration.'.format(low_conc, len(target_files)))
+        abstract.append('{0}/{1} samples have low concentration.'.format(low_conc, len(target_files)))
     if missing_samples:
-        abstract.append('There are {0} out of {1} samples missing in Qubit Result File.'.format(missing_samples, len(target_files)))
+        abstract.append('{0}/{1} samples are missing in Qubit Result File.'.format(missing_samples, len(target_files)))
     if bad_formated:
         abstract.append('There are {0} badly formated samples in Qubit Result File. Please fix these to get proper results.'.format(bad_formated))
 
