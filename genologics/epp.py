@@ -226,7 +226,7 @@ class ReadResultFiles():
                     opened_file.close()
         return parsed_files
 
-    def format_file(self, parsed_file, name = '',first_header = None, header_row = None, root_key_col = 0):
+    def format_file(self, parsed_file, name = '', first_header = None, header_row = None, root_key_col = 0, find_keys = []):
         """Function to formate a parsed csv or txt file.
 
         Arguments and Output:
@@ -247,7 +247,8 @@ class ReadResultFiles():
                 if file_info.has_key(root_key):
                     print >> sys.stderr, "Row names {0} occurs more than once in file {1}. Fix the file to continue.".format(root_key, name)
                     sys.exit(-1)
-                elif root_key not in ['Sample','Fail']:
+                elif not find_keys or root_key in find_keys:
+                #elif root_key not in ['Sample','Fail', '']:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':
