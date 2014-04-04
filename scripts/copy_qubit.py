@@ -60,7 +60,8 @@ def main(lims, pid, epp_logger):
                 if conc == 'Out Of Range':
                     target_file.qc_flag = "FAILED"
                 else:
-                    try:
+                    #try:
+                    if 1==1:
                         print sample_mesurements
                         conc = float(conc)
                         if min_conc:
@@ -73,9 +74,9 @@ def main(lims, pid, epp_logger):
                             conc = np.true_divide(conc, 1000)
                         target_file.udf['Concentration'] = conc
                         target_file.udf['Conc. Units'] = 'ng/ul'
-                    except:
-                        print 'bad'
-                        bad_formated += 1
+                    #except:
+                    #    print 'bad'
+                    #    bad_formated += 1
                 set_field(target_file)
         else:
             missing_samples += 1
