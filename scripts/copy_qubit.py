@@ -61,6 +61,7 @@ def main(lims, pid, epp_logger):
                     target_file.qc_flag = "FAILED"
                 else:
                     try:
+                        print sample_mesurements
                         conc = float(conc)
                         if min_conc:
                             if conc < min_conc:
@@ -73,13 +74,14 @@ def main(lims, pid, epp_logger):
                         target_file.udf['Concentration'] = conc
                         target_file.udf['Conc. Units'] = 'ng/ul'
                     except:
+                        print 'bad'
                         bad_formated += 1
                 set_field(target_file)
         else:
             missing_samples += 1
 
     if missing_samples:
-        abstract.append('There are {0} out of {1} samples missing in Qubit Result File!'.format(missing_samples, len(target_files)))
+        abstract.append('There are {0} out of {1} samples missing in Qubit Result File.'.format(missing_samples, len(target_files)))
     if bad_formated:
         abstract.append('There are {0} badly formated samples in Qubit Result File. Please fix these to get proper results.'.format(bad_formated))
 
