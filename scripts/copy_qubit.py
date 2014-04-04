@@ -45,7 +45,7 @@ def main(lims, pid, epp_logger):
     missing_samples = []
     bad_formated = []
     abstract = []
-    udfs = dict(process.udfs.items())
+    udfs = dict(process.udf.items())
     if udfs.has_key("Minimum required concentration (ng/ul)"):
         min_conc = udfs["Minimum required concentration (ng/ul)"]
     else:
