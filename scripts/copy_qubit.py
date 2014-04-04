@@ -86,7 +86,7 @@ def main(lims, pid, epp_logger):
         bad_formated = ', '.join(bad_formated)
         abstract.append('The folowing samples have badly formated info in Qubit Result File: {0}'.format(bad_formated))
 
-    print >> sys.stderr, abstract
+    print >> sys.stderr, ' '.join(abstract)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
