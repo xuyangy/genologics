@@ -62,14 +62,14 @@ def main(lims, pid, epp_logger):
                     target_file.qc_flag = "FAILED"
                 elif conc.replace('.','').isdigit():
                     conc = float(conc)
+                    if unit == 'ng/mL':
+                        conc = np.true_divide(conc, 1000)
                     if min_conc:
                         if conc < min_conc:
                             target_file.qc_flag = "FAILED"
                             low_conc +=1
                         else:
                             target_file.qc_flag = "PASSED"
-                    if unit == 'ng/mL':
-                        conc = np.true_divide(conc, 1000)
                     target_file.udf['Concentration'] = conc
                     target_file.udf['Conc. Units'] = 'ng/ul'
                 else:
