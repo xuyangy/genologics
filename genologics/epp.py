@@ -233,9 +233,13 @@ class ReadResultFiles():
             parsed_file     A list of lists where sublists are rows of the csv.
             first_header    First column of the heather section in the file. 
                             default value is 'None'
-            root_key_col
-            header_row
-            file_info      dict of dicts. Keys of root dict are the first 
+            root_key_col    if you want the root keys to be given by some other column 
+                            than the first one, set root_key_col to the column number.
+            header_row      insted of specifying first_header you can choose from 
+                            what line to reed by setting header_row to the row number 
+                            where you want to start reading.
+            find_keys       list of row names to look for. Will exclude all others.
+            file_info       dict of dicts. Keys of root dict are the first 
                             column in the csv starting from the line after the 
                             heather line. Keys of sub dicts are the columns of 
                             the heather line."""
@@ -248,7 +252,6 @@ class ReadResultFiles():
                     print >> sys.stderr, "Row names {0} occurs more than once in file {1}. Fix the file to continue.".format(root_key, name)
                     sys.exit(-1)
                 elif (not find_keys and root_key not in ['Sample','Fail', '']) or root_key in find_keys:
-                #elif root_key not in ['Sample','Fail', '']:
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':

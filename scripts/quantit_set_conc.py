@@ -60,7 +60,7 @@ from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
-class QunatiT():
+class QuantitConc():
     def __init__(self, process):
         self.file_handler = ReadResultFiles(process)
         self.udfs = dict(process.udf.items())
@@ -186,7 +186,7 @@ class QunatiT():
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiT(process)
+    QiT = QuantitConc(process)
     target_files = dict((r.samples[0].name, r) for r in process.result_files())
     if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
         R2 = QiT.model[0]

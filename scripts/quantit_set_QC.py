@@ -59,11 +59,11 @@ from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
-class QunatiTQC():
+class QuantitQC():
     def __init__(self, process):
         self.result_files = process.result_files()
         self.udfs = dict(process.udf.items())
-        self.requiered_udfs = set(["Allowed %CV of duplicates",
+        self.required_udfs = set(["Allowed %CV of duplicates",
             "Saturation threshold of fluorescence intensity",
             "Minimum required concentration (ng/ul)"])
         self.abstract = []
@@ -109,7 +109,7 @@ class QunatiTQC():
             return "PASSED"
 
     def assign_QC_flag(self):
-        if self.requiered_udfs.issubset(self.udfs.keys()):
+        if self.required_udfs.issubset(self.udfs.keys()):
             for result_file in self.result_files:
                 result_file_udfs = dict(result_file.udf.items())
                 QC_conc = self.concentration_QC(result_file, result_file_udfs)
@@ -120,16 +120,16 @@ class QunatiTQC():
                     result_file.qc_flag = QC
                     set_field(result_file)
         else:
-            self.missing_udfs = ', '.join(list(self.requiered_udfs))
+            self.missing_udfs = ', '.join(list(self.required_udfs))
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiTQC(process)
+    QiT = QuantitQC(process)
     QiT.assign_QC_flag()
     if QiT.flour_int_missing:
         QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
     if QiT.missing_udfs:
-        QiT.abstract.append("Could not set QC flags. Some of the folowing requiered udfs seems to be missing: {0}.".format(QiT.missing_udfs))
+        QiT.abstract.append("Could not set QC flags. Some of the folowing required udfs seems to be missing: {0}.".format(QiT.missing_udfs))
     else:
         QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
     if QiT.saturated:

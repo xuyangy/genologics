@@ -31,7 +31,7 @@ from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 lims = Lims(BASEURI,USERNAME,PASSWORD)
 
-class QunatiT():
+class QuantitDriverFile():
     def __init__(self, process, drivf):
         self.udfs = dict(process.udf.items())
         self.abstract = []
@@ -61,7 +61,7 @@ class QunatiT():
 
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiT(process, drivf)
+    QiT = QuantitDriverFile(process, drivf)
     io = process.input_output_maps
     io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
     io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
