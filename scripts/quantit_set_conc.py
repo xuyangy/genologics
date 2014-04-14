@@ -153,21 +153,18 @@ class QunatiT():
         sample = target_file.samples[0].name
         fluor_int = []
         target_udfs = target_file.udf
-        print target_file.udf.items()
-        #if dict(target_udfs.items()).has_key('Fluorescence intensity 1'): 
-        #    del target_udfs['Fluorescence intensity 1']
+        # For the moment we dont know ofa way to delete udfs. Should be solved.
+        #if dict(target_udfs.items()).has_key('Fluorescence intensity 1'):   
+        #    del target_udfs['Fluorescence intensity 1']                   
         #if dict(target_udfs.items()).has_key('Fluorescence intensity 2'): 
         #    del target_udfs['Fluorescence intensity 2']
         target_file.udf = target_udfs
-        print target_file.udf.items()
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
                 fluor_int.append(int(formated_file[sample]['End RFU']))
-                print udf_name
                 target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
             else:
                 self.missing_samps.append(sample)
-        print target_file.udf.items()
         set_field(target_file)
         rel_fluor_int = np.mean(fluor_int) - self.standards[1]
         return rel_fluor_int

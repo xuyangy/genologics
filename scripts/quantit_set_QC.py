@@ -129,7 +129,6 @@ def main(lims, pid, epp_logger):
     if QiT.flour_int_missing:
         QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
     if QiT.missing_udfs:
-
         QiT.abstract.append("Could not set QC flags. Some of the folowing requiered udfs seems to be missing: {0}.".format(QiT.missing_udfs))
     else:
         QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
@@ -137,10 +136,8 @@ def main(lims, pid, epp_logger):
         QiT.abstract.append("{0} samples had saturated fluorescence intensity.".format(QiT.saturated))
     if QiT.hig_CV_fract:
         QiT.abstract.append("{0} samples had high %CV.".format(QiT.hig_CV_fract))
-    print QiT.low_conc
     if QiT.low_conc:
         QiT.abstract.append("{0} samples had high low concentration.".format(QiT.low_conc))
-
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
