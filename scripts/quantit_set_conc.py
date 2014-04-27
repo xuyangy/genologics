@@ -161,8 +161,8 @@ class QuantitConc():
         target_file.udf = target_udfs
         for udf_name ,formated_file in self.result_files.items():
             if sample in formated_file.keys():
-                fluor_int.append(int(formated_file[sample]['End RFU']))
-                target_file.udf[udf_name] = int(formated_file[sample]['End RFU']) 
+                fluor_int.append(float(formated_file[sample]['End RFU']))
+                target_file.udf[udf_name] = float(formated_file[sample]['End RFU']) 
             else:
                 self.missing_samps.append(sample)
         set_field(target_file)
