@@ -261,7 +261,8 @@ class ReadResultFiles():
                 cond1 = find_keys == [] and root_key not in exeptions
                 cond2 = root_key in find_keys
                 if file_info.has_key(root_key):
-                    error_message = "Row names {0} occurs more than once in file {1}. Fix the file to continue.".format(root_key, name)
+                    error_message = ("Row names {0} occurs more than once in "
+                    "file {1}. Fix the file to continue.").format(root_key, name)
                     print >> sys.stderr, error_message
                     sys.exit(-1)
                 elif cond1 or cond2: 
