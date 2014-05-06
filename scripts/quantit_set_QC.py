@@ -149,9 +149,9 @@ def main(lims, pid, epp_logger):
     if QiT.low_conc:
         QiT.abstract.append("{0} samples had high low concentration.".format(
                                                                   QiT.low_conc))
-    if self.conc_missing:
+    if QiT.conc_missing:
         QiT.abstract.append("Concentration is missing for {0} "
-                                     "sample(s).".format(QiT.flour_int_missing))
+                                     "sample(s).".format(QiT.conc_missing))
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
