@@ -51,10 +51,11 @@ class QuantitDriverFile():
         file sorted by row and col."""
         keylist = location_dict.keys()
         keylist.sort()
-        open(self.drivf, 'a') as f
+        f = open(self.drivf, 'a')
         print >> f , 'Row,Column,*Target Name,*Sample Name'
         for key in keylist:
             print >> f ,location_dict[key]
+        f.close()
 
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
