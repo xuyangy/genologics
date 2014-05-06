@@ -215,16 +215,16 @@ class ReadResultFiles():
         outs = self.process.all_outputs()
         outarts = filter(lambda a: a.output_type == output_type, outs)
         parsed_files = {}
-        for outar in outarts:
-            if len(outar.files) > 0:
-                file = outar.files[0]
+        for outart in outarts:
+            if len(outart.files) > 0:
+                file = outart.files[0]
                 file_path = file.content_location.split('scilifelab.se')[1]
                 if len(file_path.split('.')) > 1:
                     of = open(file_path ,'r')
                     file_ext = file_path.split('.')[-1]
                     if file_ext == 'csv':
                         pf = [row for row in csv.reader(of.read().splitlines())]
-                        parsed_files[f.name] = pf
+                        parsed_files[outart.name] = pf
                     elif file_ext == 'txt':
                         pf = [row.strip().strip('\\').split('\t') for row in of.readlines()]
                         parsed_files[f.name] = pf
