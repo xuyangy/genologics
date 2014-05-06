@@ -30,7 +30,6 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import ReadResultFiles
 from genologics.epp import set_field
-lims = Lims(BASEURI,USERNAME,PASSWORD)
 
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)

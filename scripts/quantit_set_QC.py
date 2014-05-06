@@ -106,6 +106,7 @@ class QuantitQC():
         if result_file_udfs['Concentration'] < min_conc:
             self.low_conc +=1
             return "FAILED"
+        else:
             return "PASSED"
 
     def assign_QC_flag(self):
@@ -114,7 +115,7 @@ class QuantitQC():
                 result_file_udfs = dict(result_file.udf.items())
                 QC_conc = self.concentration_QC(result_file, result_file_udfs)
                 QC_sat = self.saturation_QC(result_file, result_file_udfs)
-                QC = QC_sat if QC_conc == QC_sat else "FAILED"
+                QC = "FAILED" if QC_conc == "FAILED" | QC_sat == "FAILED" else "PASSED"
                 self.no_failed +=1 if QC == "FAILED" else 0
                 if QC:
                     result_file.qc_flag = QC
