@@ -227,7 +227,7 @@ class ReadResultFiles():
                         parsed_files[outart.name] = pf
                     elif file_ext == 'txt':
                         pf = [row.strip().strip('\\').split('\t') for row in of.readlines()]
-                        parsed_files[f.name] = pf
+                        parsed_files[outart.name] = pf
                     of.close()
         return parsed_files
 
