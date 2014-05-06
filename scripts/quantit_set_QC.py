@@ -71,6 +71,7 @@ class QuantitQC():
         self.saturated = 0
         self.low_conc = 0
         self.flour_int_missing = 0
+        self.conc_missing = 0
         self.no_failed = 0
 
     def saturation_QC(self, result_file, udfs):
@@ -103,11 +104,15 @@ class QuantitQC():
 
     def concentration_QC(self, result_file, result_file_udfs):
         min_conc = self.udfs["Minimum required concentration (ng/ul)"]
-        if result_file_udfs['Concentration'] < min_conc:
-            self.low_conc +=1
-            return "FAILED"
+        if result_file_udfs.has_key('Concentration'):
+            if result_file_udfs['Concentration'] < min_conc:
+                self.low_conc +=1
+                return "FAILED"
+            else:
+                return "PASSED"
         else:
-            return "PASSED"
+            self.conc_missing +=1
+            return None
 
     def assign_QC_flag(self):
         if self.required_udfs.issubset(self.udfs.keys()):
@@ -115,9 +120,9 @@ class QuantitQC():
                 result_file_udfs = dict(result_file.udf.items())
                 QC_conc = self.concentration_QC(result_file, result_file_udfs)
                 QC_sat = self.saturation_QC(result_file, result_file_udfs)
-                QC = "FAILED" if QC_conc == "FAILED" or QC_sat == "FAILED" else "PASSED"
-                self.no_failed +=1 if QC == "FAILED" else 0
-                if QC:
+                if QC_conc and QC_sat:
+                    QC = QC_conc if QC_conc == QC_sat else "FAILED"
+                    self.no_failed +=1 if QC == "FAILED" else 0
                     result_file.qc_flag = QC
                     set_field(result_file)
         else:
@@ -144,6 +149,9 @@ def main(lims, pid, epp_logger):
     if QiT.low_conc:
         QiT.abstract.append("{0} samples had high low concentration.".format(
                                                                   QiT.low_conc))
+    if self.conc_missing:
+        QiT.abstract.append("Concentration is missing for {0} "
+                                     "sample(s).".format(QiT.flour_int_missing))
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
