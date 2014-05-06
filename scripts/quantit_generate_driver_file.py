@@ -32,21 +32,15 @@ from genologics.epp import ReadResultFiles
 class QuantitDriverFile():
     def __init__(self, process, drivf):
         self.udfs = dict(process.udf.items())
-        self.abstract = []
-        self.no_samples = 0
         self.drivf = drivf
 
     def make_location_dict(self, io_filtered):
         location_dict = {}
         for input, output in io_filtered:
-#            try:
-            if 1==1:
-                well = output['uri'].location[1]
-                sample = input['uri'].name
-                row, col = well.split(':')
-                location_dict[well] = ','.join([row, col,'', sample])
-#            except:
-#                self.no_samples +=1
+            well = output['uri'].location[1]
+            sample = input['uri'].name
+            row, col = well.split(':')
+            location_dict[well] = ','.join([row, col,'', sample])
         return location_dict
 
     def make_file(self, location_dict):
@@ -65,11 +59,7 @@ def main(lims, pid, drivf ,epp_logger):
     io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
     io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
     location_dict = QiT.make_location_dict(io_filtered)
-    if QiT.no_samples:
-        QiT.abstract.append("Could not get location for {0} samples.".format(QiT.no_samples))
     QiT.make_file(location_dict)
-
-    print >> sys.stderr, ' '.join(QiT.abstract)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
