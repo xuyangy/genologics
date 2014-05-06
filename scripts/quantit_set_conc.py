@@ -62,18 +62,18 @@ from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
 
 class QuantitConc():
-    def __init__(self, process):
-        self.file_handler = ReadResultFiles(process)
+    def __init__(self, process, file_handler):
+        self.file_handler = file_handler
         self.udfs = dict(process.udf.items())
         self.abstract = []
         self.missing_udfs = []
         self.missing_samps =[]
         self.no_samps = 0
-        self.standards = self._make_standards_dict()
-        self.model = self._verify_standards()
-        self.result_files = self._formated_result_files_dict()
+        self.standards = {}
+        self.model = []
+        self.result_files = {}
 
-    def _formated_result_files_dict(self):
+    def prepare_result_files_dict(self):
         """"Quant-iT Result File 1" and "Quant-iT Result File 2" (the second is 
         optional) uploaded by user, are formated and stored in a dict"""
         result_files_dict = {}
@@ -84,7 +84,7 @@ class QuantitConc():
                 result_file = self.file_handler.shared_files[f_name]
                 result_files_dict[udf_name] = self.file_handler.format_file(
                     result_file, name = f_name, root_key_col = 1, header_row = 19)
-        return result_files_dict
+        self.result_files = result_files_dict
 
     def _make_standards_dict(self):
         """End RFU standards are read from 'Standards File (.txt)' and stored 
@@ -135,11 +135,12 @@ class QuantitConc():
         R2 = 1 - resid / (Y.size * Y.var())
         return float(R2), float(slope)
 
-    def _verify_standards(self):
-        """Performing linear regresion on standards.
+    def fit_model(self):
+        """Performing linear regression on standards.
         X = Relative fluorescence intensities of 8 standards 
         Y = Nuclear acid amount in standards 
         Y = slope*X + intersect; R2=Pearson correlation coefficient."""
+        self.standards = self._make_standards_dict()
         amount_in_standards = self._nuclear_acid_amount_in_standards()
         if amount_in_standards is not None:
             relative_standards = np.ones(8)
@@ -147,16 +148,17 @@ class QuantitConc():
                 relative_standards[k-1] = v - self.standards[1]
             R2, slope = self._linear_regression(relative_standards, 
                             amount_in_standards)
-            return [R2, slope]
+            self.model = [R2, slope]
         else:
-            return None
+            self.model = None
 
     def get_and_set_fluor_int(self, target_file):
         """Copies "End RFU" values from "Quant-iT Result File 1" and 
-        "Quant-iT Result File 2" (if provided) to udfs "Fluorescence intentisy 1" 
+        "Quant-iT Result File 2" (if provided) to udfs "Fluorescence intensity 1"
         and "Fluorescence intensity 2. Calculates and returns Relative 
-        fluorescence intensitiy standards:
-        rel_fluor_int = The End RFU of standards - Background fluorescence intensity"""
+        fluorescence intensity standards:
+        rel_fluor_int = The End RFU of standards - Background fluorescence 
+        intensity"""
         sample = target_file.samples[0].name
         fluor_int = []
         target_udfs = target_file.udf
@@ -193,10 +195,14 @@ class QuantitConc():
         elif not requiered_udfs.issubset(self.missing_udfs):
             self.missing_udfs += requiered_udfs
 
+    
 def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    QiT = QuantitConc(process)
     target_files = dict((r.samples[0].name, r) for r in process.result_files())
+    file_handler = ReadResultFiles(process)
+    QiT = QuantitConc(process, file_handler)
+    QiT.fit_model()
+    QiT.prepare_result_files_dict()
     if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
