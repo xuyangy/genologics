@@ -1,7 +1,24 @@
 #!/usr/bin/env python
-DESC = """EPP script for Quant-iT mesurements to verify standards, calculate
-concentrations and load input artifact-udfs and output file-udfs of the process 
-with concentation values and fluorescence intensity
+DESC = """EPP script for Quant-iT mesurements to set QC flaggs and 
+intensity check based on concentrations, Fluorescence intensity. 
+
+Performance:
+    1) compares udfs "Fluorescence intensity 1" and "Fluorescence intensity 2" 
+    with the Saturation threshold of fluorescence intensity. If either of these 
+    two udfs >= Saturation threshold of fluorescence intensity, assign 
+    "Saturated" to the udf "Intensity check" and assign "Fail" to the sample. 
+    Otherwise assign "OK" to the analyte "Intensity check".
+
+    2) Copies the %CV values to the sample udf "%CV". 
+    For a sample with duplicate measurements, "%CV" is calculated as:
+        %CV = (SD of "Fluorescence intensity 1" and "Fluorescence intensity 2")/
+        (Mean of "Fluorescence intensity 1" and ""Fluorescence intensity 2)
+
+    3) If "%CV" >= "Allowed %CV of duplicates", assigning "Fail" to the QC flagg.
+
+    4) For a sample with only one measurement, if it passes in step 2, a "Pass" 
+    should be assigned to the QC flag. For a sample with duplicate measurements,
+    if it passes both step 2 and step 4, a "Pass" is assigned to the QC flag.
 
 Reads from:
     --Lims fields--
@@ -22,24 +39,7 @@ Writes to:
     "QC"                        qc-flag of process artifacts (result file)
 
 Logging:
-The script outputs a regular log file with regular execution information.
-
-1) compares the udfs "Fluorescence intensity 1" and "Fluorescence intensity 2" 
-with the Saturation threshold of fluorescence intensity. If either of these two 
-udfs >= Saturation threshold of fluorescence intensity, assign "Saturated" to 
-the udf "Intensity check" and assign "Fail" to the sample. Otherwise assign 
-"OK" to the analyte "Intensity check".
-
-2) For a sample with duplicate measurements, "%CV" is calculated by the formula: 
-%CV= (SD of "Fluorescence intensity 1" and "Fluorescence intensity 2")/(Mean of 
-"Fluorescence intensity 1" and ""Fluorescence intensity 2). 
-Copy the values to the sample analyte "%CV".
-
-3) If "%CV" >= Allowed %CV of duplicates, assign "Fail" to the sample. 
-
-4) For a sample with only one measurement, if it passes in step 2, a "Pass" should 
-be assigned to the QC flag. For a sample with duplicate measurements, if it passes 
-both step 2 and step 4, a "Pass" should be assigned to the QC flag.
+    The script outputs a regular log file with regular execution information.
 
 Written by Maya Brandi 
 """
@@ -57,7 +57,6 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
-lims = Lims(BASEURI,USERNAME,PASSWORD)
 
 class QuantitQC():
     def __init__(self, process):
@@ -77,8 +76,10 @@ class QuantitQC():
     def saturation_QC(self, result_file, udfs):
         treshold = self.udfs["Saturation threshold of fluorescence intensity"]
         allowed_dupl = self.udfs["Allowed %CV of duplicates"]
-        fint_2 = udfs["Fluorescence intensity 2"] if udfs.has_key("Fluorescence intensity 2") else None
-        fint_1 = udfs["Fluorescence intensity 1"] if udfs.has_key("Fluorescence intensity 1") else None
+        fint_key1 = "Fluorescence intensity 2"
+        fint_key2 = "Fluorescence intensity 1"
+        fint_2 = udfs[fint_key2] if udfs.has_key(fint_key2) else None
+        fint_1 = udfs[fint_key1] if udfs.has_key(fint_key1) else None
         if fint_1 or fint_2:
             qc_flag = "PASSED"
             if (fint_1 >= treshold) or (fint_2 >= treshold):
@@ -105,7 +106,6 @@ class QuantitQC():
         if result_file_udfs['Concentration'] < min_conc:
             self.low_conc +=1
             return "FAILED"
-        else:
             return "PASSED"
 
     def assign_QC_flag(self):
@@ -127,17 +127,22 @@ def main(lims, pid, epp_logger):
     QiT = QuantitQC(process)
     QiT.assign_QC_flag()
     if QiT.flour_int_missing:
-        QiT.abstract.append("Fluorescence intensity is missing for {0} samples.".format(QiT.flour_int_missing))
+        QiT.abstract.append("Fluorescence intensity is missing for {0} "
+                                       "samples.".format(QiT.flour_int_missing))
     if QiT.missing_udfs:
-        QiT.abstract.append("Could not set QC flags. Some of the folowing required udfs seems to be missing: {0}.".format(QiT.missing_udfs))
+        QiT.abstract.append("Could not set QC flags. Some of the following "
+             "required udfs seems to be missing: {0}.".format(QiT.missing_udfs))
     else:
-        QiT.abstract.append("{0} out of {1} samples failed QC. ".format(QiT.no_failed, len(process.result_files())))
+        QiT.abstract.append("{0} out of {1} samples failed "
+                       "QC.".format(QiT.no_failed, len(process.result_files())))
     if QiT.saturated:
-        QiT.abstract.append("{0} samples had saturated fluorescence intensity.".format(QiT.saturated))
+        QiT.abstract.append("{0} samples had saturated fluorescence "
+                                             "intensity.".format(QiT.saturated))
     if QiT.hig_CV_fract:
         QiT.abstract.append("{0} samples had high %CV.".format(QiT.hig_CV_fract))
     if QiT.low_conc:
-        QiT.abstract.append("{0} samples had high low concentration.".format(QiT.low_conc))
+        QiT.abstract.append("{0} samples had high low concentration.".format(
+                                                                  QiT.low_conc))
     QiT.abstract = list(set(QiT.abstract))
     print >> sys.stderr, ' '.join(QiT.abstract)
 
