@@ -258,13 +258,13 @@ class ReadResultFiles():
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
+                cond1 = find_keys == [] and root_key not in exeptions
+                cond2 = root_key in find_keys
                 if file_info.has_key(root_key):
                     print >> sys.stderr, "Row names {0} occurs more than " + \
                                        "once in file {1}. Fix the file to " + \
                                        "continue.".format(root_key, name)
                     sys.exit(-1)
-                cond1 = find_keys == [] and root_key not in exeptions
-                cond2 = root_key in find_keys
                 elif cond1 or cond2: 
                     file_info[root_key] = {}
                     for col in range(len(keys)):
