@@ -19,7 +19,6 @@ Written by Maya Brandi
 import os
 import sys
 import logging
-import numpy as np
 
 from argparse import ArgumentParser
 from requests import HTTPError
@@ -29,7 +28,6 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
-lims = Lims(BASEURI,USERNAME,PASSWORD)
 
 class QuantitDriverFile():
     def __init__(self, process, drivf):
@@ -41,13 +39,14 @@ class QuantitDriverFile():
     def make_location_dict(self, io_filtered):
         location_dict = {}
         for input, output in io_filtered:
-            try:
+#            try:
+i           if 1==1:
                 well = output['uri'].location[1]
                 sample = input['uri'].name
                 row, col = well.split(':')
                 location_dict[well] = ','.join([row, col,'', sample])
-            except:
-                self.no_samples +=1
+#            except:
+#                self.no_samples +=1
         return location_dict
 
     def make_file(self, location_dict):
