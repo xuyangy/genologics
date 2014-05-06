@@ -261,9 +261,9 @@ class ReadResultFiles():
                 cond1 = find_keys == [] and root_key not in exeptions
                 cond2 = root_key in find_keys
                 if file_info.has_key(root_key):
-                    print >> sys.stderr, "Row names {0} occurs more than " + \
-                                       "once in file {1}. Fix the file to " + \
-                                       "continue.".format(root_key, name)
+                    error_message = "Row names {0} occurs more than once in" + \
+                        " file {1}. Fix the file to continue.".format(root_key, name)
+                    print >> sys.stderr, error_message
                     sys.exit(-1)
                 elif cond1 or cond2: 
                     file_info[root_key] = {}
@@ -280,7 +280,7 @@ class ReadResultFiles():
                 keys = line
         if not file_info:
             print >> sys.stderr,"Could not format parsed file {0}.".format(name)
-            sys.exit(-1)
+            sys.exit(-1)    
         return file_info
 
 
@@ -288,7 +288,7 @@ class CopyField(object):
     """Class to copy any filed (or udf) from any lims element to any 
     udf on any other lims element
 
-    argumnets:
+    arguments:
 
     s_elt           source element - instance of a type
     d_elt           destination element - instance of a type
@@ -296,7 +296,7 @@ class CopyField(object):
     d_udf_name      name of destination udf name. If not specified
                     s_field_name will be used.
 
-    The copy_udf() function takes a logfile as optional argument.
+    The copy_udf() function takes a log file as optional argument.
     If this is given the changes will be logged there.
 
     Written by Maya Brandi and Johannes Alnberg
