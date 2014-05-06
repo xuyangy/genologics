@@ -273,8 +273,8 @@ class ReadResultFiles():
                         elif keys[col-1] != '':
                             tupl = (file_info[root_key][keys[col-1]], line[col])
                             file_info[root_key][keys[col-1]] = tupl
-            if first_header and len(line) > root_key_col and 
-                    line[root_key_col].strip() == first_header:
+            head = line[root_key_col].strip()
+            if first_header and len(line) > root_key_col and head == first_header:
                 keys = line
             elif header_row and row == header_row:
                 keys = line
