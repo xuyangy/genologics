@@ -40,7 +40,7 @@ class QuantitDriverFile():
         location_dict = {}
         for input, output in io_filtered:
 #            try:
-i           if 1==1:
+            if 1==1:
                 well = output['uri'].location[1]
                 sample = input['uri'].name
                 row, col = well.split(':')
