@@ -147,7 +147,7 @@ def main(lims, pid, epp_logger):
     if QiT.hig_CV_fract:
         QiT.abstract.append("{0} samples had high %CV.".format(QiT.hig_CV_fract))
     if QiT.low_conc:
-        QiT.abstract.append("{0} samples had high low concentration.".format(
+        QiT.abstract.append("{0} samples had low concentration.".format(
                                                                   QiT.low_conc))
     if QiT.conc_missing:
         QiT.abstract.append("Concentration is missing for {0} "
