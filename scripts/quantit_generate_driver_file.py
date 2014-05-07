@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-DESC = """EPP script for Quant-iT mesurements to generate a driver file (.csv) 
+DESC = """EPP script for Quant-iT measurements to generate a driver file (.csv) 
 which include the Sample names and their positions in the working plate.
 
 Reads from:
@@ -19,7 +19,6 @@ Written by Maya Brandi
 import os
 import sys
 import logging
-import numpy as np
 
 from argparse import ArgumentParser
 from requests import HTTPError
@@ -29,31 +28,30 @@ from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import set_field
 from genologics.epp import ReadResultFiles
-lims = Lims(BASEURI,USERNAME,PASSWORD)
 
-class QunatiT():
+class QuantitDriverFile():
     def __init__(self, process, drivf):
         self.udfs = dict(process.udf.items())
-        self.abstract = []
-        self.no_samples = 0
         self.drivf = drivf
 
     def make_location_dict(self, io_filtered):
+        """Loops through the input-output map and formates the 
+        well location info into the driver file formate: 
+        row,col,,sample_name"""
         location_dict = {}
         for input, output in io_filtered:
-            try:
-                well = output['uri'].location[1]
-                sample = input['uri'].name
-                row, col = well.split(':')
-                location_dict[well] = ','.join([row, col,'', sample])
-            except:
-                self.no_samples +=1
+            well = output['uri'].location[1]
+            sample = input['uri'].name
+            row, col = well.split(':')
+            location_dict[well] = ','.join([row, col,'', sample])
         return location_dict
 
     def make_file(self, location_dict):
+        """Writes the formated well location info into a driver 
+        file sorted by row and col."""
         keylist = location_dict.keys()
         keylist.sort()
-        f = open( self.drivf, 'a')
+        f = open(self.drivf, 'a')
         print >> f , 'Row,Column,*Target Name,*Sample Name'
         for key in keylist:
             print >> f ,location_dict[key]
@@ -61,16 +59,12 @@ class QunatiT():
 
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
-    QiT = QunatiT(process, drivf)
+    QiT = QuantitDriverFile(process, drivf)
     io = process.input_output_maps
     io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
     io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
     location_dict = QiT.make_location_dict(io_filtered)
-    if QiT.no_samples:
-        QiT.abstract.append("Could not get location for {0} samples.".format(QiT.no_samples))
     QiT.make_file(location_dict)
-
-    print >> sys.stderr, ' '.join(QiT.abstract)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
@@ -79,8 +73,9 @@ if __name__ == "__main__":
     parser.add_argument('--log', dest = 'log',
                         help=('File name for standard log file, '
                               'for runtime information and problems.'))
-    parser.add_argument('--drivf', dest = 'drivf', default = 'QuantiT_driver_file_exported_from_LIMS.csv',
-                            help=('File name for Driver file to be generated'))
+    parser.add_argument('--drivf', dest = 'drivf', 
+                        default = 'QuantiT_driver_file_exported_from_LIMS.csv',
+                        help=('File name for Driver file to be generated'))
 
     args = parser.parse_args()
     lims = Lims(BASEURI,USERNAME,PASSWORD)

@@ -175,11 +175,13 @@ class EppLogger(object):
             except IOError as e: # Probably some path was wrong in copy
                 print >> sys.stderr, ('Log could not be prepended, '
                                       'make sure {0} and {1} are '
-                                      'proper paths.').format(log_path, log_file_name)
+                                      'proper paths.').format(log_path, 
+                                                              log_file_name)
                 raise e
 
     class StreamToLogger(object):
-        """Fake file-like stream object that redirects writes to a logger instance.
+        """Fake file-like stream object that redirects writes to a logger 
+        instance.
         
         source: 
         http://www.electricmonk.nl/log/2011/08/14/
@@ -204,7 +206,6 @@ class ReadResultFiles():
 
     def __init__(self, process):
         self.process = process
-        self.file = file
         self.shared_files = self._pars_file('SharedResultFile')
         self.perinput_files = self._pars_file('ResultFile')
 
@@ -212,77 +213,96 @@ class ReadResultFiles():
         """Reads a csv or txt into a list of lists, where sub lists are lines 
         of the csv."""
         outs = self.process.all_outputs()
-        files = filter(lambda a: a.output_type == output_type, outs)
+        outarts = filter(lambda a: a.output_type == output_type, outs)
         parsed_files = {}
-        for f in files:
-            if len(f.files) > 0:
-                file_path = f.files[0].content_location.split('scilifelab.se')[1]
+        for outart in outarts:
+            if len(outart.files) > 0:
+                file = outart.files[0]
+                file_path = file.content_location.split('scilifelab.se')[1]
                 if len(file_path.split('.')) > 1:
-                    opened_file = open(file_path ,'r')
+                    of = open(file_path ,'r')
                     file_ext = file_path.split('.')[-1]
                     if file_ext == 'csv':
-                        parsed_files[f.name] = [row for row in csv.reader(opened_file.read().splitlines())]
+                        pf = [row for row in csv.reader(of.read().splitlines())]
+                        parsed_files[outart.name] = pf
                     elif file_ext == 'txt':
-                        parsed_files[f.name] = [row.strip().strip('\\').split('\t') for row in opened_file.readlines()]
-                    opened_file.close()
+                        pf = [row.strip().strip('\\').split('\t') for row in of.readlines()]
+                        parsed_files[outart.name] = pf
+                    of.close()
         return parsed_files
 
-    def format_file(self, parsed_file, first_header = None, header_row = None, root_key_col = 0):
-        """Function to formate a parsed csv or txt file.
+    def format_file(self, parsed_file, name = '', first_header = None, 
+                    header_row = None, root_key_col = 0, find_keys = []):
+        """Function to format a parsed csv or txt file.
 
         Arguments and Output:
             parsed_file     A list of lists where sublists are rows of the csv.
+            name            Name of parsed file. 
             first_header    First column of the heather section in the file. 
                             default value is 'None'
-            root_key_col
-            header_row
-            file_info      dict of dicts. Keys of root dict are the first 
+            root_key_col    If you want the root keys to be given by some other 
+                            column than the first one, set root_key_col to the 
+                            column number.
+            header_row      Instead of specifying first_header you can choose 
+                            from what line to reed by setting header_row to the 
+                            row number where you want to start reading.
+            find_keys       List of row names to look for. Will exclude all 
+                            others.
+            file_info       Dict of dicts. Keys of root dict are the first 
                             column in the csv starting from the line after the 
                             heather line. Keys of sub dicts are the columns of 
                             the heather line."""
         file_info = {}
         keys = []
-        dupl_rownames = []
-        warn = ''
+        error_message = ''
+        duplicated_lines = []
+        exeptions = ['Sample','Fail', '']
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
+                cond1 = find_keys == [] and root_key not in exeptions
+                cond2 = root_key in find_keys
                 if file_info.has_key(root_key):
-                    dupl_rownames.append(root_key)
-                elif root_key != 'Sample':
+                    duplicated_lines.append(root_key)
+                elif (cond1 or cond2): 
                     file_info[root_key] = {}
-                    for col in range(len(keys)):
-                        if keys[col] != '':
-                            file_info[root_key][keys[col]] = line[col]
-                        elif keys[col-1] != '':
-                            file_info[root_key][keys[col-1]] = (file_info[root_key][keys[col-1]], line[col])
-            if first_header and len(line)>root_key_col and line[root_key_col].strip() == first_header:
+                    if not duplicated_lines:
+                        for col in range(len(keys)):
+                            if keys[col] != '':
+                                file_info[root_key][keys[col]] = line[col]
+                            elif keys[col-1] != '':
+                                tupl = (file_info[root_key][keys[col-1]], line[col])
+                                file_info[root_key][keys[col-1]] = tupl
+        
+            head = line[root_key_col] if len(line) > root_key_col else None
+            if first_header and head == first_header:
                 keys = line
             elif header_row and row == header_row:
                 keys = line
-
+        if duplicated_lines:
+            error_message = ("Row names {0} occurs more than once in file {1}. "
+                "Fix the file to continue. ").format(','.join(duplicated_lines), name)
         if not file_info:
-            warn = 'Could not formate parsed file.'
-        if dupl_rownames:
-            warn += 'Row names: {0}, occurs more than once in file!'.format(', '.join(set(dupl_rownames)))
-        logging.info(warn)
-
-        return file_info, warn
+            error_message = error_message + "Could not format parsed file {0}.".format(name)
+        if error_message:
+            print >> sys.stderr, error_message
+            sys.exit(-1)    
+        return file_info
 
 
 class CopyField(object):
     """Class to copy any filed (or udf) from any lims element to any 
     udf on any other lims element
 
-    argumnets:
+    arguments:
 
-    s_elt           source elemement - instance of a type
+    s_elt           source element - instance of a type
     d_elt           destination element - instance of a type
     s_field_name    name of source field (or udf) to be copied 
-    d_udf_name      name of destination udf name. If not specifyed
+    d_udf_name      name of destination udf name. If not specified
                     s_field_name will be used.
 
-    The copy_udf() function takes a logfile as optional argument.
+    The copy_udf() function takes a log file as optional argument.
     If this is given the changes will be logged there.
 
     Written by Maya Brandi and Johannes Alnberg
@@ -330,8 +350,8 @@ class CopyField(object):
                  'nv' : self.s_field,
                  'd_elt_type': self.d_type}
 
-            changelog_f.write(("{ct}: udf: '{s_udf}' on {d_elt_type}: '{sn}' (id: {si}) is changed from "
-                               "'{su}' to '{nv}'.\n").format(**d))
+            changelog_f.write(("{ct}: udf: '{s_udf}' on {d_elt_type}: '{sn}' ("
+                "id: {si}) is changed from '{su}' to '{nv}'.\n").format(**d))
 
         logging.info(("Copying from element with id: {0} to element with "
                       " id: {1}").format(self.s_elt.id, self.d_elt.id))
@@ -343,7 +363,8 @@ class CopyField(object):
              'nv': self.s_field,
              'd_elt_type': self.d_type}
 
-        logging.info("Updated {d_elt_type} udf: {d_udf}, from {su} to {nv}.".format(**d))
+        logging.info("Updated {d_elt_type} udf: {d_udf}, from {su} to "
+                                                            "{nv}.".format(**d))
 
     def copy_udf(self, changelog_f = None):
         if self.s_field != self.old_dest_udf:
