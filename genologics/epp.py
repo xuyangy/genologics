@@ -254,6 +254,8 @@ class ReadResultFiles():
                             the heather line."""
         file_info = {}
         keys = []
+        error_message = ''
+        duplicated_lines = []
         exeptions = ['Sample','Fail', '']
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
@@ -261,11 +263,8 @@ class ReadResultFiles():
                 cond1 = find_keys == [] and root_key not in exeptions
                 cond2 = root_key in find_keys
                 if file_info.has_key(root_key):
-                    error_message = ("Row names {0} occurs more than once in "
-                    "file {1}. Fix the file to continue.").format(root_key, name)
-                    print >> sys.stderr, error_message
-                    sys.exit(-1)
-                elif cond1 or cond2: 
+                    duplicated_lines.append(root_key)
+                elif (cond1 or cond2) and not duplicated_lines: 
                     file_info[root_key] = {}
                     for col in range(len(keys)):
                         if keys[col] != '':
@@ -273,13 +272,19 @@ class ReadResultFiles():
                         elif keys[col-1] != '':
                             tupl = (file_info[root_key][keys[col-1]], line[col])
                             file_info[root_key][keys[col-1]] = tupl
+        
             head = line[root_key_col] if len(line) > root_key_col else None
             if first_header and head == first_header:
                 keys = line
             elif header_row and row == header_row:
                 keys = line
+        if duplicated_lines:
+            error_message = ("Row names {0} occurs more than once in file {1}. "
+                "Fix the file to continue. ").format(','.join(duplicated_lines), name)
         if not file_info:
-            print >> sys.stderr,"Could not format parsed file {0}.".format(name)
+            error_message = error_message + "Could not format parsed file {0}.".format(name)
+        if error_message:
+            print >> sys.stderr, error_message
             sys.exit(-1)    
         return file_info
 
