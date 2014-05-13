@@ -661,12 +661,27 @@ class Process(Entity):
     files          = EntityListDescriptor(nsmap('file:file'), File)
     # instrument XXX
     # process_parameters XXX
+
+    def outputs_per_input(self, inart):
+        inouts = filter(lambda io: io[0]['limsid'] == inart, self.input_output_maps)
+        outs = map(lambda io: io[1]['limsid'], inouts)
+        return outs
+
+    def input_per_sample(self, sample):
+        ins_all = self.all_inputs()
+        ins = []
+        for inp in ins_all:
+            for samp in inp.samples:
+                if samp.name == sample and inp not in ins:
+                    ins.append(inp)
+        return ins
     
     def all_inputs(self,unique=True):
         """Retrieving all input artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        ids = map(lambda io: io[0]['limsid'],self.input_output_maps)
+        input_output_maps = filter(lambda io: io[0], self.input_output_maps)
+        ids = map(lambda io: io[0]['limsid'], self.input_output_maps)
         if unique:
             ids = list(frozenset(ids))
         return map(lambda id: Artifact(self.lims,id=id),ids)
@@ -675,7 +690,8 @@ class Process(Entity):
         """Retrieving all output artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        ids = map(lambda io: io[1]['limsid'],self.input_output_maps)
+        input_output_maps = filter(lambda io: io[1], self.input_output_maps)
+        ids = map(lambda io: io[1]['limsid'], input_output_maps)
         if unique:
             ids = list(frozenset(ids))
         return map(lambda id: Artifact(self.lims,id=id),ids)
