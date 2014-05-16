@@ -52,7 +52,7 @@ def main(lims, pid, epp_logger):
         min_conc = None
         abstract.append("Set 'Minimum required concentration (ng/ul)' to get qc-flaggs based on this treshold!")
     for target_file in target_files:
-        print target_file
+        print target_file.name
         print dir(target_file)
         sample = target_file.samples[0].name
         if qubit_result_file.has_key(sample):
