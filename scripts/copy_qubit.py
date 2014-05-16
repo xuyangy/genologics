@@ -54,9 +54,18 @@ def main(lims, pid, epp_logger):
     for target_file in target_files:
         print '*****'
         print dir(target_file)
-#        print target_file.container
-#        print target_file.files
-#        print target_file.location
+        try: 
+            print target_file.container
+        except:
+            print 'no  target_file.container'
+        try:
+            print target_file.files
+        except:
+            print 'no files'
+        try:
+            print target_file.location
+        except:
+            print 'no loc'
 #        print target_file.root
 #        print dir(target_file)
         sample = target_file.samples[0].name
