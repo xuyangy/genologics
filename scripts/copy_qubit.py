@@ -52,9 +52,12 @@ def main(lims, pid, epp_logger):
         min_conc = None
         abstract.append("Set 'Minimum required concentration (ng/ul)' to get qc-flaggs based on this treshold!")
     for target_file in target_files:
+        print '*****'
         print target_file
-        print target_file.udf.items()
-        print target_file.__dict__
+        print target_file.udf.container
+        print target_file.files
+        print target_filelocation
+        print target_file.root
         print dir(target_file)
         sample = target_file.samples[0].name
         print target_file.samples
