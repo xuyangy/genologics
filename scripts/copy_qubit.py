@@ -54,7 +54,7 @@ def main(lims, pid, epp_logger):
     for target_file in target_files:
         print '*****'
         print target_file
-        print target_file.container
+#        print target_file.container
         print target_file.files
         print target_file.location
         print target_file.root
