@@ -57,6 +57,7 @@ def main(lims, pid, epp_logger):
         print target_file.__dict__
         print dir(target_file)
         sample = target_file.samples[0].name
+        print target_file.samples
         if qubit_result_file.has_key(sample):
             sample_mesurements = qubit_result_file[sample]
             if "Sample Concentration" in sample_mesurements.keys():
