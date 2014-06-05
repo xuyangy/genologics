@@ -663,11 +663,13 @@ class Process(Entity):
     # process_parameters XXX
 
     def outputs_per_input(self, inart):
+        """Getting all the output artifacts related to a particual input artifact"""
         inouts = filter(lambda io: io[0]['limsid'] == inart, self.input_output_maps)
         outs = map(lambda io: io[1]['limsid'], inouts)
         return outs
 
     def input_per_sample(self, sample):
+        """gettiung all the input artifacts dereved from the specifyed sample"""
         ins_all = self.all_inputs()
         ins = []
         for inp in ins_all:
