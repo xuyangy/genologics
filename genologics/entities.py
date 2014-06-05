@@ -680,7 +680,6 @@ class Process(Entity):
         """Retrieving all input artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        input_output_maps = filter(lambda io: io[0], self.input_output_maps)
         ids = map(lambda io: io[0]['limsid'], self.input_output_maps)
         if unique:
             ids = list(frozenset(ids))
@@ -690,8 +689,7 @@ class Process(Entity):
         """Retrieving all output artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        input_output_maps = filter(lambda io: io[1], self.input_output_maps)
-        ids = map(lambda io: io[1]['limsid'], input_output_maps)
+        ids = map(lambda io: io[1]['limsid'], self.input_output_maps)
         if unique:
             ids = list(frozenset(ids))
         return map(lambda id: Artifact(self.lims,id=id),ids)
