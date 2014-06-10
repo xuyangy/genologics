@@ -662,6 +662,22 @@ class Process(Entity):
     files          = EntityListDescriptor(nsmap('file:file'), File)
     # instrument XXX
     # process_parameters XXX
+
+    def outputs_per_input(self, inart):
+        """Getting all the output artifacts related to a particual input artifact"""
+        inouts = filter(lambda io: io[0]['limsid'] == inart, self.input_output_maps)
+        outs = map(lambda io: io[1]['limsid'], inouts)
+        return outs
+
+    def input_per_sample(self, sample):
+        """gettiung all the input artifacts dereved from the specifyed sample"""
+        ins_all = self.all_inputs()
+        ins = []
+        for inp in ins_all:
+            for samp in inp.samples:
+                if samp.name == sample and inp not in ins:
+                    ins.append(inp)
+        return ins
     
     def all_inputs(self,unique=True):
         """Retrieving all input artifacts from input_output_maps
