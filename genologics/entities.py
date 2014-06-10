@@ -11,6 +11,7 @@ import urlparse
 import datetime
 import time
 from xml.etree import ElementTree
+import logging
 
 _NSMAP = dict(
     art='http://genologics.com/ri/artifact',
@@ -670,7 +671,7 @@ class Process(Entity):
         try:
             ids = [io[0]['limsid'] for io in self.input_output_maps]
         except TypeError:
-            print "Process ",self," has no input artifacts"
+            logging.error("Process ",self," has no input artifacts")
             raise TypeError
         if unique:
             ids = list(frozenset(ids))
