@@ -666,19 +666,25 @@ class Process(Entity):
         """Retrieving all input artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        ids = map(lambda io: io[0]['limsid'],self.input_output_maps)
+        #if the process has no input, that is not standard and we want to know about it
+        try:
+            ids = [io[0]['limsid'] for io in self.input_output_maps]
+        except TypeError:
+            print "Process ",self," has no input artifacts"
+            raise TypeError
         if unique:
             ids = list(frozenset(ids))
-        return map(lambda id: Artifact(self.lims,id=id),ids)
+        return [Artifact(self.lims,id=id) for id in ids if id is not None]
 
     def all_outputs(self,unique=True):
         """Retrieving all output artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
-        ids = map(lambda io: io[1]['limsid'],self.input_output_maps)
+        #Given how ids is structured, io[1] might be None : some process don't have an output.
+        ids = [io[1]['limsid'] for io in self.input_output_maps if io[1] is not None]
         if unique:
             ids = list(frozenset(ids))
-        return map(lambda id: Artifact(self.lims,id=id),ids)
+        return  [Artifact(self.lims,id=id) for id in ids if id is not None]
 
     def shared_result_files(self):
         """Retreve all resultfiles of output-generation-type PerAllInputs."""
