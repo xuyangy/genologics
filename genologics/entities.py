@@ -369,7 +369,10 @@ class EntityDescriptor(TagDescriptor):
     def __get__(self, instance, cls):
         instance.get()
         node = instance.root.find(self.tag)
-        return self.klass(instance.lims, uri=node.attrib['uri'])
+        if node is None:
+            return None
+        else:
+            return self.klass(instance.lims, uri=node.attrib['uri'])
 
 
 class EntityListDescriptor(EntityDescriptor):
