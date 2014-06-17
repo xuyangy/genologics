@@ -55,6 +55,196 @@ def nsmap(tag):
     return "{%s}%s" % (_NSMAP[parts[0]], parts[1])
 
 
+class SampleHistory:
+    """Class handling the history generation for a given sample/artifact
+    """ 
+
+    def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, test=False):
+        if lims:
+            self.lims = lims
+            if (test):
+                self.sample_name=sample_name
+                self.alternate_history(output_artifact, input_artifact)
+            else:    
+        	    if (sample_name):
+        	        self.sample_name=sample_name
+        	        #If I have a sample, I build the corresponding map
+        	        self.make_sample_artifact_map()
+        	        if (output_artifact):
+        	            #If I have an output artifact, I can build the history of it
+        	            self.get_analyte_hist_sorted(output_artifact, input_artifact)
+        	    else:
+        	        self.art_map=None
+
+
+    def control(self):
+        logging.info("SAMPLE NAME: "+self.sample_name)
+        logging.info("outart : "+self.history_list[0])
+        #logging.info ("\nmap :")
+        #for key, value in self.art_map.iteritems():
+        #    logging.info(value[1]+"->"+value[0].id+"->"+key)
+        logging.info ("\nHistory :\n\n")
+        logging.info("Input\tProcess\tProcess info")
+        for key, dict in self.history.iteritems():
+            logging.info (key)
+            for key2, dict2 in dict.iteritems():
+                logging.info ("\t"+key2)
+                for key, value in dict2.iteritems():
+                    logging.info ("\t\t"+key+"->"+(value if value is not None else "None"))
+        logging.info ("\nHistory List")
+        for art in self.history_list:
+            logging.info (art)
+        
+        
+
+
+
+    def make_sample_artifact_map(self):
+        """samp_art_map: connects each output artifact for a specific sample to its 
+        corresponding process and input artifact assuming, for a given sample,
+        one input -> one process -> one output
+        This function starts from the output, 
+        and creates an entry like this : output -> (process, input)"""
+        samp_art_map ={}
+        if (self.sample_name):
+            artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte') 
+            for one_art in artifacts:
+                input_arts = one_art.input_artifact_list()
+                for input_art in input_arts:
+                    for samp in input_art.samples:
+                        if samp.name == self.sample_name:
+                            samp_art_map[one_art.id] = (one_art.parent_process, input_art.id)
+
+        self.art_map=samp_art_map
+    def alternate_history(self, out_art, in_art=None):
+        """This is a try at another way to generate the history.
+        This one iterates over Artifact.parent_process and Process.all_inputs()
+        to get the smallest tree possible. 
+        AFAIK the only fields of the history that are read are proc.type and outart"""
+        history = {}
+        hist_list = []
+       #getting the list of all expected processes.
+        qc_proc=lims_utils.LIBVALFINISHEDLIB.values()+lims_utils.AGRLIBVAL.values()+lims_utils.LIBVAL.values()+lims_utils.AGRINITQC.values()+lims_utils.INITALQC.values()+lims_utils.INITALQCFINISHEDLIB.values()
+        artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte')
+        processes=[]
+        inputs=[]
+        not_done=True
+        while not_done:
+            logging.info ("looking for "+(in_art if in_art else out_art))
+            not_done=False
+            for o in artifacts:
+                logging.info (o.id)
+# if we ve been given an input artifact, we should use that one.
+                if o.id == (in_art if in_art else out_art):
+                    not_done=True
+                    logging.info ("found it")
+                    processes.append(o.parent_process)
+                    logging.info ("looking for inputs of "+o.parent_process.id)
+                    for i in o.parent_process.all_inputs():
+                        logging.info (i.id)
+                        if i in artifacts:
+                            logging.info ("found input")
+                            inputs.append(i.id)
+                            history[i.id]={o.parent_process.id : {'date' : o.parent_process.date_run,
+                                                               'id' : o.parent_process.id,
+                                                               'outart' : o.id,
+                                                               'inart' : i.id,
+                                                               'type' : o.parent_process.type.id,
+                                                               'name' : o.parent_process.type.name}
+                                     }
+                            out_art=i.id
+                            
+                            if i.parent_process is None:
+                                not_done=False
+                                break
+                            break
+                    break 
+        #looking for processes that have one of the input artifacts of the list as input, and exist in lims_util process lists 
+
+        for tempProcess in self.lims.get_processes(inputartifactlimsid=inputs, type=qc_proc):
+            print("^"+tempProcess.id+" "+", ".join([p.id for p in tempProcess.all_outputs()]))
+            if tempProcess not in processes: 
+                for i in tempProcess.input_per_sample(self.sample_name):
+                    history[i.id][tempProcess.id] = {'date' : tempProcess.date_run,
+                                                               'id' : tempProcess.id,
+                                                               'outart' : None,
+                                                               'inart' : i.id,
+                                                               'type' : tempProcess.type.id,
+                                                               'name' : tempProcess.type.name}
+
+        self.history=history
+        self.history_list=inputs 
+
+    def get_analyte_hist_sorted(self, out_artifact, input_art = None):
+         """Makes a history map of an artifac, using the samp_art_map 
+         of the corresponding sample.
+         The samp_art_map object is built up from analytes. This means that it will not 
+         contain output-input info for processes wich have only files as output. 
+         This is logical since the samp_art_map object is used for building up the ANALYTE 
+         history of a sample. If you want to make the analyte history based on a 
+         resultfile, that is; if you want to give a resultfile as out_artifact here, 
+         and be given the historylist of analytes and processes for that file, you 
+         will also have to give the input artifact for the process that generated 
+         the resultfile for wich you want to get the history. In other words, if you 
+         want to get the History of the folowing scenario:        
+ 
+         History --- > Input_analyte -> Process -> Output_result_file
+         
+         then the arguments to this function should be:
+         out_artifact = Output_result_file
+         input_art = Input_analyte
+ 
+         If you instead want the History of the folowing scenario:
+         
+         History --- > Input_analyte -> Process -> Output_analyte
+ 
+         then you can skip the input_art argument and only set:
+         out_artifact = Output_analyte 
+         """
+         history = {}
+         hist_list = []
+         if input_art:
+            # In_art = Artifact(lims,id=input_art)
+            # try:
+            #     pro = In_art.parent_process.id
+            # except:
+            #     pro = None
+             history, out_artifact = self._add_out_art_process_conection_list(input_art, 
+                                                         out_artifact, history)
+             hist_list.append(input_art)
+         while self.art_map.has_key(out_artifact):
+             pro, input_art = self.art_map[out_artifact]
+             hist_list.append(input_art)
+             history, out_artifact = self._add_out_art_process_conection_list(input_art, 
+                                                        out_artifact, history)
+         self.history=history
+         self.history_list=hist_list
+ 
+    def _add_out_art_process_conection_list(self, input_art, out_artifact, history = {}):
+        """This function populates the history dict with process info per artifact.
+        Maps an artifact to all the processes where its used as input and adds this 
+        info to the history dict. Observe that the output artifact for the input 
+        artifact in the historychain is given as input to this function. All 
+        processes that the input artifact has been involved in, but that are not 
+        part of the historychain get the outart set to None. This is very important."""
+        # Moving this out of the function will speed it up since asking for process list everytime might not be that useful
+        processes = self.lims.get_processes(inputartifactlimsid = input_art)
+        for process in processes:
+            #outputs = map(lambda a: (a.id), process.all_outputs())
+            outputs = [a.id for a in process.all_outputs()] 
+            outart = out_artifact if out_artifact in outputs else None 
+            step_info = {'date' : process.date_run,
+                         'id' : process.id,
+                         'outart' : outart,
+                         'inart' : input_art,
+                         'type' : process.type.id,
+                         'name' : process.type.name}
+            if history.has_key(input_art):
+                history[input_art][process.id] = step_info
+            else:
+                history[input_art] = {process.id : step_info}
+        return history, input_art
+
 class BaseDescriptor(object):
     "Abstract base descriptor for an instance attribute."
 
@@ -796,3 +986,5 @@ class Artifact(Entity):
 
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
+
+
