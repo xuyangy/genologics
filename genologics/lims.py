@@ -35,6 +35,8 @@ class Lims(object):
         self.username = username
         self.password = password
         self.cache = dict()
+        # For optimization purposes, enables requests to persist connections
+        self.request_session = requests.Session()
 
     def get_uri(self, *segments, **query):
         "Return the full URI given the path segments and optional query."
@@ -46,7 +48,7 @@ class Lims(object):
 
     def get(self, uri, params=dict()):
         "GET data from the URI. Return the response XML as an ElementTree."
-        r = requests.get(uri, params=params,
+        r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
                          headers=dict(accept='application/xml'))
         return self.parse_response(r)
