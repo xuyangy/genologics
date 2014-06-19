@@ -124,56 +124,66 @@ class SampleHistory:
         history = {}
         hist_list = []
        #getting the list of all expected processes.
-        qc_proc=lims_utils.LIBVALFINISHEDLIB.values()+lims_utils.AGRLIBVAL.values()+lims_utils.LIBVAL.values()+lims_utils.AGRINITQC.values()+lims_utils.INITALQC.values()+lims_utils.INITALQCFINISHEDLIB.values()
         artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte')
         processes=[]
         inputs=[]
+        if in_art:
+            #If theres an input artifact given, I need to make a loop for this one, before treating it as an output
+            starting_art=in_art
+            inputs.append(in_art)
+            history[in_art]={}
+            for tempProcess in self.lims.get_processes(inputartifactlimsid=in_art):
+                history[in_art][tempProcess.id] = {'date' : tempProcess.date_run,
+                                                   'id' : tempProcess.id,
+                                                   'outart' : (out_art if out_art in [ out.id for out in tempProcess.all_outputs()] else None ),
+                                                   'inart' : in_art,
+                                                   'type' : tempProcess.type.id,
+                                                   'name' : tempProcess.type.name}
+        else:
+            starting_art=out_art
+        #main iteration    
         not_done=True
         while not_done:
-            logging.info ("looking for "+(in_art if in_art else out_art))
+            logging.info ("looking for "+(starting_art))
             not_done=False
             for o in artifacts:
                 logging.info (o.id)
-# if we ve been given an input artifact, we should use that one.
-                if o.id == (in_art if in_art else out_art):
-                    not_done=True
+                if o.id == (starting_art):
+                    if o.parent_process is None:
+                        not_done=False
+                        break
+                    else:
+                        not_done=True
                     logging.info ("found it")
                     processes.append(o.parent_process)
                     logging.info ("looking for inputs of "+o.parent_process.id)
                     for i in o.parent_process.all_inputs():
                         logging.info (i.id)
                         if i in artifacts:
-                            logging.info ("found input")
-                            inputs.append(i.id)
-                            history[i.id]={o.parent_process.id : {'date' : o.parent_process.date_run,
-                                                               'id' : o.parent_process.id,
-                                                               'outart' : o.id,
-                                                               'inart' : i.id,
-                                                               'type' : o.parent_process.type.id,
-                                                               'name' : o.parent_process.type.name}
-                                     }
-                            out_art=i.id
-                            
-                            if i.parent_process is None:
-                                not_done=False
-                                break
-                            break
-                    break 
-        #looking for processes that have one of the input artifacts of the list as input, and exist in lims_util process lists 
-
-        for tempProcess in self.lims.get_processes(inputartifactlimsid=inputs, type=qc_proc):
-            print("^"+tempProcess.id+" "+", ".join([p.id for p in tempProcess.all_outputs()]))
-            if tempProcess not in processes: 
-                for i in tempProcess.input_per_sample(self.sample_name):
-                    history[i.id][tempProcess.id] = {'date' : tempProcess.date_run,
+                            history[i.id]={}
+                            for tempProcess in self.lims.get_processes(inputartifactlimsid=i.id):
+                                history[i.id][tempProcess.id] = {'date' : tempProcess.date_run,
                                                                'id' : tempProcess.id,
-                                                               'outart' : None,
+                                                               'outart' : (o.id if tempProcess.id == o.parent_process.id else None),
                                                                'inart' : i.id,
                                                                'type' : tempProcess.type.id,
                                                                'name' : tempProcess.type.name}
 
+
+
+                            logging.info ("found input "+i.id)
+                            inputs.append(i.id)
+                            #increment is below
+                            starting_art=i.id
+                            
+                            #if i.parent_process is None:
+                            #    not_done=False
+                            #    break
+                            break
+                    break 
         self.history=history
         self.history_list=inputs 
+
 
     def get_analyte_hist_sorted(self, out_artifact, input_art = None):
          """Makes a history map of an artifac, using the samp_art_map 
