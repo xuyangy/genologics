@@ -63,19 +63,20 @@ class SampleHistory:
         if lims:
             self.lims = lims
             if not (test):
-#this is now the default
+                #this is now the default
                 self.sample_name=sample_name
                 self.alternate_history(output_artifact, input_artifact)
-            else:    
-        	    if (sample_name):
-        	        self.sample_name=sample_name
-        	        #If I have a sample, I build the corresponding map
-        	        self.make_sample_artifact_map()
-        	        if (output_artifact):
-        	            #If I have an output artifact, I can build the history of it
-        	            self.get_analyte_hist_sorted(output_artifact, input_artifact)
-        	    else:
-        	        self.art_map=None
+        	    self.art_map=None
+            elif (sample_name):
+                self.sample_name=sample_name
+                #If I have a sample, I build the corresponding map
+                self.make_sample_artifact_map()
+                if (output_artifact):
+                    #If I have an output artifact, I can build the history of it
+                    self.get_analyte_hist_sorted(output_artifact, input_artifact)
+        else:
+            logging.error("Tried to build History without lims")
+            raise AttributeError("History cannot be computed without a valid lims object")
 
 
     def control(self):
