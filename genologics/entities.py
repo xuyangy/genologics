@@ -69,10 +69,8 @@ class SampleHistory:
         	    self.art_map=None
             elif (sample_name):
                 self.sample_name=sample_name
-                #If I have a sample, I build the corresponding map
                 self.make_sample_artifact_map()
-                if (output_artifact):
-                    #If I have an output artifact, I can build the history of it
+                if output_artifact:
                     self.get_analyte_hist_sorted(output_artifact, input_artifact)
         else:
             logging.error("Tried to build History without lims")
@@ -82,8 +80,8 @@ class SampleHistory:
     def control(self):
         """this can be used to check the content of the object.
         """
-        logging.info("SAMPLE NAME: "+self.sample_name)
-        logging.info("outart : "+self.history_list[0])
+        logging.info("SAMPLE NAME: {}".format(self.sample_name))
+        logging.info("outart : {}".format(self.history_list[0]))
         #logging.info ("\nmap :")
         #for key, value in self.art_map.iteritems():
         #    logging.info(value[1]+"->"+value[0].id+"->"+key)
@@ -92,17 +90,13 @@ class SampleHistory:
         for key, dict in self.history.iteritems():
             logging.info (key)
             for key2, dict2 in dict.iteritems():
-                logging.info ("\t"+key2)
+                logging.info ("\t{}".format(key2))
                 for key, value in dict2.iteritems():
-                    logging.info ("\t\t"+key+"->"+(value if value is not None else "None"))
+                    logging.info ("\t\t{0}->{1}".format(key,(value if value is not None else "None")))
         logging.info ("\nHistory List")
         for art in self.history_list:
             logging.info (art)
         
-        
-
-
-
     def make_sample_artifact_map(self):
         """samp_art_map: connects each output artifact for a specific sample to its 
         corresponding process and input artifact assuming, for a given sample,
@@ -110,7 +104,7 @@ class SampleHistory:
         This function starts from the output, 
         and creates an entry like this : output -> (process, input)"""
         samp_art_map ={}
-        if (self.sample_name):
+        if self.sample_name:
             artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte') 
             for one_art in artifacts:
                 input_arts = one_art.input_artifact_list()
@@ -154,7 +148,7 @@ class SampleHistory:
             not_done=False 
             for o in artifacts:
                 logging.info (o.id)
-                if o.id == (starting_art):
+                if o.id == starting_art:
                     if o.parent_process is None:
                         #flow control : if there is no parent process, we can stop iterating, we're done.
                         not_done=False
