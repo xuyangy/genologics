@@ -57,12 +57,13 @@ def nsmap(tag):
 
 class SampleHistory:
     """Class handling the history generation for a given sample/artifact
-    """ 
+    AFAIK the only fields of the history that are read are proc.type and outart""" 
 
     def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, test=False):
         if lims:
             self.lims = lims
-            if (test):
+            if not (test):
+#this is now the default
                 self.sample_name=sample_name
                 self.alternate_history(output_artifact, input_artifact)
             else:    
@@ -78,6 +79,8 @@ class SampleHistory:
 
 
     def control(self):
+        """this can be used to check the content of the object.
+        """
         logging.info("SAMPLE NAME: "+self.sample_name)
         logging.info("outart : "+self.history_list[0])
         #logging.info ("\nmap :")
@@ -119,11 +122,12 @@ class SampleHistory:
     def alternate_history(self, out_art, in_art=None):
         """This is a try at another way to generate the history.
         This one iterates over Artifact.parent_process and Process.all_inputs()
-        to get the smallest tree possible. 
-        AFAIK the only fields of the history that are read are proc.type and outart"""
+        Then, it takes all the child processes for each input (because we want
+        qc processes too) and puts everything in a dictionnary. 
+        """
         history = {}
         hist_list = []
-       #getting the list of all expected processes.
+       #getting the list of all expected analytes.
         artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte')
         processes=[]
         inputs=[]
@@ -142,18 +146,20 @@ class SampleHistory:
         else:
             starting_art=out_art
         #main iteration    
+        #it is quite heavy on logging at info level
         not_done=True
         while not_done:
             logging.info ("looking for "+(starting_art))
-            not_done=False
+            not_done=False 
             for o in artifacts:
                 logging.info (o.id)
                 if o.id == (starting_art):
                     if o.parent_process is None:
+                        #flow control : if there is no parent process, we can stop iterating, we're done.
                         not_done=False
-                        break
+                        break #breaks the for artifacts, we are done anyway.
                     else:
-                        not_done=True
+                        not_done=True #keep the loop running
                     logging.info ("found it")
                     processes.append(o.parent_process)
                     logging.info ("looking for inputs of "+o.parent_process.id)
@@ -172,15 +178,12 @@ class SampleHistory:
 
 
                             logging.info ("found input "+i.id)
-                            inputs.append(i.id)
-                            #increment is below
+                            inputs.append(i.id) #this will be the sorted list of artifacts used to rebuild the history in order
+                            # while increment
                             starting_art=i.id
                             
-                            #if i.parent_process is None:
-                            #    not_done=False
-                            #    break
-                            break
-                    break 
+                            break #break the for allinputs, if we found the right one
+                    break # breaks the for artifacts if we matched the current one
         self.history=history
         self.history_list=inputs 
 
