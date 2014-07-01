@@ -59,15 +59,17 @@ class SampleHistory:
     """Class handling the history generation for a given sample/artifact
     AFAIK the only fields of the history that are read are proc.type and outart""" 
 
-    def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, test=False):
+    def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, test=False, pro_per_art=None):
+        if pro_per_art:
+            self.processes_per_artifact=pro_per_art
         if lims:
             self.lims = lims
             if not (test):
                 #this is now the default
                 self.sample_name=sample_name
                 self.alternate_history(output_artifact, input_artifact)
-        	    self.art_map=None
-            elif (sample_name):
+                self.art_map=None
+            elif (sample_name) and pro_per_art:
                 self.sample_name=sample_name
                 self.make_sample_artifact_map()
                 if output_artifact:
@@ -131,7 +133,7 @@ class SampleHistory:
             starting_art=in_art
             inputs.append(in_art)
             history[in_art]={}
-            for tempProcess in self.lims.get_processes(inputartifactlimsid=in_art):
+            for tempProcess in (self.processes_per_artifact?self.processes_per_artifact[in_art]:inputartifactlimsid=in_art):#If there is a loacl map, use it. else, query the lims.
                 history[in_art][tempProcess.id] = {'date' : tempProcess.date_run,
                                                    'id' : tempProcess.id,
                                                    'outart' : (out_art if out_art in [ out.id for out in tempProcess.all_outputs()] else None ),
@@ -162,7 +164,7 @@ class SampleHistory:
                         logging.info (i.id)
                         if i in artifacts:
                             history[i.id]={}
-                            for tempProcess in self.lims.get_processes(inputartifactlimsid=i.id):
+                            for tempProcess in (self.processes_per_artifact?self.processes_per_artifact[i.id]:inputartifactlimsid=i.id):#If there is a loacl map, use it. else, query the lims.
                                 history[i.id][tempProcess.id] = {'date' : tempProcess.date_run,
                                                                'id' : tempProcess.id,
                                                                'outart' : (o.id if tempProcess.id == o.parent_process.id else None),
@@ -235,9 +237,8 @@ class SampleHistory:
         artifact in the historychain is given as input to this function. All 
         processes that the input artifact has been involved in, but that are not 
         part of the historychain get the outart set to None. This is very important."""
-        # Moving this out of the function will speed it up since asking for process list everytime might not be that useful
-        processes = self.lims.get_processes(inputartifactlimsid = input_art)
-        for process in processes:
+        # Use the local process map if we have one, else, query the lims 
+        for process in self.processes_per_artifact[input_art] if self.processes_per_artifact else lims.get_processes(inputartifactlimsid = inart):
             #outputs = map(lambda a: (a.id), process.all_outputs())
             outputs = [a.id for a in process.all_outputs()] 
             outart = out_artifact if out_artifact in outputs else None 
