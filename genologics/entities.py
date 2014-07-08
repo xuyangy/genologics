@@ -59,9 +59,8 @@ class SampleHistory:
     """Class handling the history generation for a given sample/artifact
     AFAIK the only fields of the history that are read are proc.type and outart""" 
 
-    def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, test=False, pro_per_art=None):
-        if pro_per_art:
-            self.processes_per_artifact=pro_per_art
+    def __init__(self, sample_name=None, output_artifact=None, input_artifact=None, lims=None, pro_per_art=None, test=False):
+        self.processes_per_artifact=pro_per_art
         if lims:
             self.lims = lims
             if not (test):
@@ -133,7 +132,7 @@ class SampleHistory:
             starting_art=in_art
             inputs.append(in_art)
             history[in_art]={}
-            for tempProcess in (self.processes_per_artifact?self.processes_per_artifact[in_art]:inputartifactlimsid=in_art):#If there is a loacl map, use it. else, query the lims.
+            for tempProcess in ( self.processes_per_artifact[in_art] if self.processes_per_artifact else self.lims.get_processes(inputartifactlimsid=in_art)):#If there is a loacl map, use it. else, query the lims.
                 history[in_art][tempProcess.id] = {'date' : tempProcess.date_run,
                                                    'id' : tempProcess.id,
                                                    'outart' : (out_art if out_art in [ out.id for out in tempProcess.all_outputs()] else None ),
@@ -164,7 +163,7 @@ class SampleHistory:
                         logging.info (i.id)
                         if i in artifacts:
                             history[i.id]={}
-                            for tempProcess in (self.processes_per_artifact?self.processes_per_artifact[i.id]:inputartifactlimsid=i.id):#If there is a loacl map, use it. else, query the lims.
+                            for tempProcess in (self.processes_per_artifact[i.id] if self.processes_per_artifact else self.lims.get_processes(inputartifactlimsid=i.id)):#If there is a loacl map, use it. else, query the lims.
                                 history[i.id][tempProcess.id] = {'date' : tempProcess.date_run,
                                                                'id' : tempProcess.id,
                                                                'outart' : (o.id if tempProcess.id == o.parent_process.id else None),
