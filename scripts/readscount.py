@@ -22,16 +22,16 @@ def main(lims, args, logger):
    for output_artifact in p.all_outputs():
        if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
            sample=output_artifact.samples[0]
-           sample.udf['Total Reads (M)']=sumreads(sample.name)
+           sample.udf['Total Reads (M)']=sumreads(sample)
            logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
            sample.put()
        elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
            logging.error("Found {0} samples for the ouput analyte {}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
             
 
-def sumreads(sampleName):
-    expectedName="{0} (FASTQ reads)".format(sampleName)
-    arts=lims.get_artifacts(sample_name=sampleName,process_type=DEMULTIPLEX.values(), name=expectedName)   
+def sumreads(sample):
+    expectedName="{0} (FASTQ reads)".format(sample.name)
+    arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
     for a in sorted(arts, key=lambda art:art.parent_process.date_run):
         #discard artifacts that do not have reads
@@ -44,10 +44,13 @@ def sumreads(sampleName):
         except KeyError:
             pass
 
-    #total needs to be divided by 2 
+    #grab the sequencing setup
+    seqsetup=sample.project.udf.get('Sequencing setup')
+    if seqsetup.startswith('2x'):
+        #total needs to be divided by 2 
+        tot/=2
 
-    tot/=2
-    # then displayed as millions
+    # total is displayed as millions
     tot/=1000000
     return tot
 
