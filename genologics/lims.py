@@ -35,6 +35,8 @@ class Lims(object):
         self.username = username
         self.password = password
         self.cache = dict()
+        # For optimization purposes, enables requests to persist connections
+        self.request_session = requests.Session()
 
     def get_uri(self, *segments, **query):
         "Return the full URI given the path segments and optional query."
@@ -46,7 +48,7 @@ class Lims(object):
 
     def get(self, uri, params=dict()):
         "GET data from the URI. Return the response XML as an ElementTree."
-        r = requests.get(uri, params=params,
+        r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
                          headers=dict(accept='application/xml'))
         return self.parse_response(r)
@@ -88,16 +90,21 @@ class Lims(object):
         """Parse the XML returned in the response.
         Raise an HTTP error if the response status is not 200.
         """
-        root = ElementTree.fromstring(response.content)
         if response.status_code != 200:
-            node = root.find('message')
-            if node is None:
-                response.raise_for_status()
-            message = "%s: %s" % (response.status_code, node.text)
-            node = root.find('suggested-actions')
-            if node is not None:
-                message += ' ' + node.text
+            try:
+                root = ElementTree.fromstring(response.content)
+                node = root.find('message')
+                if node is None:
+                    response.raise_for_status()
+                message = "%s: %s" % (response.status_code, node.text)
+                node = root.find('suggested-actions')
+                if node is not None:
+                    message += ' ' + node.text
+            except ElementTree.ParseError: # some error messages might not follow the xml standard
+                message=response.content 
             raise requests.exceptions.HTTPError(message)
+        else:
+            root = ElementTree.fromstring(response.content)
         return root
 
     def get_udfs(self, name = None, attach_to_name = None, attach_to_category = None, start_index = None):
