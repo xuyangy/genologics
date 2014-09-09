@@ -73,8 +73,6 @@ class QualityFilter():
     def get_and_set_yield_and_Q30(self):
         file_handler = ReadResultFiles(self.process)
         source_file = file_handler.shared_files['Quality Filter']
-        print '*******'
-        print source_file
         target_files = dict((r.samples[0].name, r) for r in self.result_files)
         self.nr_samps_tot = str(len(target_files))
         self.QF_from_file = file_handler.format_file(source_file, 
@@ -84,8 +82,6 @@ class QualityFilter():
         self._logging()
 
     def _set_udfs(self, samp_name, target_file):
-        print samp_name
-        print self.QF_from_file.keys()
         if samp_name in self.QF_from_file.keys():
             s_inf = self.QF_from_file[samp_name]
             target_file.udf['# Reads'] = int(s_inf['# Reads'])
