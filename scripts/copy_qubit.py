@@ -35,7 +35,6 @@ def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     sample_names = map(lambda a: a.name, process.analytes()[0])
     target_files = process.result_files()
-    
     file_handler = ReadResultFiles(process)
     files = file_handler.shared_files['Qubit Result File']
     qubit_result_file = file_handler.format_file(files, 
@@ -53,24 +52,7 @@ def main(lims, pid, epp_logger):
         min_conc = None
         abstract.append("Set 'Minimum required concentration (ng/ul)' to get qc-flaggs based on this treshold!")
     for target_file in target_files:
-        print '*****'
-        print dir(target_file)
-        try: 
-            print target_file.container
-        except:
-            print 'no  target_file.container'
-        try:
-            print target_file.files
-        except:
-            print 'no files'
-        try:
-            print target_file.location
-        except:
-            print 'no loc'
-#        print target_file.root
-#        print dir(target_file)
         sample = target_file.samples[0].name
-        print target_file.samples
         if qubit_result_file.has_key(sample):
             sample_mesurements = qubit_result_file[sample]
             if "Sample Concentration" in sample_mesurements.keys():
