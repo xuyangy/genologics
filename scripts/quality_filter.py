@@ -94,8 +94,8 @@ class QualityFilter():
         set_field(target_file)
 
     def _logging(self):
-        self.abstract.append("Yield and Q30 uploaded for {0} out of {1} samples.
-                               ".format(self.nr_samps_updat, self.nr_samps_tot))
+        self.abstract.append("Yield and Q30 uploaded for {0} out of {1} samples."
+                              "".format(self.nr_samps_updat, self.nr_samps_tot))
         if self.missing_samps:
             self.abstract.append("The following samples are missing in Quality "
             "Filter file: {0}.".format(', '.join(self.missing_samps)))
