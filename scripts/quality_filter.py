@@ -72,6 +72,8 @@ class QualityFilter():
     def get_and_set_yield_and_Q30(self):
         file_handler = ReadResultFiles(self.process)
         source_file = file_handler.shared_files['Quality Filter']
+        print '*******'
+        print source_file
         target_files = dict((r.samples[0].name, r) for r in self.result_files)
         self.QF_from_file = file_handler.format_file(source_file, 
                                name = 'Quality Filter', first_header = 'Sample')

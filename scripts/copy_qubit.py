@@ -35,6 +35,7 @@ def main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
     sample_names = map(lambda a: a.name, process.analytes()[0])
     target_files = process.result_files()
+    
     file_handler = ReadResultFiles(process)
     files = file_handler.shared_files['Qubit Result File']
     qubit_result_file = file_handler.format_file(files, 
