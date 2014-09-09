@@ -86,7 +86,7 @@ class QualityFilter():
         if samp_name in self.QF_from_file.keys():
             s_inf = self.QF_from_file[samp_name]
             target_file.udf['# Reads'] = int(s_inf['# Reads'])
-            target_file.udf['% Bases >Q30'] = float(s_inf['% Bases >Q30'])
+            target_file.udf['% Bases >=Q30'] = float(s_inf['% Bases >=Q30'])
         else:
             self.missing_samps.append(samp_name)
         set_field(target_file)
