@@ -67,7 +67,8 @@ class QualityFilter():
         self.QF_from_file = {}
         self.missing_samps = []
         self.abstract = []
-        self.nr_updat_samps = 0
+        self.nr_samps_updat = 0
+        self.nr_samps_tot = '-'
 
     def get_and_set_yield_and_Q30(self):
         file_handler = ReadResultFiles(self.process)
@@ -75,11 +76,12 @@ class QualityFilter():
         print '*******'
         print source_file
         target_files = dict((r.samples[0].name, r) for r in self.result_files)
+        self.nr_samps_tot = str(len(target_files))
         self.QF_from_file = file_handler.format_file(source_file, 
                                name = 'Quality Filter', first_header = 'Sample')
         for samp_name, target_file in target_files.items():
             self._set_udfs(samp_name, target_file)
-            self.nr_updat_samps += 1
+            self.nr_samps_updat += 1
         self._logging()
 
     def _set_udfs(self, samp_name, target_file):
@@ -92,8 +94,8 @@ class QualityFilter():
         set_field(target_file)
 
     def _logging(self):
-        self.abstract.append("Yield and Q30 uploaded for {0} samples.".format(
-                                                           self.nr_updat_samps))
+        self.abstract.append("Yield and Q30 uploaded for {0} out of {1} samples.
+                               ".format(self.nr_samps_updat, self.nr_samps_tot))
         if self.missing_samps:
             self.abstract.append("The following samples are missing in Quality "
             "Filter file: {0}.".format(', '.join(self.missing_samps)))
