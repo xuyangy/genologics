@@ -81,14 +81,16 @@ class QualityFilter():
                                name = 'Quality Filter', first_header = 'Sample')
         for samp_name, target_file in target_files.items():
             self._set_udfs(samp_name, target_file)
-            self.nr_samps_updat += 1
         self._logging()
 
     def _set_udfs(self, samp_name, target_file):
+        print samp_name
+        print self.QF_from_file.keys()
         if samp_name in self.QF_from_file.keys():
             s_inf = self.QF_from_file[samp_name]
             target_file.udf['# Reads'] = int(s_inf['# Reads'])
             target_file.udf['% Bases >=Q30'] = float(s_inf['% Bases >=Q30'])
+            self.nr_samps_updat += 1
         else:
             self.missing_samps.append(samp_name)
         set_field(target_file)
