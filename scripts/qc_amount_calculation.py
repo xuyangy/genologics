@@ -19,6 +19,15 @@ import logging
 import sys
 
 def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger,process):
+    """For each result file of the process: if its corresponding inart has the udf 
+    'Dilution Fold', the result_udf: 'Amount (ng)' is calculated as
+   
+    'Amount (ng)' =  'Concentration'*'Volume (ul)'*'Dilution Fold'
+    
+    otherwise its calculated as
+        
+    'Amount (ng)' =  'Concentration'*'Volume (ul)'"""
+
     logging.info(("result_udf: {0}, udf1: {1}, "
                   "operator: {2}, udf2: {3}").format(result_udf,udf1,op,udf2))
     for artifact in artifacts:
@@ -28,7 +37,8 @@ def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger,process
             artifact.udf[result_udf]=0
 
         try:
-            dil_fold = process.input_per_sample(artifact.sample)[0].udf['Dilution Fold']
+            inart = process.input_per_sample(artifact.samples[0].name)[0]
+            dil_fold = inart.udf['Dilution Fold']
         except:
             dil_fold = None
 
@@ -77,10 +87,6 @@ def check_udf_has_value(artifacts, udf, value):
                           ", due to undefined/blank {1}").format(artifact.samples[0].name, udf))
 
     return filtered_artifacts, incorrect_artifacts
-
-def look_for_Dillution_Fold(process, artifacts):
-    
-    input_per_sample
 
 def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
