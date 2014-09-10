@@ -18,7 +18,7 @@ from genologics.epp import EppLogger
 import logging
 import sys
 
-def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger):
+def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger,process):
     logging.info(("result_udf: {0}, udf1: {1}, "
                   "operator: {2}, udf2: {3}").format(result_udf,udf1,op,udf2))
     for artifact in artifacts:
@@ -27,14 +27,21 @@ def apply_calculations(lims,artifacts,udf1,op,udf2,result_udf,epp_logger):
         except KeyError:
             artifact.udf[result_udf]=0
 
+        try:
+            dil_fold = process.input_per_sample(artifact.sample)[0].udf['Dilution Fold']
+        except:
+            dil_fold = None
+
         logging.info(("Updating: Artifact id: {0}, "
                      "result_udf: {1}, udf1: {2}, "
                      "operator: {3}, udf2: {4}").format(artifact.id, 
                                                         artifact.udf[result_udf],
                                                         artifact.udf[udf1],op,
                                                         artifact.udf[udf2]))
-        artifact.udf[result_udf] = eval(
-            '{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
+        prod = eval('{0}{1}{2}'.format(artifact.udf[udf1],op,artifact.udf[udf2]))
+        if dil_fold:
+            prod = eval('{0}{1}{2}'.format(prod, op, dil_fold))
+        artifact.udf[result_udf] = prod
         artifact.put()
         logging.info('Updated {0} to {1}.'.format(result_udf,
                                                  artifact.udf[result_udf]))
@@ -71,6 +78,10 @@ def check_udf_has_value(artifacts, udf, value):
 
     return filtered_artifacts, incorrect_artifacts
 
+def look_for_Dillution_Fold(process, artifacts):
+    
+    input_per_sample
+
 def main(lims,args,epp_logger):
     p = Process(lims,id = args.pid)
     udf_check = 'Conc. Units'
@@ -92,7 +103,7 @@ def main(lims,args,epp_logger):
 
     if correct_artifacts:
         apply_calculations(lims, correct_artifacts, udf_factor1, '*',
-                           udf_factor2, result_udf, epp_logger)
+                           udf_factor2, result_udf, epp_logger, p)
 
     d = {'ca': len(correct_artifacts),
          'ia': len(wrong_factor1)+ len(wrong_factor2) + len(wrong_value)}
