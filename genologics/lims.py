@@ -37,6 +37,9 @@ class Lims(object):
         self.cache = dict()
         # For optimization purposes, enables requests to persist connections
         self.request_session = requests.Session()
+        #The connection pool has a default size of 10
+        self.adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self.request_session.mount('http://', self.adapter)
 
     def get_uri(self, *segments, **query):
         "Return the full URI given the path segments and optional query."
