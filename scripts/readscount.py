@@ -51,7 +51,7 @@ def sumreads(sample):
     #find the correct input
     inputart=None
     for inart in a.parent_process.all_inputs():
-        if sample in [s.name for s in inart.samples]:
+        if sample.name in [s.name for s in inart.samples]:
             try:
                 sq=lims.get_processes(type=SEQUENCING.values(), inputartifactlimsid=inart.id)
             except TypeError:
