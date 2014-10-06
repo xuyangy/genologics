@@ -15,21 +15,36 @@ from genologics.entities import *
 from pprint import pprint
 
 
-DEMULTIPLEX={'666' : 'Bcl Conversion & Demultiplexing (Illumina SBS) 4.0'}
+DEMULTIPLEX={'13' : 'Bcl Conversion & Demultiplexing (Illumina SBS) 4.0'}
 SUMMARY = {'356' : 'Project Summary 1.3'}
 SEQUENCING = {'38' : 'Illumina Sequencing (Illumina SBS) 4.0','46' : 'MiSeq Run (MiSeq) 4.0'}
 def main(lims, args, logger):
-   p = Process(lims,id = args.pid)
-   for output_artifact in p.all_outputs():
-       if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
-           sample=output_artifact.samples[0]
-           sample.udf['Total Reads (M)']=sumreads(sample)
-           logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
+    p = Process(lims,id = args.pid)
+    for output_artifact in p.all_outputs():
+        if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
+            sample=output_artifact.samples[0]
+            sample.udf['Total Reads (M)']=sumreads(sample)
+            logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
+            try:
+                if sample.udf['Reads min'] > sample.udf['Total Reads (M)']:
+                    sample.udf['Status (Auto)']="In Progress"
+                elif sample.udf['Reads min'] < sample.udf['Total Reads (M)'] or demnumber(sample) >2: 
+                    sample.udf['Status (Auto)']="Finished"
+            except KeyError:
+                logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
+
            sample.put()
        elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
            logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
             
+def demnumber(sample):
 
+    dem=set()
+    arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
+    for a in arts:
+        dem.add(a.parent_process.id)
+    return len(dem)
+    
 def sumreads(sample):
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
@@ -50,16 +65,22 @@ def sumreads(sample):
     #grab the sequencing process associated 
     #find the correct input
     inputart=None
-    for inart in a.parent_process.all_inputs():
-        if sample.name in [s.name for s in inart.samples]:
-            try:
-                sq=lims.get_processes(type=SEQUENCING.values(), inputartifactlimsid=inart.id)
-            except TypeError:
-                logging.error("Did not manage to get sequencing process for artifact {}".format(inart.id))
-            else:
-                if "Read 2 Cycles" in sq.udf and sq.udf['Read 2 Cycles'] is not None:
-                    tot/=2
-            break
+    try:
+        for inart in base_art.parent_process.all_inputs():
+            if sample.name in [s.name for s in inart.samples]:
+                try:
+                    sq=lims.get_processes(type=SEQUENCING.values(), inputartifactlimsid=inart.id)
+                except TypeError:
+                    logging.error("Did not manage to get sequencing process for artifact {}".format(inart.id))
+                else:
+                    if "Read 2 Cycles" in sq.udf and sq.udf['Read 2 Cycles'] is not None:
+                        tot/=2
+                break
+    except AttributeError:
+        #base_art is still None because no arts were found
+        logging.info("No demmultiplexing processes found for sample {0}".format(sample.name))
+
+
 
     # total is displayed as millions
     tot/=1000000
