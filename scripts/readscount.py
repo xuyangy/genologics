@@ -28,8 +28,10 @@ def main(lims, args, logger):
             try:
                 if sample.udf['Reads min'] > sample.udf['Total Reads (M)']:
                     sample.udf['Status (Auto)']="In Progress"
-                elif sample.udf['Reads min'] < sample.udf['Total Reads (M)'] or demnumber(sample) >2: 
-                    sample.udf['Status (Auto)']="Finished"
+                elif sample.udf['Reads min'] < sample.udf['Total Reads (M)'] : 
+                    sample.udf['Passed sequencing QC']="True"
+                    if demnumber(sample) > 2:
+                        sample.udf['Status (Auto)']="Finished"
             except KeyError:
                 logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
 
@@ -38,7 +40,7 @@ def main(lims, args, logger):
            logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
             
 def demnumber(sample):
-
+    """Returns the number of distinct demultiplexing processes for a given sample"""
     dem=set()
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     for a in arts:
