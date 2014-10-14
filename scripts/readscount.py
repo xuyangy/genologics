@@ -20,13 +20,16 @@ SUMMARY = {'356' : 'Project Summary 1.3'}
 SEQUENCING = {'38' : 'Illumina Sequencing (Illumina SBS) 4.0','46' : 'MiSeq Run (MiSeq) 4.0'}
 def main(lims, args, logger):
     p = Process(lims,id = args.pid)
+    samplenb=0
+    errnb=0
     for output_artifact in p.all_outputs():
         if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
             sample=output_artifact.samples[0]
+            samplenb+=1
             sample.udf['Total Reads (M)']=sumreads(sample)
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
-                if sample.udf['Reads min'] > sample.udf['Total Reads (M)']:
+                if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
                     sample.udf['Status (Auto)']="In Progress"
                 elif sample.udf['Reads min'] < sample.udf['Total Reads (M)'] : 
                     sample.udf['Passed sequencing QC']="True"
@@ -34,10 +37,13 @@ def main(lims, args, logger):
                         sample.udf['Status (Auto)']="Finished"
             except KeyError:
                 logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
+                errnb+=1
 
            sample.put()
        elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
            logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
+
+    logging.info("updated {0} samples with {1} errors".format(samplesnb, errnb))
             
 def demnumber(sample):
     """Returns the number of distinct demultiplexing processes for a given sample"""
