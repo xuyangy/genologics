@@ -29,11 +29,11 @@ def main(lims, args, logger):
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
-                    sample.udf['Status (Auto)']="In Progress"
+                    sample.udf['Status (auto)']="In Progress"
                 elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
                     sample.udf['Passed Sequencing QC']="True"
                     if demnumber(sample) > 2:
-                        sample.udf['Status (Auto)']="Finished"
+                        sample.udf['Status (auto)']="Finished"
             except KeyError as e:
                 logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
                 errnb+=1
