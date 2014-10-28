@@ -12,7 +12,6 @@ from genologics.epp import EppLogger
 import logging
 import sys
 from genologics.entities import *
-from pprint import pprint
 
 
 DEMULTIPLEX={'13' : 'Bcl Conversion & Demultiplexing (Illumina SBS) 4.0'}
@@ -31,22 +30,23 @@ def main(lims, args, logger):
             try:
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
                     sample.udf['Status (Auto)']="In Progress"
-                elif sample.udf['Reads min'] < sample.udf['Total Reads (M)'] : 
+                elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
                     sample.udf['Passed sequencing QC']="True"
                     if demnumber(sample) > 2:
                         sample.udf['Status (Auto)']="Finished"
-            except KeyError:
+            except KeyError as e:
                 logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
                 errnb+=1
 
-           sample.put()
-       elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
-           logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
+            sample.put()
+        elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
+            logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
 
-    logging.info("updated {0} samples with {1} errors".format(samplesnb, errnb))
+    logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
 def demnumber(sample):
     """Returns the number of distinct demultiplexing processes for a given sample"""
+    expectedName="{0} (FASTQ reads)".format(sample.name)
     dem=set()
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     for a in arts:
@@ -86,7 +86,7 @@ def sumreads(sample):
                 break
     except AttributeError:
         #base_art is still None because no arts were found
-        logging.info("No demmultiplexing processes found for sample {0}".format(sample.name))
+        logging.info("No demultiplexing processes found for sample {0}".format(sample.name))
 
 
 
