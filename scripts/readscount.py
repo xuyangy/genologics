@@ -31,7 +31,7 @@ def main(lims, args, logger):
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
                     sample.udf['Status (Auto)']="In Progress"
                 elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
-                    sample.udf['Passed sequencing QC']="True"
+                    sample.udf['Passed Sequencing QC']="True"
                     if demnumber(sample) > 2:
                         sample.udf['Status (Auto)']="Finished"
             except KeyError as e:
