@@ -8,9 +8,10 @@ from argparse import ArgumentParser
 
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
-from genologics.epp import EppLogger
+from genologics.epp import attach_file, EppLogger
 import logging
 import sys
+import os
 from genologics.entities import *
 
 
@@ -21,30 +22,40 @@ def main(lims, args, logger):
     p = Process(lims,id = args.pid)
     samplenb=0
     errnb=0
+    summary={}
+    logart=None
     for output_artifact in p.all_outputs():
         if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
             sample=output_artifact.samples[0]
             samplenb+=1
-            sample.udf['Total Reads (M)']=sumreads(sample)
+            sample.udf['Total Reads (M)']=sumreads(sample, summary)
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
-                    if demnumber(sample) > 2:
-                        sample.udf['Status (auto)']="Finished"
-                    else:
-                        sample.udf['Status (auto)']="In Progress"
+                    sample.udf['Status (auto)']="In Progress"
                 elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
                     sample.udf['Passed Sequencing QC']="True"
                     sample.udf['Status (auto)']="Finished"
             except KeyError as e:
                 print e
-                logging.info("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
+                logging.warning("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
                 errnb+=1
 
             sample.put()
         elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
             logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
+        elif(output_artifact.type=="ResultFile" and output_artifact.name=="AggregationLog"):
+            logart=output_artifact
 
+
+    f=open("AggregationLog", "w")
+    for sample in summary:
+        view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
+        totfc=len(set([s[0] for s in summary[sample]]))
+        totlanes=len(view)
+        f.write("{0} | {1} | {2} | {3}\n".format(sample, ";".join(view), totfc, totlanes))
+    f.close()
+    attach_file(os.path.join(os.getcwd(), "AggregationLog"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
 def demnumber(sample):
@@ -57,7 +68,9 @@ def demnumber(sample):
             dem.add(a.parent_process.id)
     return len(dem)
     
-def sumreads(sample):
+def sumreads(sample, summary):
+    if sample.name not in summary:
+        summary[sample.name]=[]
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
@@ -69,6 +82,13 @@ def sumreads(sample):
             continue
         try:
             if a.udf['Include reads'] == 'YES':
+                try:
+                    orig=a.parent_process.all_inputs()
+                    for o in orig:
+                        if sample in o.samples:
+                            summary[sample.name].append((o.location[0].name,o.location[1]))
+                except IOError:
+                    print "{0} has no location".format(a.id)
                 base_art=a
                 tot+=float(a.udf['# Reads'])
         except KeyError:
