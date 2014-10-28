@@ -50,7 +50,8 @@ def demnumber(sample):
     dem=set()
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     for a in arts:
-        dem.add(a.parent_process.id)
+        if a.udf["Include reads"] == "YES":
+            dem.add(a.parent_process.id)
     return len(dem)
     
 def sumreads(sample):
