@@ -87,7 +87,7 @@ def sumreads(sample, summary):
                     orig=a.parent_process.all_inputs()
                     for o in orig:
                         if sample in o.samples:
-                            summary[sample.name].append((o.location[0].name,location[1].split(":")[0]))
+                            summary[sample.name].append((o.location[0].name,o.location[1].split(":")[0]))
                 except IOError:
                     print "{0} has no location".format(a.id)
                 base_art=a
