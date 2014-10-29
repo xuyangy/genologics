@@ -48,14 +48,15 @@ def main(lims, args, logger):
             logart=output_artifact
 
 
-    f=open("AggregationLog", "w")
+    f=open("AggregationLog.csv", "w")
+    f.write("sample name | number of flowcells | number of lanes [ list of <flowcells:lane>")
     for sample in summary:
         view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
         totfc=len(set([s[0] for s in summary[sample]]))
         totlanes=len(view)
-        f.write("{0} | {1} | {2} | {3}\n".format(sample, ";".join(view), totfc, totlanes))
+        f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
     f.close()
-    attach_file(os.path.join(os.getcwd(), "AggregationLog"), logart)
+    attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
 def demnumber(sample):
@@ -86,7 +87,7 @@ def sumreads(sample, summary):
                     orig=a.parent_process.all_inputs()
                     for o in orig:
                         if sample in o.samples:
-                            summary[sample.name].append((o.location[0].name,o.location[1]))
+                            summary[sample.name].append((o.location[0].name,":".split(o.location[1])[0]))
                 except IOError:
                     print "{0} has no location".format(a.id)
                 base_art=a
