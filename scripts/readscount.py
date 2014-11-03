@@ -56,11 +56,11 @@ def main(lims, args, logger):
     with open("AggregationLog.csv", "w") as f:
         f.write("sample name | number of flowcells | number of lanes | flowcell1:lane1,lane2;flowcell2:lane1,lane2,lane3 ...")
         for sample in summary:
-            view=set("{0}:{1}".format(f, ",".join(summary[sample][f]) for f in summary[sample])
             totfc=len(summary[sample])
             totlanes=0
-            for f in summary[sample]:
-                totlanes+=len(summary[sample][f])
+            for fc in summary[sample]:
+                view="{0}:{1}".format(fc, ",".join(summary[sample][fc]))
+                totlanes+=len(summary[sample][fc])
             f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
