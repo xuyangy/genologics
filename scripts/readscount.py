@@ -81,7 +81,7 @@ def sumreads(sample, summary):
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
-    fileteredarts=[]
+    filteredarts=[]
     base_art=None
     for a in sorted(arts, key=lambda art:art.parent_process.date_run):
         if "# Reads" not in a.udf:
