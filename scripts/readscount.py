@@ -53,14 +53,13 @@ def main(lims, args, logger):
 
 
     #write the csv file, separated by pipes, no cell delimiter
-    f=open("AggregationLog.csv", "w")
-    f.write("sample name | number of flowcells | number of lanes | list of <flowcells:lane>")
-    for sample in summary:
-        view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
-        totfc=len(set([s[0] for s in summary[sample]]))
-        totlanes=len(view)
-        f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
-    f.close()
+    with open("AggregationLog.csv", "w") as f:
+       f.write("sample name | number of flowcells | number of lanes | list of <flowcells:lane>")
+        for sample in summary:
+            view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
+            totfc=len(set([s[0] for s in summary[sample]]))
+            totlanes=len(view)
+            f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
