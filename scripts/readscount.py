@@ -54,14 +54,15 @@ def main(lims, args, logger):
 
     #write the csv file, separated by pipes, no cell delimiter
     with open("AggregationLog.csv", "w") as f:
-        f.write("sample name | number of flowcells | number of lanes | flowcell1:lane1,lane2;flowcell2:lane1,lane2,lane3 ...")
+        f.write("sample name , number of flowcells , number of lanes , flowcell1:lane1|lane2;flowcell2:lane1|lane2|lane3 ...\n")
         for sample in summary:
+            view=[]
             totfc=len(summary[sample])
             totlanes=0
             for fc in summary[sample]:
-                view="{0}:{1}".format(fc, ",".join(summary[sample][fc]))
+                view.append("{0}:{1}".format(fc, "|".join(summary[sample][fc])))
                 totlanes+=len(summary[sample][fc])
-            f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
+            f.write("{0},{1},{2},{3}\n".format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
@@ -93,10 +94,10 @@ def sumreads(sample, summary):
                     if sample in o.samples:
                         #if the artifact belongs to the same flowcell/run, overwrite with the most recent.
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
-                        if o.location[0] in summary[sample.name]:
-                            summary[sample.name][o.location[0]].append(o.location[1].split(":")[0])
+                        if o.location[0].name in summary[sample.name]:
+                            summary[sample.name][o.location[0].name].add(o.location[1].split(":")[0])
                         else:
-                            summary[sample.name][o.location[0]]=[o.location[1].split(":")[0]]
+                            summary[sample.name][o.location[0].name]=set(o.location[1].split(":")[0])
 
                         filteredarts.append(a)
         except KeyError:
