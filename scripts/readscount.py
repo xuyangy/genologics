@@ -56,7 +56,7 @@ def main(lims, args, logger):
     with open("AggregationLog.csv", "w") as f:
         f.write("sample name | number of flowcells | number of lanes | flowcell1:lane1,lane2;flowcell2:lane1,lane2,lane3 ...")
         for sample in summary:
-            view=set("{0}:{1}".format(f, summary[sample][f].join(",")) for f in summary[sample])
+            view=set("{0}:{1}".format(f, ",".join(summary[sample][f]) for f in summary[sample])
             totfc=len(summary[sample])
             totlanes=0
             for f in summary[sample]:
