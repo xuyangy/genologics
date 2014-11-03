@@ -54,11 +54,13 @@ def main(lims, args, logger):
 
     #write the csv file, separated by pipes, no cell delimiter
     with open("AggregationLog.csv", "w") as f:
-       f.write("sample name | number of flowcells | number of lanes | list of <flowcells:lane>")
+        f.write("sample name | number of flowcells | number of lanes | flowcell1:lane1,lane2;flowcell2:lane1,lane2,lane3 ...")
         for sample in summary:
-            view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
-            totfc=len(set([s[0] for s in summary[sample]]))
-            totlanes=len(view)
+            view=set("{0}:{1}".format(f, summary[sample][f].join(",")) for f in summary[sample])
+            totfc=len(summary[sample])
+            totlanes=0
+            for f in summary[sample]:
+                totlanes+=len(summary[sample][f])
             f.write("{0} | {1} | {2} | {3}\n".format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
@@ -75,11 +77,11 @@ def demnumber(sample):
     
 def sumreads(sample, summary):
     if sample.name not in summary:
-        summary[sample.name]=[]
+        summary[sample.name]={}
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
-    artsfcs={}
+    fileteredarts=[]
     base_art=None
     for a in sorted(arts, key=lambda art:art.parent_process.date_run):
         if "# Reads" not in a.udf:
@@ -91,21 +93,17 @@ def sumreads(sample, summary):
                     if sample in o.samples:
                         #if the artifact belongs to the same flowcell/run, overwrite with the most recent.
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
-                        artsfcs[fc]=a
+                        if o.location[0] in summary[sample.name]:
+                            summary[sample.name][o.location[0]].append(o.location[1].split(":")[0])
+                        else:
+                            summary[sample.name][o.location[0]]=[o.location[1].split(":")[0]]
+
+                        filteredarts.append(a)
         except KeyError:
             #Happens if the "Include reads" does not exist
             pass
 
-    for a in artsfcs.values():
-        #discard artifacts that do not have reads
-        #there should not be any actually
-        try:
-            orig=a.parent_process.all_inputs()
-            for o in orig:
-                if sample in o.samples:
-                    summary[sample.name].append((o.location[0].name,o.location[1].split(":")[0]))
-        except IOError:
-            print "{0} has no location".format(a.id)
+    for a in filteredarts:
         base_art=a
         tot+=float(a.udf['# Reads'])
 
