@@ -62,7 +62,7 @@ def main(lims, args, logger):
             for fc in summary[sample]:
                 view.append("{0}:{1}".format(fc, "|".join(summary[sample][fc])))
                 totlanes+=len(summary[sample][fc])
-            f.write("{0},{1},{2},{3}\n".format(sample, totfc, totlanes, ";".join(view)))
+            f.write('"{0}","{1}","{2}","{3}"\n'.format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
@@ -82,9 +82,10 @@ def sumreads(sample, summary):
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
+    fclanel=[]
     filteredarts=[]
     base_art=None
-    for a in sorted(arts, key=lambda art:art.parent_process.date_run):
+    for a in sorted(arts, key=lambda art:art.parent_process.date_run, reverse=True):
         if "# Reads" not in a.udf:
             continue
         try:
@@ -92,14 +93,15 @@ def sumreads(sample, summary):
                 orig=a.parent_process.all_inputs()
                 for o in orig:
                     if sample in o.samples:
-                        #if the artifact belongs to the same flowcell/run, overwrite with the most recent.
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
+                        if fc not in fclanel:
+                            filteredarts.append(a)
+                            fclanel.append(fc)
                         if o.location[0].name in summary[sample.name]:
                             summary[sample.name][o.location[0].name].add(o.location[1].split(":")[0])
                         else:
                             summary[sample.name][o.location[0].name]=set(o.location[1].split(":")[0])
 
-                        filteredarts.append(a)
         except KeyError:
             #Happens if the "Include reads" does not exist
             pass
