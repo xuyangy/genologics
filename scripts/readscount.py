@@ -19,15 +19,18 @@ DEMULTIPLEX={'13' : 'Bcl Conversion & Demultiplexing (Illumina SBS) 4.0'}
 SUMMARY = {'356' : 'Project Summary 1.3'}
 SEQUENCING = {'38' : 'Illumina Sequencing (Illumina SBS) 4.0','46' : 'MiSeq Run (MiSeq) 4.0'}
 def main(lims, args, logger):
+    """This should be run at project summary level"""
     p = Process(lims,id = args.pid)
     samplenb=0
     errnb=0
     summary={}
     logart=None
     for output_artifact in p.all_outputs():
+        #filter to only keep solo sample demultiplexing output artifacts
         if output_artifact.type=='Analyte' and len(output_artifact.samples)==1:
             sample=output_artifact.samples[0]
             samplenb+=1
+            #update the total number of reads
             sample.udf['Total Reads (M)']=sumreads(sample, summary)
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
@@ -41,6 +44,7 @@ def main(lims, args, logger):
                 logging.warning("No reads minimum found, cannot set the status auto flag for sample {}".format(sample.name))
                 errnb+=1
 
+            #commit the changes
             sample.put()
         elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
             logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
@@ -48,8 +52,9 @@ def main(lims, args, logger):
             logart=output_artifact
 
 
+    #write the csv file, separated by pipes, no cell delimiter
     f=open("AggregationLog.csv", "w")
-    f.write("sample name | number of flowcells | number of lanes [ list of <flowcells:lane>")
+    f.write("sample name | number of flowcells | number of lanes | list of <flowcells:lane>")
     for sample in summary:
         view=set("{0}:{1}".format(s[0],s[1]) for s in summary[sample])
         totfc=len(set([s[0] for s in summary[sample]]))
@@ -60,7 +65,7 @@ def main(lims, args, logger):
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
 def demnumber(sample):
-    """Returns the number of distinct demultiplexing processes for a given sample"""
+    """Returns the number of distinct demultiplexing processes tagged with "Include reads" for a given sample"""
     expectedName="{0} (FASTQ reads)".format(sample.name)
     dem=set()
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
@@ -75,25 +80,35 @@ def sumreads(sample, summary):
     expectedName="{0} (FASTQ reads)".format(sample.name)
     arts=lims.get_artifacts(sample_name=sample.name,process_type=DEMULTIPLEX.values(), name=expectedName)   
     tot=0
+    artsfcs={}
     base_art=None
     for a in sorted(arts, key=lambda art:art.parent_process.date_run):
-        #discard artifacts that do not have reads
-        #there should not be any actually
         if "# Reads" not in a.udf:
             continue
         try:
             if a.udf['Include reads'] == 'YES':
-                try:
-                    orig=a.parent_process.all_inputs()
-                    for o in orig:
-                        if sample in o.samples:
-                            summary[sample.name].append((o.location[0].name,o.location[1].split(":")[0]))
-                except IOError:
-                    print "{0} has no location".format(a.id)
-                base_art=a
-                tot+=float(a.udf['# Reads'])
+                orig=a.parent_process.all_inputs()
+                for o in orig:
+                    if sample in o.samples:
+                        #if the artifact belongs to the same flowcell/run, overwrite with the most recent.
+                        fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
+                        artsfcs[fc]=a
         except KeyError:
+            #Happens if the "Include reads" does not exist
             pass
+
+    for a in artsfcs.values():
+        #discard artifacts that do not have reads
+        #there should not be any actually
+        try:
+            orig=a.parent_process.all_inputs()
+            for o in orig:
+                if sample in o.samples:
+                    summary[sample.name].append((o.location[0].name,o.location[1].split(":")[0]))
+        except IOError:
+            print "{0} has no location".format(a.id)
+        base_art=a
+        tot+=float(a.udf['# Reads'])
 
     #grab the sequencing process associated 
     #find the correct input
