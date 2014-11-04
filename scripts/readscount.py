@@ -54,7 +54,8 @@ def main(lims, args, logger):
 
     #write the csv file, separated by pipes, no cell delimiter
     with open("AggregationLog.csv", "w") as f:
-        f.write('"sample name" ; "number of flowcells" ; "number of lanes" ; "flowcell1:lane1|lane2,flowcell2:lane1|lane2|lane3 ..."\n')
+        f.write("sep=,\n")
+        f.write('sample name,number of flowcells,number of lanes,flowcell1:lane1|lane2;flowcell2:lane1|lane2|lane3 ...\n')
         for sample in summary:
             view=[]
             totfc=len(summary[sample])
@@ -62,7 +63,7 @@ def main(lims, args, logger):
             for fc in summary[sample]:
                 view.append("{0}:{1}".format(fc, "|".join(summary[sample][fc])))
                 totlanes+=len(summary[sample][fc])
-            f.write('"{0}";"{1}";"{2}";"{3}"\n'.format(sample, totfc, totlanes, ",".join(view)))
+            f.write('{0},{1},{2},{3}\n'.format(sample, totfc, totlanes, ";".join(view)))
     attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
     logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
             
