@@ -89,7 +89,7 @@ def sumreads(sample, summary):
         if "# Reads" not in a.udf:
             continue
         try:
-            if a.udf['Include reads'] == 'YES':
+            if 'Include reads' in a.udf:
                 orig=a.parent_process.all_inputs()
                 for o in orig:
                     if sample in o.samples:
@@ -107,8 +107,9 @@ def sumreads(sample, summary):
             pass
 
     for a in filteredarts:
-        base_art=a
-        tot+=float(a.udf['# Reads'])
+        if a.udf['Include reads']=='YES':
+            base_art=a
+            tot+=float(a.udf['# Reads'])
 
     #grab the sequencing process associated 
     #find the correct input
