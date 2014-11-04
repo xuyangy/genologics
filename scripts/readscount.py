@@ -36,6 +36,7 @@ def main(lims, args, logger):
             try:
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
                     sample.udf['Status (auto)']="In Progress"
+                    sample.udf['Passed Sequencing QC']="False"
                 elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
                     sample.udf['Passed Sequencing QC']="True"
                     sample.udf['Status (auto)']="Finished"
