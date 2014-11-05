@@ -92,13 +92,17 @@ def sumreads(sample, summary):
             continue
         try:
             if 'Include reads' in a.udf:
-                orig=a.parent_process.all_inputs()
+                orig=getParentInputs(a)
+                #orig=a.parent_process.all_inputs()
                 for o in orig:
                     if sample in o.samples:
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
                         if fc not in fclanel:
+                            #print "{} adding {} {} {} {}".format(sample.name,fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                             filteredarts.append(a)
                             fclanel.append(fc)
+                        else:
+                            #print "{} skipping {} {} {} {}".format(sample.name, fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                         if o.location[0].name in summary[sample.name]:
                             summary[sample.name][o.location[0].name].add(o.location[1].split(":")[0])
                         else:
@@ -108,9 +112,12 @@ def sumreads(sample, summary):
             #Happens if the "Include reads" does not exist
             pass
 
-    for a in filteredarts:
+    #for a in filteredarts:
+    for i in xrange(0,len(filteredarts)):    
+        a=filteredarts[i]
         if a.udf['Include reads']=='YES':
             base_art=a
+            #print "sample {} artifact {} fc {} reads {}".format(sample.name, a.id, fclanel[i], a.udf["# Reads"])
             tot+=float(a.udf['# Reads'])
 
     #grab the sequencing process associated 
@@ -138,6 +145,13 @@ def sumreads(sample, summary):
     tot/=1000000
     return tot
 
+def getParentInputs(art):
+    inp=set()
+    for i in art.parent_process.input_output_maps:
+        if i[1]['uri'].id==art.id:
+            inp.add(i[0]['uri'])
+
+    return inp
     
 
 if __name__=="__main__":
