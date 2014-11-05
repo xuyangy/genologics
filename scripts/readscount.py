@@ -101,7 +101,7 @@ def sumreads(sample, summary):
                             #print "{} adding {} {} {} {}".format(sample.name,fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                             filteredarts.append(a)
                             fclanel.append(fc)
-                        else:
+                        #else:
                             #print "{} skipping {} {} {} {}".format(sample.name, fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                         if o.location[0].name in summary[sample.name]:
                             summary[sample.name][o.location[0].name].add(o.location[1].split(":")[0])
