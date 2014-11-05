@@ -120,14 +120,15 @@ def sumreads(sample, summary):
         for inart in base_art.parent_process.all_inputs():
             if sample.name in [s.name for s in inart.samples]:
                 try:
-                    sq=lims.get_processes(type=SEQUENCING.values(), inputartifactlimsid=inart.id)
+                    sq=lims.get_processes(type=SEQUENCING.values(), inputartifactlimsid=inart.id)[0]
                 except TypeError:
                     logging.error("Did not manage to get sequencing process for artifact {}".format(inart.id))
                 else:
                     if "Read 2 Cycles" in sq.udf and sq.udf['Read 2 Cycles'] is not None:
                         tot/=2
                 break
-    except AttributeError:
+    except AttributeError as e:
+        print e
         #base_art is still None because no arts were found
         logging.info("No demultiplexing processes found for sample {0}".format(sample.name))
 
