@@ -5,7 +5,6 @@ based on the flag 'include reads' located at the same level as '# reads'
 Denis Moreno, Science for Life Laboratory, Stockholm, Sweden
 """ 
 from argparse import ArgumentParser
-
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.epp import attach_file, EppLogger
@@ -165,7 +164,6 @@ if __name__=="__main__":
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
 
-    main(lims, args, None)
     with EppLogger(args.log, lims=lims, prepend=True) as epp_logger:
         main(lims, args, epp_logger)
 
