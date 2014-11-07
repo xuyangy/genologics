@@ -7,7 +7,11 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.epp import attach_file, EppLogger
 import logging
 import os
+import sys
 from genologics.entities import *
+
+#Global. Sue me.
+checkTheLog=False
 
 def main(lims, args):
     currentStep=Process(lims,id=args.pid)
@@ -27,9 +31,12 @@ def main(lims, args):
             attach_file(os.path.join(os.getcwd(), "bravo.csv"), out)
         if out.name=="Bravo Log":
             attach_file(os.path.join(os.getcwd(), "bravo.log"), out)
-    logging.info("Work done")
+    if checkTheLog:
+        logging.warning("Errors were met, please check the Log file")
+        sys.exit(1)
+    else:
+        logging.info("Work done")
 def calc_vol(art_tuple, logContext):
-    checkTheLog=False
     try:
         assert art_tuple[0]['uri'].udf['Conc. Units'] == "ng/ul"
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
@@ -37,8 +44,8 @@ def calc_vol(art_tuple, logContext):
         volume=amount_ng/conc
         if volume<4:
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
-            checkTheLog=True
                 art_tuple[0]['uri'].location[0].name,art_tuple[0]['uri'].location[1], volume))
+            checkTheLog=True
         elif volume>art_tuple[0]['uri'].udf["Volume (ul)"]:
             logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
                 art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[0]['uri'].udf["Volume (ul)"] ))
@@ -52,8 +59,6 @@ def calc_vol(art_tuple, logContext):
     except AssertionError:
         logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.")
         checkTheLog=True
-    if checkTheLog:
-        logging.warning("Errors were met, please check the Log file")
     return "#ERROR#"
 
 if __name__=="__main__":
