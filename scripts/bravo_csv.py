@@ -37,7 +37,7 @@ def calc_vol(art_tuple, logContext):
         if volume<4:
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
                 art_tuple[0]['uri'].location[0].name,art_tuple[0]['uri'].location[1], volume))
-        elif volume>art_tuple[1]['uri'].udf["Total Volume (uL)"]:
+        elif volume>art_tuple[0]['uri'].udf["Volume (ul)"]:
             logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
                 art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[1]['uri'].udf["Total Volume (uL)"] ))
         else:
