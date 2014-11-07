@@ -12,29 +12,41 @@ from genologics.entities import *
 def main(lims, args):
     currentStep=Process(lims,id=args.pid)
     with open("bravo.csv", "w") as stupidContext:
-        for art_tuple in currentStep.input_output_maps:
-            if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte': 
-                source_fc=art_tuple[0]['uri'].location[0].name
-                source_well=art_tuple[0]['uri'].location[1]
-                dest_fc=art_tuple[1]['uri'].location[0].name
-                dest_well=art_tuple[1]['uri'].location[1]
-                volume=calc_vol(art_tuple)
-                stupidContext.write("{0},{1},{2},{3},{4}\n".format(source_fc, source_well, volume, dest_fc, dest_well)) 
+        with open("bravo.log", "w") as logContext:
+            for art_tuple in currentStep.input_output_maps:
+                if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte': 
+                    source_fc=art_tuple[0]['uri'].location[0].name
+                    source_well=art_tuple[0]['uri'].location[1]
+                    dest_fc=art_tuple[1]['uri'].location[0].name
+                    dest_well=art_tuple[1]['uri'].location[1]
+                    final_volume=art_tuple[1]['uri'].udf["Total Volume (uL)"]
+                    volume=calc_vol(art_tuple, logContext)
+                    stupidContext.write("{0},{1},{2},{3},{4},{5}\n".format(source_fc, source_well, volume, dest_fc, dest_well, final_volume)) 
     for out in currentStep.all_outputs():
         if out.name=="Bravo CSV File":
             attach_file(os.path.join(os.getcwd(), "bravo.csv"), out)
+        if out.name=="Bravo Log":
+            attach_file(os.path.join(os.getcwd(), "bravo.log"), out)
     logging.info("Work done")
-def calc_vol(art_tuple):
+def calc_vol(art_tuple, logContext):
     try:
         assert art_tuple[0]['uri'].udf['Conc. Units'] == "ng/ul"
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
         conc=art_tuple[0]['uri'].udf['Concentration']
-        print amount_ng, conc, "{0:.2f}".format(amount_ng/conc)
-        return "{0:.2f}".format(amount_ng/conc) 
+        volume=amount_ng/conc
+        if volume<4:
+            logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
+                art_tuple[0]['uri'].location[0].name,art_tuple[0]['uri'].location[1], volume))
+        elif volume>art_tuple[1]['uri'].udf["Total Volume (uL)"]:
+            logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
+                art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[1]['uri'].udf["Total Volume (uL)"] ))
+        else:
+            logContext.write("INFO : Sample {0} looks okay.\n".format(art_tuple[1]['uri'].samples[0].name))
+        return "{0:.2f}".format(volume) 
     except KeyError as e:
-        logging.error("The input artifact is lacking a field : {}".format(e)) 
+        logContext.write("ERROR : The input artifact is lacking a field : {}".format(e)) 
     except AssertionError:
-        logging.error("This script expects the concentration to be in ng/ul, this does not seem to be the case.")
+        logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.")
     return "#ERROR#"
 
 if __name__=="__main__":
