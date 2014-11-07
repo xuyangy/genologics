@@ -29,6 +29,7 @@ def main(lims, args):
             attach_file(os.path.join(os.getcwd(), "bravo.log"), out)
     logging.info("Work done")
 def calc_vol(art_tuple, logContext):
+    checkTheLog=False
     try:
         assert art_tuple[0]['uri'].udf['Conc. Units'] == "ng/ul"
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
@@ -36,17 +37,23 @@ def calc_vol(art_tuple, logContext):
         volume=amount_ng/conc
         if volume<4:
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
+            checkTheLog=True
                 art_tuple[0]['uri'].location[0].name,art_tuple[0]['uri'].location[1], volume))
         elif volume>art_tuple[0]['uri'].udf["Volume (ul)"]:
             logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
-                art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[1]['uri'].udf["Total Volume (uL)"] ))
+                art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[0]['uri'].udf["Volume (ul)"] ))
+            checkTheLog=True
         else:
             logContext.write("INFO : Sample {0} looks okay.\n".format(art_tuple[1]['uri'].samples[0].name))
         return "{0:.2f}".format(volume) 
     except KeyError as e:
         logContext.write("ERROR : The input artifact is lacking a field : {}".format(e)) 
+        checkTheLog=True
     except AssertionError:
         logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.")
+        checkTheLog=True
+    if checkTheLog:
+        logging.warning("Errors were met, please check the Log file")
     return "#ERROR#"
 
 if __name__=="__main__":
