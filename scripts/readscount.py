@@ -97,11 +97,8 @@ def sumreads(sample, summary):
                     if sample in o.samples:
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
                         if fc not in fclanel:
-                            #print "{} adding {} {} {} {}".format(sample.name,fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                             filteredarts.append(a)
                             fclanel.append(fc)
-                        #else:
-                            #print "{} skipping {} {} {} {}".format(sample.name, fc, a.parent_process.date_run, a.udf["# Reads"], a.id)
                         if o.location[0].name in summary[sample.name]:
                             summary[sample.name][o.location[0].name].add(o.location[1].split(":")[0])
                         else:
@@ -116,7 +113,6 @@ def sumreads(sample, summary):
         a=filteredarts[i]
         if a.udf['Include reads']=='YES':
             base_art=a
-            #print "sample {} artifact {} fc {} reads {}".format(sample.name, a.id, fclanel[i], a.udf["# Reads"])
             tot+=float(a.udf['# Reads'])
 
     #grab the sequencing process associated 
