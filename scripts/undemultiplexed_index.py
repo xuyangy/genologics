@@ -83,6 +83,7 @@ class UndemuxInd():
                 self.nr_lane_samps_tot += 1
                 samp_name = target_file.samples[0].name
                 for lane_samp in self.demultiplex_stats['Barcode_lane_statistics']:
+                    logging.info(lane_samp.keys())
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
