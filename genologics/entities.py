@@ -1026,7 +1026,6 @@ class Step(Entity):
 
     _URI = 'steps'
     def __init__(self, lims, uri=None, id=None):
-        self.test='plop'
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
         self.actions= StepActions(lims,uri=self.uri)
