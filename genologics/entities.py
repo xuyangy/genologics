@@ -999,7 +999,45 @@ class Artifact(Entity):
     # XXX set_state ?
     state = property(get_state)
 
+class StepActions():
+    """Small hack to be able to query the actions subentity of
+    the Step entity. Right now, only the escalation is parsed."""
+
+    def __init__(self, lims, uri=None, id=None):
+        self.lims=lims
+        self.uri="{0}/actions".format(uri)
+        self.root=lims.get(self.uri)
+        self.escalation={}
+        for node in self.root.findall('escalation'):
+            self.escalation['artifacts']=[]
+            self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
+            if "review" in node:
+                self.escalation['status']='Reviewed'
+                self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
+            else:
+                self.escalation['status']='Pending'
+
+            for node2 in node.findall('escalated-artifacts'):
+                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
+                self.escalation['artifacts'].extend(art)
+
+class Step(Entity):
+    "Step, as defined by the genologics API."
+
+    _URI = 'steps'
+    def __init__(self, lims, uri=None, id=None):
+        self.test='plop'
+        super(Step, self).__init__(lims,uri,id)
+        assert self.uri is not None
+        self.actions= StepActions(lims,uri=self.uri)
+
+
+    #configuration      = EntityDescriptor('configuration', StepConfiguration)
+    #placements         = EntityDescriptor('placements', StepPlacements)
+    #program_status     = EntityDescriptor('program-status',StepProgramStatus)
+    #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
+StepActions.step    = EntityDescriptor('step', Step)
 
 
