@@ -1011,7 +1011,7 @@ class StepActions():
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
             self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
-            if "review" in node:
+            if node.find('review') is not None: #recommended by the Etree doc
                 self.escalation['status']='Reviewed'
                 self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
             else:
