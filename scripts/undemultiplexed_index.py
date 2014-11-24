@@ -144,7 +144,7 @@ class UndemuxInd():
             if self.single:
                 Nr = float(sample_info['# Reads'].replace(',',''))
             else:
-                Nr = np.true_divide(float(sample_info['# Reads'].replace(',','')),2,2))
+                Nr = np.true_divide(float(sample_info['# Reads'].replace(',','')),2,2)
             target_file.udf['# Reads'] = Nr
         target_file.qc_flag = self._QC(target_file, sample_info)
         logging.info(target_file.udf.items())
