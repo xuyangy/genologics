@@ -64,6 +64,7 @@ class UndemuxInd():
         self.nr_lane_samps_updat = 0
         self.nr_lane_samps_tot = 0
         self.miseq = False
+        self.single = True
 
 
     def _get_file_path(self):
@@ -81,6 +82,12 @@ class UndemuxInd():
             logging.info('Could not find mi-seq run ID with Reagent Cartridge '
                             'ID {0}. Looking for Hiseq run.'.format(cont_name))
             ID = cont_name
+        logging.info('looking for sequencing setup')
+        try:
+            Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
+            self.single = False
+        except:
+            self.single = True
         try:
             return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
         except:
@@ -134,7 +141,11 @@ class UndemuxInd():
         if not dict(target_file.udf.items()).has_key('% Bases >=Q30'):
             target_file.udf['% Bases >=Q30'] = float(sample_info['% of >= Q30 Bases (PF)'])
         if not dict(target_file.udf.items()).has_key('# Reads'):
-            target_file.udf['# Reads'] = float(sample_info['# Reads'].replace(',',''))
+            if self.single:
+                Nr = float(sample_info['# Reads'].replace(',',''))
+            else:
+                Nr = np.true_divide(float(sample_info['# Reads'].replace(',','')),2,2))
+            target_file.udf['# Reads'] = Nr
         target_file.qc_flag = self._QC(target_file, sample_info)
         logging.info(target_file.udf.items())
         set_field(target_file)
