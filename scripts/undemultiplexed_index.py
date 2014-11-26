@@ -30,6 +30,7 @@ Writes to:
     % Perfect Index Read                            per artifact (result file)
     % Bases >=Q30                                   per artifact (result file)
     # Reads                                         per artifact (result file)
+    # Read Pairs
 
 Logging:
     The script outputs a regular log file with regular execution information.
@@ -65,6 +66,7 @@ class UndemuxInd():
         self.nr_lane_samps_tot = 0
         self.miseq = False
         self.single = True
+        self.read_pairs = None
 
 
     def _get_file_path(self):
@@ -84,10 +86,14 @@ class UndemuxInd():
             ID = cont_name
         logging.info('looking for sequencing setup')
         try:
-            Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
-            self.single = False
+            Read_1_Cycles = miseq_run[0].udf['Read 1 Cycles']
+            try:
+                Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
+                self.single = False
+            except:
+                self.single = True
         except:
-            self.single = True
+            sys.exit('Could not get sequencing set up.')
         try:
             return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
         except:
@@ -141,11 +147,12 @@ class UndemuxInd():
         if not dict(target_file.udf.items()).has_key('% Bases >=Q30'):
             target_file.udf['% Bases >=Q30'] = float(sample_info['% of >= Q30 Bases (PF)'])
         if not dict(target_file.udf.items()).has_key('# Reads'):
+            target_file.udf['# Reads'] = float(sample_info['# Reads'].replace(',',''))
             if self.single:
-                Nr = float(sample_info['# Reads'].replace(',',''))
+                self.read_pairs = float(sample_info['# Reads'].replace(',',''))
             else:
-                Nr = np.true_divide(float(sample_info['# Reads'].replace(',','')),2)
-            target_file.udf['# Reads'] = Nr
+                self.read_pairs = np.true_divide(float(sample_info['# Reads'].replace(',','')),2)
+            target_file.udf['# Read Pairs'] = self.read_pairs
         target_file.qc_flag = self._QC(target_file, sample_info)
         logging.info(target_file.udf.items())
         set_field(target_file)
@@ -160,11 +167,10 @@ class UndemuxInd():
         quality filtering if performed."""
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        nr_reads = int(sample_info['# Reads'].replace(',',''))
         self._get_QC_thresholds()
         QC1 = (perf_ind_read >= self.QC_thresholds['perf_ind'])
         QC2 = (Q30 >= self.QC_thresholds['%Q30'])
-        QC3 = (nr_reads >= self.QC_thresholds['nr_read'])
+        QC3 = (self.read_pairs >= self.QC_thresholds['nr_read'])
         if QC1 and QC2 and QC3:
             return 'PASSED'
         else:
