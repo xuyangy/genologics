@@ -170,6 +170,8 @@ class UndemuxInd():
         self._get_QC_thresholds()
         QC1 = (perf_ind_read >= self.QC_thresholds['perf_ind'])
         QC2 = (Q30 >= self.QC_thresholds['%Q30'])
+        logging.info(self.read_pairs)
+        logging.info(self.QC_thresholds['nr_read'])
         QC3 = (self.read_pairs >= self.QC_thresholds['nr_read'])
         if QC1 and QC2 and QC3:
             return 'PASSED'
