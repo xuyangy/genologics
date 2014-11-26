@@ -30,6 +30,7 @@ Writes to:
     % Perfect Index Read                            per artifact (result file)
     % Bases >=Q30                                   per artifact (result file)
     # Reads                                         per artifact (result file)
+    # Read Pairs
 
 Logging:
     The script outputs a regular log file with regular execution information.
@@ -141,11 +142,12 @@ class UndemuxInd():
         if not dict(target_file.udf.items()).has_key('% Bases >=Q30'):
             target_file.udf['% Bases >=Q30'] = float(sample_info['% of >= Q30 Bases (PF)'])
         if not dict(target_file.udf.items()).has_key('# Reads'):
+            target_file.udf['# Reads'] = float(sample_info['# Reads'].replace(',',''))
             if self.single:
                 Nr = float(sample_info['# Reads'].replace(',',''))
             else:
                 Nr = np.true_divide(float(sample_info['# Reads'].replace(',','')),2)
-            target_file.udf['# Reads'] = Nr
+            target_file.udf['# Read Pairs'] = Nr
         target_file.qc_flag = self._QC(target_file, sample_info)
         logging.info(target_file.udf.items())
         set_field(target_file)
