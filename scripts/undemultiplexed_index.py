@@ -85,10 +85,14 @@ class UndemuxInd():
             ID = cont_name
         logging.info('looking for sequencing setup')
         try:
-            Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
-            self.single = False
+            Read_1_Cycles = miseq_run[0].udf['Read 1 Cycles']
+            try:
+                Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
+                self.single = False
+            except:
+                self.single = True
         except:
-            self.single = True
+            sys.exit('Could not get sequencing set up.')
         try:
             return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
         except:
