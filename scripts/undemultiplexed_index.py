@@ -181,6 +181,7 @@ class UndemuxInd():
             self.QC_thresholds['perf_ind'] = self.process.udf['Threshold for % Perfect Index Reads']
             self.QC_thresholds['%Q30'] = self.process.udf['Threshold for % bases >= Q30']
             self.QC_thresholds['nr_read'] = self.process.udf['Threshold for # Reads']
+            self.QC_thresholds['undem_yield'] = self.process.udf['Threshold for Undemultiplexed Index Yield']
         except:
             sys.exit("Set QC thresholds and try again!")
 
@@ -250,7 +251,7 @@ class UndemuxInd():
             index_name = lane_inf['undemultiplexed_barcodes']['index_name']
             lanes = lane_inf['undemultiplexed_barcodes']['lane']
             for i, c in enumerate(counts):
-                if int(c) > 100000:
+                if int(c) > self.QC_thresholds['undem_yield']:
                     ##  Format warning message
                     lane = lanes[i]
                     if index_name[i]:
