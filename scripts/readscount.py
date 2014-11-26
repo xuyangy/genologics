@@ -64,8 +64,12 @@ def main(lims, args, logger):
                 view.append("{0}:{1}".format(fc, "|".join(summary[sample][fc])))
                 totlanes+=len(summary[sample][fc])
             f.write('{0},{1},{2},{3}\n'.format(sample, totfc, totlanes, ";".join(view)))
-    attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
-    logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
+    try:
+        attach_file(os.path.join(os.getcwd(), "AggregationLog.csv"), logart)
+        logging.info("updated {0} samples with {1} errors".format(samplenb, errnb))
+    except AttributeError:
+        #happens if the log artifact does not exist, if the step has been started before the configuration changes
+        logging.info("Could not upload the log file")
             
 def demnumber(sample):
     """Returns the number of distinct demultiplexing processes tagged with "Include reads" for a given sample"""
@@ -92,7 +96,6 @@ def sumreads(sample, summary):
         try:
             if 'Include reads' in a.udf:
                 orig=getParentInputs(a)
-                #orig=a.parent_process.all_inputs()
                 for o in orig:
                     if sample in o.samples:
                         fc="{0}:{1}".format(o.location[0].name,o.location[1].split(":")[0])
@@ -108,7 +111,6 @@ def sumreads(sample, summary):
             #Happens if the "Include reads" does not exist
             pass
 
-    #for a in filteredarts:
     for i in xrange(0,len(filteredarts)):    
         a=filteredarts[i]
         if a.udf['Include reads']=='YES':
