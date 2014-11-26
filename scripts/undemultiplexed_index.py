@@ -148,11 +148,11 @@ class UndemuxInd():
             target_file.udf['% Bases >=Q30'] = float(sample_info['% of >= Q30 Bases (PF)'])
         if not dict(target_file.udf.items()).has_key('# Reads'):
             target_file.udf['# Reads'] = float(sample_info['# Reads'].replace(',',''))
-            if self.single:
-                self.read_pairs = int(sample_info['# Reads'].replace(',',''))
-            else:
-                self.read_pairs = np.true_divide(float(sample_info['# Reads'].replace(',','')),2)
-            target_file.udf['# Read Pairs'] = self.read_pairs
+        if self.single:
+            self.read_pairs = int(target_file.udf['# Reads'])
+        else:
+            self.read_pairs = np.true_divide(float(target_file.udf['# Reads']),2)
+        target_file.udf['# Read Pairs'] = self.read_pairs
         target_file.qc_flag = self._QC(target_file, sample_info)
         logging.info(target_file.udf.items())
         set_field(target_file)
