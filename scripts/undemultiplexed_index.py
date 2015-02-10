@@ -173,10 +173,10 @@ class UndemuxInd():
         QC2 = (Q30 >= self.QC_thresholds['%Q30'])
         QC3 = (self.read_pairs >= self.QC_thresholds['nr_read'])
         if QC1 and QC2 and QC3:
-            target_file.udf['Include reads'] = YES
+            target_file.udf['Include reads'] = 'YES'
             return 'PASSED'
         else:
-            target_file.udf['Include reads'] = NO
+            target_file.udf['Include reads'] = 'NO'
             return 'FAILED'
 
     def _get_QC_thresholds(self):
