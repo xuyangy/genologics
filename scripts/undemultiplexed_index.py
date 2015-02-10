@@ -163,7 +163,9 @@ class UndemuxInd():
         # Reads < 100000
         OBS: Reads from target file udf if they are already set. Otherwise from 
         file system!!! This is to take into account yield and quality after 
-        quality filtering if performed."""
+        quality filtering if performed.
+        
+        Sets the include reads field"""
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
         self._get_QC_thresholds()
@@ -171,8 +173,10 @@ class UndemuxInd():
         QC2 = (Q30 >= self.QC_thresholds['%Q30'])
         QC3 = (self.read_pairs >= self.QC_thresholds['nr_read'])
         if QC1 and QC2 and QC3:
+            target_file.udf['Include reads'] = YES
             return 'PASSED'
         else:
+            target_file.udf['Include reads'] = NO
             return 'FAILED'
 
     def _get_QC_thresholds(self):
