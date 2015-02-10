@@ -67,33 +67,43 @@ class UndemuxInd():
         self.miseq = False
         self.single = True
         self.read_pairs = None
+        self.run_id = None
 
+    def set_run_id(self):
+        self.process.udf['Run ID'] = self.run_id
+        set_field(self.process)
 
     def _get_file_path(self):
         try:
             cont_name = self.process.all_inputs()[0].location[0].name
         except:
             sys.exit('Could not find container name.')
-        miseq_run  = lims.get_processes(type = 'MiSeq Run (MiSeq) 4.0', 
-                                         udf={'Reagent Cartridge ID':cont_name})
         try:
-            logging.info('looking for mi-seq run ID')
-            ID = miseq_run[0].udf['Flow Cell ID']
+            seq_run  = lims.get_processes(type = 'MiSeq Run (MiSeq) 4.0',
+                                         udf={'Reagent Cartridge ID' : cont_name})
+            ID = seq_run[0].udf['Flow Cell ID']
+            logging.info('Found mi-seq run ID')
             self.miseq = True
         except:
             logging.info('Could not find mi-seq run ID with Reagent Cartridge '
                             'ID {0}. Looking for Hiseq run.'.format(cont_name))
+            seq_run  = lims.get_processes(type = 'Illumina Sequencing (Illumina SBS) 4.0',
+                                         udf = {'Reagent Cartridge ID' : cont_name})
             ID = cont_name
+        try:
+            self.run_id = seq_run[0].udf['Run ID']
+        except:
+            logging.info('could not get Run ID')
         logging.info('looking for sequencing setup')
         try:
-            Read_1_Cycles = miseq_run[0].udf['Read 1 Cycles']
+            Read_1_Cycles = seq_run[0].udf['Read 1 Cycles']
             try:
-                Read_2_Cycles = miseq_run[0].udf['Read 2 Cycles']
+                Read_2_Cycles = seq_run[0].udf['Read 2 Cycles']
                 self.single = False
             except:
                 self.single = True
         except:
-            sys.exit('Could not get sequencing set up.')
+            sys.exit("Could not get sequencing set up. Make sure 'Read 1 Cycles' (and 'Read 2 Cycles' if applicable) is set in the sequencing step.")
         try:
             return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
         except:
@@ -279,6 +289,7 @@ def main(lims, pid, epp_logger, demuxfile):
     UDI.get_demultiplex_files()
     UDI.set_result_file_udfs()
     UDI.make_demultiplexed_counts_file(demuxfile)
+    UDI.set_run_id()
     UDI.logging()
     
 
