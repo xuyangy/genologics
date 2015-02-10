@@ -88,7 +88,7 @@ class UndemuxInd():
             logging.info('Could not find mi-seq run ID with Reagent Cartridge '
                             'ID {0}. Looking for Hiseq run.'.format(cont_name))
             seq_run  = lims.get_processes(type = 'Illumina Sequencing (Illumina SBS) 4.0',
-                                         udf = {'Reagent Cartridge ID' : cont_name})
+                                                udf = {'Flow Cell ID' : cont_name})
             ID = cont_name
         try:
             self.run_id = seq_run[0].udf['Run ID']
