@@ -287,9 +287,9 @@ def main(lims, pid, epp_logger, demuxfile):
     process = Process(lims,id = pid)
     UDI = UndemuxInd(process)
     UDI.get_demultiplex_files()
+    UDI.set_run_id()
     UDI.set_result_file_udfs()
     UDI.make_demultiplexed_counts_file(demuxfile)
-    UDI.set_run_id()
     UDI.logging()
     
 
