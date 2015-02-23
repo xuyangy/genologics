@@ -193,7 +193,7 @@ class UndemuxInd():
             nr_lane_samps = len(outarts_per_lane)
             pool_udfs = dict(pool.udf.items())
             threshold_nr_read = self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)
-            threshold_perf_ind = self._QC_threshold_perf_ind(self, pool_udfs)
+            threshold_perf_ind = self._QC_threshold_perf_ind()
 
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
@@ -232,7 +232,7 @@ class UndemuxInd():
             target_file.udf['Include reads'] = 'NO'
             target_file.qc_flag = 'FAILED'
 
-    def _QC_threshold_perf_ind(self, pool_udfs):
+    def _QC_threshold_perf_ind(self):
         if self.demux_udfs.has_key('Threshold for % Perfect Index Reads'):
             return self.demux_udfs['Threshold for % Perfect Index Reads']
         else:
