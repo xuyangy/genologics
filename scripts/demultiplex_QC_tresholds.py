@@ -210,12 +210,13 @@ class UndemuxInd():
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
         elif pool_udfs.has_key("Clusters PF R1"):
-            nr_reads = pool_udfs["Clusters PF R1"]
             expected = np.true_divide(pool_udfs["Clusters PF R1"],nr_lane_samps)
-            print np.true_divide(expected, 2)
-            print 'hehhhe'
-            return np.true_divide(expected, 2)
-            #nr_samps = nr_lane_samps
+            reads_threshold = np.true_divide(expected, 2)
+            self.process.udf['Threshold for # Reads'] = reads_threshold
+            set_field(self.process)
+            return reads_threshold
+        #else:
+            # do some log
 
 
     def _get_fields(self, t_file, sample_info):
