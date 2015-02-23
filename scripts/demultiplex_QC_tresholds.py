@@ -64,13 +64,13 @@ class UndemuxInd():
         self.un_exp_ind_warn = ''
         self.nr_lane_samps_updat = 0
         self.nr_lane_samps_tot = 0
-        self.miseq = False
         self.seq_run = None
         self.single = True
         self.read_pairs = None
         self.file_path = None
         self.run_udfs = {}
         self.demux_udfs = dict(self.process.udf.items())
+        self.read_length = None
 
 
     def get_run_info(self):
@@ -78,20 +78,32 @@ class UndemuxInd():
             cont_name = self.process.all_inputs()[0].location[0].name
         except:
             sys.exit('Could not find container name.')
-        miseq_run = lims.get_processes(
+        miseq = lims.get_processes(
                                 udf={'Reagent Cartridge ID' : cont_name},
                                 type = 'MiSeq Run (MiSeq) 4.0')
-        hiseq_run = lims.get_processes(
+        hiseq = lims.get_processes(
                                 udf = {'Flow Cell ID' : cont_name},
                                 type = 'Illumina Sequencing (Illumina SBS) 4.0')
-        if miseq_run:
-            self.seq_run = miseq_run[0]
-            self.miseq = True
-        elif hiseq_run:
-            self.seq_run = hiseq_run[0]
+        hiseq_X10 = lims.get_processes(
+                                udf = {'Flow Cell ID' : cont_name},
+                                type = 'Illumina Sequencing (HiSeq X) 1.0')
+        if miseq:
+            self.seq_run = miseq[0]
+            self.run_type = 'MiSeq'
+        elif hiseq:
+            self.seq_run = hiseq[0]
+            try:
+                self.run_type = self.seq_run.udf['Flow Cell Version']
+            except:
+                sys.exit("Missing field 'Flow Cell Version' in sequencing process")
+            path_id = cont_name
+        elif hiseq_X10:
+            self.seq_run = hiseq_X10[0]
+            self.run_type = 'HiSeqX10'
             path_id = cont_name
         else:
             sys.exit("run not found")
+
         self.run_udfs = dict(self.seq_run.udf.items())
         self._get_run_id()
         self._get_cycles()
@@ -112,9 +124,9 @@ class UndemuxInd():
             self.single = False
 
     def _get_file_path(self, cont_name):
-        if self.miseq:
+        if self.run_type == 'MiSeq':
             path_id = self.run_udfs['Flow Cell ID']
-        else:
+        elif self.run_type in ['HiSeq','HiSeqX10']:
             path_id = cont_name
         try:
             self.file_path = glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/"
@@ -143,7 +155,7 @@ class UndemuxInd():
     def set_result_file_udfs(self):
         """populates the target file qc-flags"""
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else:
                 lane = pool.location[1][0] #getting lane number
@@ -199,21 +211,51 @@ class UndemuxInd():
             return self.demux_udfs['Threshold for % bases >= Q30']
         elif pool_udfs.has_key("Clusters PF R1"):
             nr_reads = pool_udfs["Clusters PF R1"]
-            #self.read_length 
-            #self.miseq
-            if self.miseq and self.read_length in [76, 301]:
-                version = 3
-            else:
-                version = 2
+            if self.run_type == 'MiSeq':
+                if self.read_length < 101:
+                    Q30_threshold = 80
+                elif self.read_length == 101:
+                    Q30_threshold = 75
+                elif self.read_length == 151:
+                    Q30_threshold = 70
+                elif self.read_length >= 251:
+                    Q30_threshold = 60
+            else self.run_type == 'HiSeq':
+                if self.read_length == 51:
+                    Q30_threshold = 85
+                elif self.read_length == 101:
+                    Q30_threshold = 80
+                elif self.read_length == 126:
+                    Q30_threshold = 80
+                elif self.read_length == 151:
+                    Q30_threshold = 75
+                self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
+                set_field(self.process)
+                return Q30_threshold
 
     def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
         elif pool_udfs.has_key("Clusters PF R1"):
-            expected = np.true_divide(pool_udfs["Clusters PF R1"],nr_lane_samps)
-            reads_threshold = int(np.true_divide(expected, 2))
-            self.process.udf['Threshold for # Reads'] = reads_threshold
-            set_field(self.process)
+            print pool_udfs
+            if self.run_type == 'MiSeq':
+                if self.read_length in [76, 301]:   # ver3
+                    exp_lane_clust = 18000000
+                else:                               # ver2
+                    exp_lane_clust = 10000000
+            elif self.run_type == 'HiSeq Rapid Flow Cell v1':
+                exp_lane_clust = 114000000
+            elif self.run_type == 'HiSeq Flow Cell v4':
+                exp_lane_clust = 143000000
+            elif self.run_type == 'HiSeq Flow Cell v3':
+                exp_lane_clust = 188000000
+            elif self.run_type == 'HiSeqX10':
+                exp_lane_clust = 250000000
+            exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
+            reads_threshold = int(np.true_divide(exp_samp_clust, 2))
+            self.abstract.append("INFO: Threshold for # Reads on lane is %. "
+                    "Value based on nr of sampels: %s, and run type %.".format(
+                                reads_threshold, nr_lane_samps, self.run_type)
             return reads_threshold
         #else:
             # do some log
@@ -261,7 +303,7 @@ class UndemuxInd():
                                     'Index name', '% of >= Q30 Bases (PF)']
         toCSV = []
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else:
                 lane = pool.location[1][0]
@@ -298,7 +340,7 @@ class UndemuxInd():
         """Warning if any unexpected index has yield > 0.5M"""
         warn = {'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]}
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else: 
                 lane = pool.location[1][0]
