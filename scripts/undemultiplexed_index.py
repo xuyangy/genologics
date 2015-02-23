@@ -240,7 +240,7 @@ class UndemuxInd():
     def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
-        elif pool_udfs.has_key("Clusters PF R1"):
+        else:
             print pool_udfs
             if self.run_type == 'MiSeq':
                 if self.read_length in [76, 301]:   # ver3
