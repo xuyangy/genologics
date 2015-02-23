@@ -126,7 +126,7 @@ class UndemuxInd():
     def _get_file_path(self, cont_name):
         if self.run_type == 'MiSeq':
             path_id = self.run_udfs['Flow Cell ID']
-        elif self.run_type in ['HiSeq','HiSeqX10']:
+        else:
             path_id = cont_name
         try:
             self.file_path = glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/"
