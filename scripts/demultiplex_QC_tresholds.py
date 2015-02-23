@@ -253,8 +253,7 @@ class UndemuxInd():
                 exp_lane_clust = 250000000
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            print "INFO: Threshold for # Reads on lane is {0}. "
-                 "Value based on nr of sampels: {1}, and run type {2}.".format(
+            print "INFO: Threshold for # Reads on lane is {0}. Value based on nr of sampels: {1}, and run type {2}.".format(
                                  reads_threshold, nr_lane_samps, self.run_type)
             self.abstract.append("INFO: Threshold for # Reads on lane is {0}. "
                    "Value based on nr of sampels: {1}, and run type {2}.".format(
