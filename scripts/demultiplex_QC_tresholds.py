@@ -401,9 +401,9 @@ def main(lims, pid, epp_logger, demuxfile):
     UDI = UndemuxInd(process)
     UDI.get_run_info()
     UDI.set_result_file_udfs()
-#    UDI.make_demultiplexed_counts_file(demuxfile)
-#    UDI.check_unexpected_yield()
-#    UDI.logging()
+    UDI.make_demultiplexed_counts_file(demuxfile)
+    UDI.check_unexpected_yield()
+    UDI.logging()
     
 
 if __name__ == "__main__":
