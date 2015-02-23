@@ -64,78 +64,110 @@ class UndemuxInd():
         self.un_exp_ind_warn = ''
         self.nr_lane_samps_updat = 0
         self.nr_lane_samps_tot = 0
-        self.miseq = False
+        self.seq_run = None
         self.single = True
         self.read_pairs = None
-        self.run_id = None
+        self.file_path = None
+        self.run_udfs = {}
+        self.demux_udfs = dict(self.process.udf.items())
+        self.read_length = None
 
-    def set_run_id(self):
-        self.process.udf['Run ID'] = self.run_id
-        set_field(self.process)
 
-    def _get_file_path(self):
+    def get_run_info(self):
         try:
             cont_name = self.process.all_inputs()[0].location[0].name
         except:
             sys.exit('Could not find container name.')
-        try:
-            seq_run  = lims.get_processes(type = 'MiSeq Run (MiSeq) 4.0',
-                                         udf={'Reagent Cartridge ID' : cont_name})
-            ID = seq_run[0].udf['Flow Cell ID']
-            logging.info('Found mi-seq run ID')
-            self.miseq = True
-        except:
-            logging.info('Could not find mi-seq run ID with Reagent Cartridge '
-                            'ID {0}. Looking for Hiseq run.'.format(cont_name))
-            seq_run  = lims.get_processes(type = 'Illumina Sequencing (Illumina SBS) 4.0',
-                                                udf = {'Flow Cell ID' : cont_name})
-            ID = cont_name
-        try:
-            self.run_id = seq_run[0].udf['Run ID']
-        except:
-            logging.info('could not get Run ID')
-        logging.info('looking for sequencing setup')
-        try:
-            Read_1_Cycles = seq_run[0].udf['Read 1 Cycles']
+        miseq = lims.get_processes(
+                                udf={'Reagent Cartridge ID' : cont_name},
+                                type = 'MiSeq Run (MiSeq) 4.0')
+        hiseq = lims.get_processes(
+                                udf = {'Flow Cell ID' : cont_name},
+                                type = 'Illumina Sequencing (Illumina SBS) 4.0')
+        hiseq_X10 = None #lims.get_processes(
+#                                udf = {'Flow Cell ID' : cont_name},
+#                                type = 'Illumina Sequencing (HiSeq X) 1.0')
+        if miseq:
+            self.seq_run = miseq[0]
+            self.run_type = 'MiSeq'
+        elif hiseq:
+            self.seq_run = hiseq[0]
             try:
-                Read_2_Cycles = seq_run[0].udf['Read 2 Cycles']
-                self.single = False
+                self.run_type = self.seq_run.udf['Flow Cell Version']
             except:
-                self.single = True
-        except:
-            sys.exit("Could not get sequencing set up. Make sure 'Read 1 Cycles' (and 'Read 2 Cycles' if applicable) is set in the sequencing step.")
-        try:
-            return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
-        except:
-            sys.exit("Failed to get file path") 
+                sys.exit("Missing field 'Flow Cell Version' in sequencing process")
+            path_id = cont_name
+        elif hiseq_X10:
+            self.seq_run = hiseq_X10[0]
+            self.run_type = 'HiSeqX10'
+            path_id = cont_name
+        else:
+            sys.exit("run not found")
 
-    def get_demultiplex_files(self):
+        self.run_udfs = dict(self.seq_run.udf.items())
+        self._get_run_id()
+        self._get_cycles()
+        self._get_file_path(cont_name)
+        self._get_demultiplex_files()
+
+    def _get_run_id(self):
+        if self.run_udfs.has_key('Run ID'):
+            self.process.udf['Run ID'] = self.run_udfs['Run ID']
+            set_field(self.process)
+
+    def _get_cycles(self):
+        if self.run_udfs.has_key('Read 1 Cycles'):
+            self.read_length = self.run_udfs['Read 1 Cycles']
+        else:
+            sys.exit("Could not get 'Read 1 Cycles' from the sequencing step.")
+        if self.run_udfs.has_key('Read 2 Cycles'):
+            self.single = False
+
+    def _get_file_path(self, cont_name):
+        if self.run_type == 'MiSeq':
+            path_id = self.run_udfs['Flow Cell ID']
+        elif self.run_type in ['HiSeq','HiSeqX10']:
+            path_id = cont_name
+        try:
+            self.file_path = glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/"
+                                        "Basecall_Stats_*/".format(path_id)))[0]
+        except:
+            sys.exit("Failed to get file path")
+
+    def _get_demultiplex_files(self):
         """ Files are read from the file msf system. Path hard coded."""
         FRMP = FlowcellRunMetricsParser()
-        file_path = self._get_file_path()
         try:
-            fp_dem = file_path + 'Demultiplex_Stats.htm'
+            fp_dem = self.file_path + 'Demultiplex_Stats.htm'
             self.dem_stat = FRMP.parse_demultiplex_stats_htm(fp_dem)
             logging.info("Parsed file {0}".format(fp_dem))
         except:
             sys.exit("Failed to find or parse Demultiplex_Stats.htm.")
         try:
-            fp_und = file_path + 'Undemultiplexed_stats.metrics'
+            fp_und = self.file_path + 'Undemultiplexed_stats.metrics'
             self.undem_stat = FRMP.parse_undemultiplexed_barcode_metrics(fp_und)
             logging.info("Parsed file {0}".format(fp_und))
         except:
             sys.exit("Failed to find or parse Undemultiplexed_stats.metrics")
- 
+
+
 
     def set_result_file_udfs(self):
         """populates the target file qc-flags"""
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else:
                 lane = pool.location[1][0] #getting lane number
             outarts_per_lane = self.process.outputs_per_input(
                                           pool.id, ResultFile = True)
+
+            nr_lane_samps = len(outarts_per_lane)
+            pool_udfs = dict(pool.udf.items())
+            thresholds = {'perf_ind' : self._QC_threshold_perf_ind(pool_udfs),
+                'Q30' : self._QC_threshold_Q30(pool_udfs),
+                'nr_read' : self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)}
+
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
                 samp_name = target_file.samples[0].name
@@ -143,62 +175,131 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._set_fields(target_file, lane_samp)
+                            self._QC(target_file, lane_samp, thresholds)
+                            self._get_fields(target_file, lane_samp)
+                            set_field(target_file)
                             self.nr_lane_samps_updat += 1
 
-    def _set_fields(self, target_file, sample_info):
-        target_file.udf['% One Mismatch Reads (Index)'] = float(sample_info['% One Mismatch Reads (Index)'])
-        target_file.udf['% of Raw Clusters Per Lane'] = float(sample_info['% of raw clusters per lane'])
-        target_file.udf['%PF'] = float(sample_info['% PF'])
-        target_file.udf['Ave Q Score'] = float(sample_info['Mean Quality Score (PF)'])
-        Yield_PF_Gb = np.true_divide(float(sample_info['Yield (Mbases)'].replace(',','')), 1000)
-        target_file.udf['Yield PF (Gb)'] = Yield_PF_Gb 
-        target_file.udf['% Perfect Index Read'] = float(sample_info['% Perfect Index Reads'])
-        if not dict(target_file.udf.items()).has_key('% Bases >=Q30'):
-            target_file.udf['% Bases >=Q30'] = float(sample_info['% of >= Q30 Bases (PF)'])
-        if not dict(target_file.udf.items()).has_key('# Reads'):
-            target_file.udf['# Reads'] = float(sample_info['# Reads'].replace(',',''))
-        if self.single:
-            self.read_pairs = int(target_file.udf['# Reads'])
-        else:
-            self.read_pairs = np.true_divide(float(target_file.udf['# Reads']),2)
-        target_file.udf['# Read Pairs'] = self.read_pairs
-        target_file.qc_flag = self._QC(target_file, sample_info)
-        set_field(target_file)
 
-    def _QC(self, target_file, sample_info):
+    def _QC(self, target_file, sample_info, threshold):
         """Makes per sample warnings if any of the following holds: 
-        % Perfect Index Reads < 60
-        % of >= Q30 Bases (PF) < 80
-        # Reads < 100000
+                % Perfect Index Reads < ..
+                % of >= Q30 Bases (PF) < ..
+                # Reads < ..
+            sets qc flaggs        
+            Sets the include reads field
         OBS: Reads from target file udf if they are already set. Otherwise from 
         file system!!! This is to take into account yield and quality after 
-        quality filtering if performed.
-        
-        Sets the include reads field"""
+        quality filtering if performed."""
+
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        self._get_QC_thresholds()
-        QC1 = (perf_ind_read >= self.QC_thresholds['perf_ind'])
-        QC2 = (Q30 >= self.QC_thresholds['%Q30'])
-        QC3 = (self.read_pairs >= self.QC_thresholds['nr_read'])
+        QC1 = (perf_ind_read >= threshold['perf_ind'])
+        QC2 = (Q30 >= threshold['Q30'])
+        QC3 = (self.read_pairs >= threshold['nr_read'])
         if QC1 and QC2 and QC3:
             target_file.udf['Include reads'] = 'YES'
-            return 'PASSED'
+            target_file.qc_flag = 'PASSED'
         else:
             target_file.udf['Include reads'] = 'NO'
-            return 'FAILED'
+            target_file.qc_flag = 'FAILED'
 
-    def _get_QC_thresholds(self):
-        """Fetching QC_thresholds from process udfs"""
-        try:
-            self.QC_thresholds['perf_ind'] = self.process.udf['Threshold for % Perfect Index Reads']
-            self.QC_thresholds['%Q30'] = self.process.udf['Threshold for % bases >= Q30']
-            self.QC_thresholds['nr_read'] = self.process.udf['Threshold for # Reads']
-            self.QC_thresholds['undem_yield'] = self.process.udf['Threshold for Undemultiplexed Index Yield']
-        except:
-            sys.exit("Set QC thresholds and try again!")
+    def _QC_threshold_perf_ind(self, pool_udfs):
+        if self.demux_udfs.has_key('Threshold for % Perfect Index Reads'):
+            return self.demux_udfs['Threshold for % Perfect Index Reads']
+        else:
+            return 40
 
+    def _QC_threshold_Q30(self, pool_udfs):
+        if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
+            return self.demux_udfs['Threshold for % bases >= Q30']
+        elif pool_udfs.has_key("Clusters PF R1"):
+            nr_reads = pool_udfs["Clusters PF R1"]
+            if self.run_type == 'MiSeq':
+                if self.read_length < 101:
+                    Q30_threshold = 80
+                elif self.read_length == 101:
+                    Q30_threshold = 75
+                elif self.read_length == 151:
+                    Q30_threshold = 70
+                elif self.read_length >= 251:
+                    Q30_threshold = 60
+            else:
+                if self.read_length == 51:
+                    Q30_threshold = 85
+                elif self.read_length == 101:
+                    Q30_threshold = 80
+                elif self.read_length == 126:
+                    Q30_threshold = 80
+                elif self.read_length == 151:
+                    Q30_threshold = 75
+                self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
+                set_field(self.process)
+                return Q30_threshold
+
+    def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
+        if self.demux_udfs.has_key('Threshold for # Reads'):
+            return self.demux_udfs['Threshold for # Reads']
+        elif pool_udfs.has_key("Clusters PF R1"):
+            print pool_udfs
+            if self.run_type == 'MiSeq':
+                if self.read_length in [76, 301]:   # ver3
+                    exp_lane_clust = 18000000
+                else:                               # ver2
+                    exp_lane_clust = 10000000
+            elif self.run_type == 'HiSeq Rapid Flow Cell v1':
+                exp_lane_clust = 114000000
+            elif self.run_type == 'HiSeq Flow Cell v4':
+                exp_lane_clust = 143000000
+            elif self.run_type == 'HiSeq Flow Cell v3':
+                exp_lane_clust = 188000000
+            elif self.run_type == 'HiSeqX10':
+                exp_lane_clust = 250000000
+            exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
+            reads_threshold = int(np.true_divide(exp_samp_clust, 2))
+            print "INFO: Threshold for # Reads on lane is {0}. Value based on nr of sampels: {1}, and run type {2}.".format(
+                                 reads_threshold, nr_lane_samps, self.run_type)
+            self.abstract.append("INFO: Threshold for # Reads on lane is {0}. "
+                   "Value based on nr of sampels: {1}, and run type {2}.".format(
+                                reads_threshold, nr_lane_samps, self.run_type))
+            print self.abstract
+            return reads_threshold
+        #else:
+            # do some log
+
+
+    def _get_fields(self, t_file, sample_info):
+        """ Populates the target file udfs. (run lane index resolution)
+        sample_info -   Barcode lane statistics fetched from demultiplexed 
+                        stats file
+        t_file -   output artifact of the bcl-conv & demux process (run 
+                        lane index resolution)"""
+
+        omr = float(sample_info['% One Mismatch Reads (Index)'])
+        rcl = float(sample_info['% of raw clusters per lane'])
+        pf  = float(sample_info['% PF'])
+        mqs = float(sample_info['Mean Quality Score (PF)'])
+        yMb = float(sample_info['Yield (Mbases)'].replace(',',''))
+        pir = float(sample_info['% Perfect Index Reads'])
+        q30 = float(sample_info['% of >= Q30 Bases (PF)'])
+        nrr = float(sample_info['# Reads'].replace(',',''))
+
+        t_file.udf['% One Mismatch Reads (Index)'] = omr
+        t_file.udf['% of Raw Clusters Per Lane'] = rcl
+        t_file.udf['%PF'] = pf
+        t_file.udf['Ave Q Score'] = mqs
+        t_file.udf['Yield PF (Gb)'] = np.true_divide(yMb, 1000)
+        t_file.udf['% Perfect Index Read'] = pir 
+
+        if not dict(t_file.udf.items()).has_key('% Bases >=Q30'):
+            t_file.udf['% Bases >=Q30'] = q30
+        if not dict(t_file.udf.items()).has_key('# Reads'):
+            t_file.udf['# Reads'] = nrr 
+        if self.single:
+            self.read_pairs = int(t_file.udf['# Reads'])
+        else:
+            self.read_pairs = np.true_divide(float(t_file.udf['# Reads']), 2)
+        t_file.udf['# Read Pairs'] = self.read_pairs
 
     def make_demultiplexed_counts_file(self, demuxfile):
         """Reformats the content of the demultiplex and undemultiplexed files
@@ -209,7 +310,7 @@ class UndemuxInd():
                                     'Index name', '% of >= Q30 Bases (PF)']
         toCSV = []
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else:
                 lane = pool.location[1][0]
@@ -240,22 +341,13 @@ class UndemuxInd():
             self.abstract.append("WARNING: Could not generate a Metrics file "
                                "with demultiplexed and undemultiplexed counts.")
 
-    def logging(self):
-        """Collects and prints logging info."""
-        self._check_unexpected_yield()
-        self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
-              " out of {1} analytes. Flags are set based on the selected thresh"
-              "olds. ".format(self.nr_lane_samps_updat, self.nr_lane_samps_tot))
-        if self.un_exp_ind_warn:
-            sys.exit(' '.join(self.abstract))
-        else:
-            print >> sys.stderr, ' '.join(self.abstract)
 
-    def _check_unexpected_yield(self):
+
+    def check_unexpected_yield(self):
         """Warning if any unexpected index has yield > 0.5M"""
         warn = {'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]}
         for pool in self.input_pools:
-            if self.miseq:
+            if self.run_type == 'MiSeq':
                 lane = '1'
             else: 
                 lane = pool.location[1][0]
@@ -265,7 +357,7 @@ class UndemuxInd():
             index_name = lane_inf['undemultiplexed_barcodes']['index_name']
             lanes = lane_inf['undemultiplexed_barcodes']['lane']
             for i, c in enumerate(counts):
-                if int(c) > self.QC_thresholds['undem_yield']:
+                if int(c) > self._QC_threshold_undem_yield():
                     ##  Format warning message
                     lane = lanes[i]
                     if index_name[i]:
@@ -279,17 +371,38 @@ class UndemuxInd():
                 self.un_exp_ind_warn = self.un_exp_ind_warn + ''.join([inds,
                                                           ' on Lane ', l, ', '])
         if self.un_exp_ind_warn:
+            print self.abstract
             self.abstract.insert(0, "WARNING: High yield of unexpected index:"
                                   " {0}. Please check the Metrics file!".format(
                                                           self.un_exp_ind_warn))
+            print self.abstract
+            print 'ss'
+
+    def _QC_threshold_undem_yield(self):
+        if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
+            return self.demux_udfs['Threshold for Undemultiplexed Index Yield']
+        else:
+            return 500000
+
+    def logging(self):
+        """Collects and prints logging info."""
+        self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
+              " out of {1} analytes. Flags are set based on the selected thresh"
+              "olds. ".format(self.nr_lane_samps_updat, self.nr_lane_samps_tot))
+        if self.un_exp_ind_warn:
+            sys.exit(' '.join(self.abstract))
+        else:
+            print >> sys.stderr, ' '.join(self.abstract)
+
+######################### 
 
 def main(lims, pid, epp_logger, demuxfile):
     process = Process(lims,id = pid)
     UDI = UndemuxInd(process)
-    UDI.get_demultiplex_files()
-    UDI.set_run_id()
+    UDI.get_run_info()
     UDI.set_result_file_udfs()
     UDI.make_demultiplexed_counts_file(demuxfile)
+    UDI.check_unexpected_yield()
     UDI.logging()
     
 
