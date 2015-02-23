@@ -220,7 +220,7 @@ class UndemuxInd():
                     Q30_threshold = 70
                 elif self.read_length >= 251:
                     Q30_threshold = 60
-            else self.run_type == 'HiSeq':
+            else:
                 if self.read_length == 51:
                     Q30_threshold = 85
                 elif self.read_length == 101:
