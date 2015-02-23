@@ -211,8 +211,10 @@ class UndemuxInd():
             return self.demux_udfs['Threshold for # Reads']
         elif pool_udfs.has_key("Clusters PF R1"):
             nr_reads = pool_udfs["Clusters PF R1"]
-            print nr_reads
-            return nr_reads
+            expected = np.true_divide(pool_udfs["Clusters PF R1"],nr_lane_samps)
+            print np.true_divide(expected, 2)
+            print 'hehhhe'
+            return np.true_divide(expected, 2)
             #nr_samps = nr_lane_samps
 
 
