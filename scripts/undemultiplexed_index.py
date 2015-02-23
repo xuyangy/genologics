@@ -192,8 +192,7 @@ class UndemuxInd():
                                           pool.id, ResultFile = True)
 
             nr_lane_samps = len(outarts_per_lane)
-            pool_udfs = dict(pool.udf.items())
-            threshold_nr_read = self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)
+            threshold_nr_read = self._QC_threshold_nr_read(pool, nr_lane_samps)
             threshold_perf_ind = self._QC_threshold_perf_ind()
 
             for target_file in outarts_per_lane:
@@ -240,7 +239,9 @@ class UndemuxInd():
             return 40
 
 
-    def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
+    def _QC_threshold_nr_read(self, pool, nr_lane_samps):
+        lane = pool.location[1][0]
+        pool_udfs = dict(pool.udf.items())
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
         else:
@@ -259,9 +260,9 @@ class UndemuxInd():
                 exp_lane_clust = 250000000
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            self.abstract.append("INFO: Threshold for # Reads on lane is {0}. "
-                   "Value based on nr of sampels: {1}, and run type {2}.".format(
-                                reads_threshold, nr_lane_samps, self.run_type))
+            self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
+                   "Value based on nr of sampels: {2}, and run type {3}.".format(
+                                lane, reads_threshold, nr_lane_samps, self.run_type))
             return reads_threshold
         #else:
             # do some log
@@ -386,8 +387,8 @@ class UndemuxInd():
     def logging(self):
         """Collects and prints logging info."""
         self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
-              " out of {1} analytes. Flags are set based on the selected thresh"
-              "olds. ".format(self.nr_lane_samps_updat, self.nr_lane_samps_tot))
+              " out of {1} analytes.".format(self.nr_lane_samps_updat, 
+                                                        self.nr_lane_samps_tot))
         if self.un_exp_ind_warn:
             sys.exit(' '.join(self.abstract))
         else:
