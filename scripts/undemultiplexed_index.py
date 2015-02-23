@@ -236,6 +236,9 @@ class UndemuxInd():
         if self.demux_udfs.has_key('Threshold for % Perfect Index Reads'):
             return self.demux_udfs['Threshold for % Perfect Index Reads']
         else:
+            self.process.udf['Threshold for % Perfect Index Reads'] = 40
+            set_field(self.process)
+            self.abstract.append("INFO: Threshold for % Perfect Index Reads is set to 40".format()
             return 40
 
 
