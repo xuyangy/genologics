@@ -211,6 +211,8 @@ class UndemuxInd():
             return self.demux_udfs['Threshold for # Reads']
         elif pool_udfs.has_key("Clusters PF R1"):
             nr_reads = pool_udfs["Clusters PF R1"]
+            print nr_reads
+            return nr_reads
             #nr_samps = nr_lane_samps
 
 
