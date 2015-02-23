@@ -125,7 +125,6 @@ class UndemuxInd():
     def _get_demultiplex_files(self):
         """ Files are read from the file msf system. Path hard coded."""
         FRMP = FlowcellRunMetricsParser()
-        self._get_file_path()
         try:
             fp_dem = self.file_path + 'Demultiplex_Stats.htm'
             self.dem_stat = FRMP.parse_demultiplex_stats_htm(fp_dem)
