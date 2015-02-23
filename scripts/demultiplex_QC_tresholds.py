@@ -343,7 +343,7 @@ def main(lims, pid, epp_logger, demuxfile):
     process = Process(lims,id = pid)
     UDI = UndemuxInd(process)
     UDI.get_run_info()
-#    UDI.set_result_file_udfs()
+    UDI.set_result_file_udfs()
 #    UDI.make_demultiplexed_counts_file(demuxfile)
 #    UDI.check_unexpected_yield()
 #    UDI.logging()
