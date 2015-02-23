@@ -73,7 +73,7 @@ class UndemuxInd():
         self.demux_udfs = dict(self.process.udf.items())
 
 
-    def get_run_info():
+    def get_run_info(self):
         try:
             cont_name = self.process.all_inputs()[0].location[0].name
         except:
@@ -189,13 +189,13 @@ class UndemuxInd():
             target_file.udf['Include reads'] = 'NO'
             target_file.qc_flag = 'FAILED'
 
-    def _QC_threshold_perf_ind(pool_udfs):
+    def _QC_threshold_perf_ind(self, pool_udfs):
         if self.demux_udfs.has_key('Threshold for % Perfect Index Reads'):
             return self.demux_udfs['Threshold for % Perfect Index Reads']
         else:
             return 40
 
-    def _QC_threshold_Q30(pool_udfs):
+    def _QC_threshold_Q30(self, pool_udfs):
         if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
             return self.demux_udfs['Threshold for % bases >= Q30']
         elif pool_udfs.has_key("Clusters PF R1"):
@@ -207,7 +207,7 @@ class UndemuxInd():
             else:
                 version = 2
 
-    def _QC_threshold_nr_read(pool_udfs, nr_lane_samps):
+    def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
         elif pool_udfs.has_key("Clusters PF R1"):
@@ -322,7 +322,7 @@ class UndemuxInd():
                                   " {0}. Please check the Metrics file!".format(
                                                           self.un_exp_ind_warn))
 
-    def _QC_threshold_undem_yield():
+    def _QC_threshold_undem_yield(self):
         if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
             return self.demux_udfs['Threshold for Undemultiplexed Index Yield']
         else:
