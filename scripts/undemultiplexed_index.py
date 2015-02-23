@@ -71,7 +71,7 @@ class UndemuxInd():
         self.run_udfs = {}
         self.demux_udfs = dict(self.process.udf.items())
         self.read_length = None
-
+        self.Q30_treshold = None
 
     def get_run_info(self):
         try:
@@ -109,6 +109,7 @@ class UndemuxInd():
         self._get_cycles()
         self._get_file_path(cont_name)
         self._get_demultiplex_files()
+        self._get_threshold_Q30()
 
     def _get_run_id(self):
         if self.run_udfs.has_key('Run ID'):
@@ -150,6 +151,33 @@ class UndemuxInd():
         except:
             sys.exit("Failed to find or parse Undemultiplexed_stats.metrics")
 
+    def _get_threshold_Q30(self):
+        if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
+            return self.demux_udfs['Threshold for % bases >= Q30']
+        if self.run_type == 'MiSeq':
+            if self.read_length < 101:
+                Q30_threshold = 80
+            elif self.read_length == 101:
+                Q30_threshold = 75
+            elif self.read_length == 151:
+                Q30_threshold = 70
+            elif self.read_length >= 251:
+                Q30_threshold = 60
+        else:
+            if self.read_length == 51:
+                Q30_threshold = 85
+            elif self.read_length == 101:
+               Q30_threshold = 80
+            elif self.read_length == 126:
+                Q30_threshold = 80
+            elif self.read_length == 151:
+                Q30_threshold = 75
+        self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
+        set_field(self.process)
+        self.abstract.append("INFO: Threshold for Q30 was set to {0}."
+                   "Value based on read length: {1}, and run type {2}.".format(
+                               Q30_threshold, self.read_length, self.run_type))
+        self.Q30_treshold = Q30_threshold
 
 
     def set_result_file_udfs(self):
@@ -164,9 +192,8 @@ class UndemuxInd():
 
             nr_lane_samps = len(outarts_per_lane)
             pool_udfs = dict(pool.udf.items())
-            thresholds = {'perf_ind' : self._QC_threshold_perf_ind(pool_udfs),
-                'Q30' : self._QC_threshold_Q30(pool_udfs),
-                'nr_read' : self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)}
+            threshold_nr_read = self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)
+            threshold_perf_ind = self._QC_threshold_perf_ind(self, pool_udfs)
 
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
@@ -175,13 +202,14 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._QC(target_file, lane_samp, thresholds)
+                            self._QC(target_file, lane_samp, threshold_nr_read,
+                                        threshold_perf_ind)
                             self._get_fields(target_file, lane_samp)
                             set_field(target_file)
                             self.nr_lane_samps_updat += 1
 
 
-    def _QC(self, target_file, sample_info, threshold):
+    def _QC(self, target_file, sample_info, threshold_nr_read, threshold_perf_ind):
         """Makes per sample warnings if any of the following holds: 
                 % Perfect Index Reads < ..
                 % of >= Q30 Bases (PF) < ..
@@ -194,9 +222,9 @@ class UndemuxInd():
 
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        QC1 = (perf_ind_read >= threshold['perf_ind'])
-        QC2 = (Q30 >= threshold['Q30'])
-        QC3 = (self.read_pairs >= threshold['nr_read'])
+        QC1 = (perf_ind_read >= threshold_perf_ind)
+        QC2 = (Q30 >= self.Q30_treshold)
+        QC3 = (self.read_pairs >= threshold_nr_read)
         if QC1 and QC2 and QC3:
             target_file.udf['Include reads'] = 'YES'
             target_file.qc_flag = 'PASSED'
@@ -210,38 +238,11 @@ class UndemuxInd():
         else:
             return 40
 
-    def _QC_threshold_Q30(self, pool_udfs):
-        if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
-            return self.demux_udfs['Threshold for % bases >= Q30']
-        elif pool_udfs.has_key("Clusters PF R1"):
-            nr_reads = pool_udfs["Clusters PF R1"]
-            if self.run_type == 'MiSeq':
-                if self.read_length < 101:
-                    Q30_threshold = 80
-                elif self.read_length == 101:
-                    Q30_threshold = 75
-                elif self.read_length == 151:
-                    Q30_threshold = 70
-                elif self.read_length >= 251:
-                    Q30_threshold = 60
-            else:
-                if self.read_length == 51:
-                    Q30_threshold = 85
-                elif self.read_length == 101:
-                    Q30_threshold = 80
-                elif self.read_length == 126:
-                    Q30_threshold = 80
-                elif self.read_length == 151:
-                    Q30_threshold = 75
-                self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
-                set_field(self.process)
-                return Q30_threshold
 
     def _QC_threshold_nr_read(self, pool_udfs, nr_lane_samps):
         if self.demux_udfs.has_key('Threshold for # Reads'):
             return self.demux_udfs['Threshold for # Reads']
         else:
-            print pool_udfs
             if self.run_type == 'MiSeq':
                 if self.read_length in [76, 301]:   # ver3
                     exp_lane_clust = 18000000
@@ -257,12 +258,9 @@ class UndemuxInd():
                 exp_lane_clust = 250000000
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            print "INFO: Threshold for # Reads on lane is {0}. Value based on nr of sampels: {1}, and run type {2}.".format(
-                                 reads_threshold, nr_lane_samps, self.run_type)
             self.abstract.append("INFO: Threshold for # Reads on lane is {0}. "
                    "Value based on nr of sampels: {1}, and run type {2}.".format(
                                 reads_threshold, nr_lane_samps, self.run_type))
-            print self.abstract
             return reads_threshold
         #else:
             # do some log
