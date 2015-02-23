@@ -371,9 +371,12 @@ class UndemuxInd():
                 self.un_exp_ind_warn = self.un_exp_ind_warn + ''.join([inds,
                                                           ' on Lane ', l, ', '])
         if self.un_exp_ind_warn:
+            print self.abstract
             self.abstract.insert(0, "WARNING: High yield of unexpected index:"
                                   " {0}. Please check the Metrics file!".format(
                                                           self.un_exp_ind_warn))
+            print self.abstract
+            print 'ss'
 
     def _QC_threshold_undem_yield(self):
         if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
