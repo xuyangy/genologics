@@ -255,7 +255,7 @@ class UndemuxInd():
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             self.abstract.append("INFO: Threshold for # Reads on lane is %. "
                     "Value based on nr of sampels: %s, and run type %.".format(
-                                reads_threshold, nr_lane_samps, self.run_type)
+                                reads_threshold, nr_lane_samps, self.run_type))
             return reads_threshold
         #else:
             # do some log
