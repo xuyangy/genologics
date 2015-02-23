@@ -161,7 +161,13 @@ class UndemuxInd():
                 lane = pool.location[1][0] #getting lane number
             outarts_per_lane = self.process.outputs_per_input(
                                           pool.id, ResultFile = True)
+
             nr_lane_samps = len(outarts_per_lane)
+            pool_udfs = dict(pool.udf.items())
+            threshold['perf_ind'] = self._QC_threshold_perf_ind(pool_udfs)
+            threshold['Q30'] = self._QC_threshold_Q30(pool_udfs)
+            threshold['nr_read'] = self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)
+
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
                 samp_name = target_file.samples[0].name
@@ -169,13 +175,13 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._QC(target_file, lane_samp, pool, nr_lane_samps)
+                            self._QC(target_file, lane_samp, threshold)
                             self._get_fields(target_file, lane_samp)
                             set_field(target_file)
                             self.nr_lane_samps_updat += 1
 
 
-    def _QC(self, target_file, sample_info, pool, nr_lane_samps):
+    def _QC(self, target_file, sample_info, threshold):
         """Makes per sample warnings if any of the following holds: 
                 % Perfect Index Reads < ..
                 % of >= Q30 Bases (PF) < ..
@@ -188,11 +194,9 @@ class UndemuxInd():
 
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        pool_udfs = dict(pool.udf.items())
-
-        QC1 = (perf_ind_read >= self._QC_threshold_perf_ind(pool_udfs))
-        QC2 = (Q30 >= self._QC_threshold_Q30(pool_udfs))
-        QC3 = (self.read_pairs >= self._QC_threshold_nr_read(pool_udfs, nr_lane_samps))
+        QC1 = (perf_ind_read >= threshold['perf_ind'])
+        QC2 = (Q30 >= threshold['Q30'])
+        QC3 = (self.read_pairs >= threshold['nr_read'])
         if QC1 and QC2 and QC3:
             target_file.udf['Include reads'] = 'YES'
             target_file.qc_flag = 'PASSED'
