@@ -164,9 +164,9 @@ class UndemuxInd():
 
             nr_lane_samps = len(outarts_per_lane)
             pool_udfs = dict(pool.udf.items())
-            threshold['perf_ind'] = self._QC_threshold_perf_ind(pool_udfs)
-            threshold['Q30'] = self._QC_threshold_Q30(pool_udfs)
-            threshold['nr_read'] = self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)
+            thresholds = {'perf_ind' : self._QC_threshold_perf_ind(pool_udfs),
+                'Q30' : self._QC_threshold_Q30(pool_udfs),
+                'nr_read' : self._QC_threshold_nr_read(pool_udfs, nr_lane_samps)}
 
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
@@ -175,7 +175,7 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._QC(target_file, lane_samp, threshold)
+                            self._QC(target_file, lane_samp, thresholds)
                             self._get_fields(target_file, lane_samp)
                             set_field(target_file)
                             self.nr_lane_samps_updat += 1
