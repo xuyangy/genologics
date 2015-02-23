@@ -258,6 +258,7 @@ class UndemuxInd():
             self.abstract.append("INFO: Threshold for # Reads on lane is {0}. "
                    "Value based on nr of sampels: {1}, and run type {2}.".format(
                                 reads_threshold, nr_lane_samps, self.run_type))
+            print self.abstract
             return reads_threshold
         #else:
             # do some log
