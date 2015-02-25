@@ -264,6 +264,8 @@ class UndemuxInd():
                     'and demultiplexing again'.format(self.run_type)) 
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
+            self.process.udf['Threshold for # Reads'] = reads_threshold
+            set_field(self.process)
             self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
                    "Value based on nr of sampels: {2}, and run type {3}.".format(
                                 lane, reads_threshold, nr_lane_samps, self.run_type))
