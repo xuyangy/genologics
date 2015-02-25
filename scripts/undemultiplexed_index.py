@@ -215,7 +215,7 @@ class UndemuxInd():
                             self.nr_lane_samps_updat += 1
 
 
-    def _QC(self, target_file, sample_info, threshold_nr_read)
+    def _QC(self, target_file, sample_info, threshold_nr_read):
         """Makes per sample warnings if any of the following holds: 
                 % Perfect Index Reads < ..
                 % of >= Q30 Bases (PF) < ..
