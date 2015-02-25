@@ -206,8 +206,8 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._QC(target_file, lane_samp, threshold_nr_read)
                             self._get_fields(target_file, lane_samp)
+                            self._QC(target_file, lane_samp, threshold_nr_read)
                             set_field(target_file)
                             self.nr_lane_samps_updat += 1
 
