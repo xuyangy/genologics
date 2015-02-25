@@ -59,19 +59,18 @@ class UndemuxInd():
         self.input_pools = process.all_inputs()
         self.dem_stat = None
         self.undem_stat = None 
-        self.QC_thresholds = {}
         self.abstract = []
-        self.un_exp_ind_warn = ''
         self.nr_lane_samps_updat = 0
         self.nr_lane_samps_tot = 0
         self.seq_run = None
         self.single = True
-        self.read_pairs = None
         self.file_path = None
         self.run_udfs = {}
         self.demux_udfs = dict(self.process.udf.items())
         self.read_length = None
         self.Q30_treshold = None
+        self.high_index_yield = []
+        self.high_lane_yield = []
 
     def get_run_info(self):
         try:
@@ -103,7 +102,6 @@ class UndemuxInd():
             path_id = cont_name
         else:
             sys.exit("run not found")
-
         self.run_udfs = dict(self.seq_run.udf.items())
         self._get_run_id()
         self._get_cycles()
@@ -182,62 +180,44 @@ class UndemuxInd():
         self.abstract.append("INFO: Threshold for Q30 was set to {0}."
                    "Value based on read length: {1}, and run type {2}.".format(
                                Q30_threshold, self.read_length, self.run_type))
-        print self.abstract
         self.Q30_treshold = Q30_threshold
 
-
-    def set_result_file_udfs(self):
-        """populates the target file qc-flags"""
+    def run_QC(self):
         for pool in self.input_pools:
-            if self.run_type == 'MiSeq':
-                lane = '1'
-            else:
-                lane = pool.location[1][0] #getting lane number
-            outarts_per_lane = self.process.outputs_per_input(
-                                          pool.id, ResultFile = True)
+            self._lane_QC(pool)
+        if self.high_index_yield or self.high_lane_yield:
+            warn = "WARNING: "
+            if self.high_index_yield:
+                self.high_index_yield = ', '.join(list(set(self.high_index_yield)))
+                warn = warn + "High yield of unexpected index on lane(s): {0} .".format(self.high_index_yield)
+            if self.high_lane_yield:
+                self.high_lane_yield = ', '.join(list(set(self.high_lane_yield)))
+                warn = warn + "High total yield of unexpected index on lane(s): {0}.".format(self.high_lane_yield)
+            warn = warn + "Please check the Metrics file!"
+            self.abstract.insert(0, warn)
 
-            nr_lane_samps = len(outarts_per_lane)
-            threshold_nr_read = self._QC_threshold_nr_read(pool, nr_lane_samps)
-
-            for target_file in outarts_per_lane:
-                self.nr_lane_samps_tot += 1
-                samp_name = target_file.samples[0].name
-                for lane_samp in self.dem_stat['Barcode_lane_statistics']:
-                    if lane == lane_samp['Lane']:
-                        samp = lane_samp['Sample ID']
-                        if samp == samp_name:
-                            self._get_fields(target_file, lane_samp)
-                            self._QC(target_file, lane_samp, threshold_nr_read)
-                            set_field(target_file)
-                            self.nr_lane_samps_updat += 1
-
-
-    def _QC(self, target_file, sample_info, threshold_nr_read):
-        """Makes per sample warnings if any of the following holds: 
-                % Perfect Index Reads < ..
-                % of >= Q30 Bases (PF) < ..
-                # Reads < ..
-            sets qc flaggs        
-            Sets the include reads field
-        OBS: Reads from target file udf if they are already set. Otherwise from 
-        file system!!! This is to take into account yield and quality after 
-        quality filtering if performed."""
-
-        perf_ind_read = float(sample_info['% Perfect Index Reads'])
-        Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        print Q30
-        print self.Q30_treshold
-        print self.read_pairs
-        print threshold_nr_read
-        QC2 = (Q30 >= self.Q30_treshold)
-        QC3 = (self.read_pairs >= threshold_nr_read)
-        if QC2 and QC3:
-            target_file.udf['Include reads'] = 'YES'
-            target_file.qc_flag = 'PASSED'
-        else:
-            print 'NOOOOO'
-            target_file.udf['Include reads'] = 'NO'
-            target_file.qc_flag = 'FAILED'
+    def _lane_QC(self, pool):
+        lane = '1' if self.run_type == 'MiSeq' else pool.location[1][0]
+        counts = self.undem_stat[lane]['undemultiplexed_barcodes']['count']
+        outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
+        nr_lane_samps = len(outarts_per_lane)
+        thres_read_per_samp, thres_read_per_lane = self._QC_threshold_nr_read(pool, nr_lane_samps)
+        for target_file in outarts_per_lane:
+            self.nr_lane_samps_tot += 1
+            samp_name = target_file.samples[0].name
+            for lane_samp in self.dem_stat['Barcode_lane_statistics']:
+                if lane == lane_samp['Lane']:
+                    samp = lane_samp['Sample ID']
+                    if samp == samp_name:
+                        self._sample_fields(target_file, lane_samp)
+                        self._sample_QC(target_file, lane_samp, thres_read_per_samp)
+                        set_field(target_file)
+                        self.nr_lane_samps_updat += 1
+        if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
+            self.high_lane_yield.append(lane)
+        for index_count in counts:
+            if self._check_un_exp_ind_yield(index_count):
+                self.high_index_yield.append(lane)
 
     def _QC_threshold_nr_read(self, pool, nr_lane_samps):
         lane = pool.location[1][0]
@@ -261,16 +241,15 @@ class UndemuxInd():
             else:
                 sys.exit('Unrecognized run type: {0}. Report to developer! Set '
                     'Threshold for # Reads if you want to run bcl conversion '
-                    'and demultiplexing again'.format(self.run_type)) 
+                    'and demultiplexing again'.format(self.run_type))
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
                    "Value based on nr of sampels in the lane: {2}, and run type {3}.".format(
                                 lane, reads_threshold, nr_lane_samps, self.run_type))
-            return reads_threshold
+            return reads_threshold, exp_lane_clust
 
-
-    def _get_fields(self, t_file, sample_info):
+    def _sample_fields(self, t_file, sample_info):
         """ Populates the target file udfs. (run lane index resolution)
         sample_info -   Barcode lane statistics fetched from demultiplexed 
                         stats file
@@ -291,60 +270,56 @@ class UndemuxInd():
         t_file.udf['%PF'] = pf
         t_file.udf['Ave Q Score'] = mqs
         t_file.udf['Yield PF (Gb)'] = np.true_divide(yMb, 1000)
-        t_file.udf['% Perfect Index Read'] = pir 
+        t_file.udf['% Perfect Index Read'] = pir
 
         if not dict(t_file.udf.items()).has_key('% Bases >=Q30'):
             t_file.udf['% Bases >=Q30'] = q30
         if not dict(t_file.udf.items()).has_key('# Reads'):
-            t_file.udf['# Reads'] = nrr 
+            t_file.udf['# Reads'] = nrr
         if self.single:
-            self.read_pairs = int(t_file.udf['# Reads'])
+            t_file.udf['# Read Pairs'] = int(t_file.udf['# Reads'])
         else:
-            self.read_pairs = np.true_divide(float(t_file.udf['# Reads']), 2)
-        t_file.udf['# Read Pairs'] = self.read_pairs
+            t_file.udf['# Read Pairs'] = np.true_divide(float(t_file.udf['# Reads']), 2)
 
+    def _sample_QC(self, target_file, sample_info, thres_read_per_samp):
+        """Makes per sample warnings if any of the following holds: 
+                % Perfect Index Reads < ..
+                % of >= Q30 Bases (PF) < ..
+                # Reads < ..
+            sets qc flaggs        
+            Sets the include reads field
+        OBS: Reads from target file udf if they are already set. Otherwise from 
+        file system!!! This is to take into account yield and quality after 
+        quality filtering if performed."""
 
-    def check_unexpected_yield(self):
-        """Warning if any unexpected index has yield > 0.5M"""
-        warn = {'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]}
-        for pool in self.input_pools:
-            if self.run_type == 'MiSeq':
-                lane = '1'
-            else: 
-                lane = pool.location[1][0]
-            lane_inf = self.undem_stat[lane]
-            counts = lane_inf['undemultiplexed_barcodes']['count']
-            sequence = lane_inf['undemultiplexed_barcodes']['sequence']
-            index_name = lane_inf['undemultiplexed_barcodes']['index_name']
-            lanes = lane_inf['undemultiplexed_barcodes']['lane']
-            print lane_inf
-            for i, c in enumerate(counts):
-                if int(c) > self._QC_threshold_undem_yield():
-                    ##  Format warning message
-                    lane = lanes[i]
-                    if index_name[i]:
-                        s = ' '.join([sequence[i],'(',index_name[i],')'])
-                        warn[lane].append(s)
-                    else:
-                        warn[lane].append(sequence[i])
-        for l, w in warn.items():
-            if w:
-                inds = ', '.join(w)
-                self.un_exp_ind_warn = self.un_exp_ind_warn + ''.join([inds,
-                                                          ' on Lane ', l, ', '])
-        if self.un_exp_ind_warn:
-            print self.abstract
-            self.abstract.insert(0, "WARNING: High yield of unexpected index:"
-                                  " {0}. Please check the Metrics file!".format(
-                                                          self.un_exp_ind_warn))
-            print self.abstract
-            print 'ss'
+        perf_ind_read = float(sample_info['% Perfect Index Reads'])
+        Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
+        QC2 = (Q30 >= self.Q30_treshold)
+        QC3 = (target_file.udf['# Read Pairs'] >= thres_read_per_samp)
+        if QC2 and QC3:
+            target_file.udf['Include reads'] = 'YES'
+            target_file.qc_flag = 'PASSED'
+        else:
+            target_file.udf['Include reads'] = 'NO'
+            target_file.qc_flag = 'FAILED'
 
-    def _QC_threshold_undem_yield(self):
+    def _check_un_exp_lane_yield(self, counts, threshold):
+        unexp_lane_yield = sum([int(x) for x in counts])
+        threshold = threshold*0.05 if self.single else threshold*0.1
+        if unexp_lane_yield > threshold:
+            return True
+        else:
+            return False
+
+    def _check_un_exp_ind_yield(index_count):    
         if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
-            return self.demux_udfs['Threshold for Undemultiplexed Index Yield']
+            threshold_undem_yield =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
         else:
-            return 500000
+            sys.exit('Threshold for Undemultiplexed Index Yield not set. Select treshold.')
+        if int(index_count) > threshold_undem_yield:
+            return True
+        else:
+            return False
 
     def make_demultiplexed_counts_file(self, demuxfile):
         """Reformats the content of the demultiplex and undemultiplexed files
@@ -392,7 +367,7 @@ class UndemuxInd():
         self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
               " out of {1} analytes.".format(self.nr_lane_samps_updat, 
                                                         self.nr_lane_samps_tot))
-        if self.un_exp_ind_warn:
+        if 'WARNING' in ' '.join(self.abstract):
             sys.exit(' '.join(self.abstract))
         else:
             print >> sys.stderr, ' '.join(self.abstract)
@@ -403,8 +378,7 @@ def main(lims, pid, epp_logger, demuxfile):
     process = Process(lims,id = pid)
     UDI = UndemuxInd(process)
     UDI.get_run_info()
-    UDI.set_result_file_udfs()
-    UDI.check_unexpected_yield()
+    UDI.run_QC()
     UDI.make_demultiplexed_counts_file(demuxfile)
     UDI.logging()
     
