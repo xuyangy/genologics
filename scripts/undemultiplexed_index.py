@@ -321,6 +321,9 @@ class UndemuxInd():
         else:
             return False
 
+    def make_qc_log_file(self, qc_log_file):
+        f = open(qc_log_file, 'a')
+
     def make_demultiplexed_counts_file(self, demuxfile):
         """Reformats the content of the demultiplex and undemultiplexed files
         to be more easy to read."""
