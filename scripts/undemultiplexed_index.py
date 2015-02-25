@@ -157,8 +157,11 @@ class UndemuxInd():
         warning = sys.exit('Un recognized read length: {0}. Report this to '
                     'developers! set Threshold for % bases >= Q30 if you want '
                     'to run bcl conversion and demultiplexing anyway.'.format(self.read_length))
+        print self.run_type
         if self.run_type == 'MiSeq':
+            print 'hkjhk'
             if self.read_length < 101:
+                print 'gagga'
                 Q30_threshold = 80
             elif self.read_length == 101:
                 Q30_threshold = 75
