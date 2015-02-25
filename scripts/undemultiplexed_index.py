@@ -201,7 +201,6 @@ class UndemuxInd():
 
             nr_lane_samps = len(outarts_per_lane)
             threshold_nr_read = self._QC_threshold_nr_read(pool, nr_lane_samps)
-            threshold_perf_ind = self._QC_threshold_perf_ind()
 
             for target_file in outarts_per_lane:
                 self.nr_lane_samps_tot += 1
@@ -210,14 +209,13 @@ class UndemuxInd():
                     if lane == lane_samp['Lane']:
                         samp = lane_samp['Sample ID']
                         if samp == samp_name:
-                            self._QC(target_file, lane_samp, threshold_nr_read,
-                                        threshold_perf_ind)
+                            self._QC(target_file, lane_samp, threshold_nr_read)
                             self._get_fields(target_file, lane_samp)
                             set_field(target_file)
                             self.nr_lane_samps_updat += 1
 
 
-    def _QC(self, target_file, sample_info, threshold_nr_read, threshold_perf_ind):
+    def _QC(self, target_file, sample_info, threshold_nr_read)
         """Makes per sample warnings if any of the following holds: 
                 % Perfect Index Reads < ..
                 % of >= Q30 Bases (PF) < ..
@@ -230,7 +228,6 @@ class UndemuxInd():
 
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-#        QC1 = (perf_ind_read >= threshold_perf_ind)
         QC2 = (Q30 >= self.Q30_treshold)
         QC3 = (self.read_pairs >= threshold_nr_read)
         if QC2 and QC3:
