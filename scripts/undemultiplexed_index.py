@@ -155,9 +155,6 @@ class UndemuxInd():
         if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
             return self.demux_udfs['Threshold for % bases >= Q30']
         warning = "Un recognized read length: {0}. Report this to developers! set Threshold for % bases >= Q30 if you want to run bcl conversion and demultiplexing anyway.".format(self.read_length)
-        print self.run_type
-        print self.read_length
-        print 'hhhhhh'
         if self.run_type == 'MiSeq':
             if self.read_length < 101:
                 Q30_threshold = 80
@@ -228,12 +225,17 @@ class UndemuxInd():
 
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
+        print Q30
+        print self.Q30_treshold
+        print self.read_pairs
+        print threshold_nr_read
         QC2 = (Q30 >= self.Q30_treshold)
         QC3 = (self.read_pairs >= threshold_nr_read)
         if QC2 and QC3:
             target_file.udf['Include reads'] = 'YES'
             target_file.qc_flag = 'PASSED'
         else:
+            print 'NOOOOO'
             target_file.udf['Include reads'] = 'NO'
             target_file.qc_flag = 'FAILED'
 
