@@ -158,10 +158,9 @@ class UndemuxInd():
                     'developers! set Threshold for % bases >= Q30 if you want '
                     'to run bcl conversion and demultiplexing anyway.'.format(self.read_length))
         print self.run_type
+        print 'hhhhhh'
         if self.run_type == 'MiSeq':
-            print 'hkjhk'
             if self.read_length < 101:
-                print 'gagga'
                 Q30_threshold = 80
             elif self.read_length == 101:
                 Q30_threshold = 75
@@ -232,25 +231,15 @@ class UndemuxInd():
 
         perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        QC1 = (perf_ind_read >= threshold_perf_ind)
+#        QC1 = (perf_ind_read >= threshold_perf_ind)
         QC2 = (Q30 >= self.Q30_treshold)
         QC3 = (self.read_pairs >= threshold_nr_read)
-        if QC1 and QC2 and QC3:
+        if QC2 and QC3:
             target_file.udf['Include reads'] = 'YES'
             target_file.qc_flag = 'PASSED'
         else:
             target_file.udf['Include reads'] = 'NO'
             target_file.qc_flag = 'FAILED'
-
-    def _QC_threshold_perf_ind(self):
-        if self.demux_udfs.has_key('Threshold for % Perfect Index Reads'):
-            return self.demux_udfs['Threshold for % Perfect Index Reads']
-        else:
-            self.process.udf['Threshold for % Perfect Index Reads'] = 40
-            set_field(self.process)
-            self.abstract.append("INFO: Threshold for % Perfect Index Reads is" 
-                                                        "set to 40 by default.")
-            return 40
 
     def _QC_threshold_nr_read(self, pool, nr_lane_samps):
         lane = pool.location[1][0]
@@ -265,9 +254,9 @@ class UndemuxInd():
                     exp_lane_clust = 10000000
             elif self.run_type == 'HiSeq Rapid Flow Cell v1':
                 exp_lane_clust = 114000000
-            elif self.run_type == 'HiSeq Flow Cell v4':
-                exp_lane_clust = 143000000
             elif self.run_type == 'HiSeq Flow Cell v3':
+                exp_lane_clust = 143000000
+            elif self.run_type == 'HiSeq Flow Cell v4':
                 exp_lane_clust = 188000000
             elif self.run_type == 'HiSeqX10':
                 exp_lane_clust = 250000000
