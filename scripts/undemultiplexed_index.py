@@ -154,6 +154,10 @@ class UndemuxInd():
     def _get_threshold_Q30(self):
         if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
             return self.demux_udfs['Threshold for % bases >= Q30']
+        warning = sys.exit('Un recognized read length: {0}. Report this to '
+                        'developers! set Threshold for % bases >= Q30 if you '
+                        'want to run bcl conversion and demultiplexing anyway.
+                        '.format(self.read_length))
         if self.run_type == 'MiSeq':
             if self.read_length < 101:
                 Q30_threshold = 80
@@ -163,6 +167,8 @@ class UndemuxInd():
                 Q30_threshold = 70
             elif self.read_length >= 251:
                 Q30_threshold = 60
+            else:
+                sys.exit(warning)
         else:
             if self.read_length == 51:
                 Q30_threshold = 85
@@ -172,6 +178,8 @@ class UndemuxInd():
                 Q30_threshold = 80
             elif self.read_length == 151:
                 Q30_threshold = 75
+            else:
+                sys.exit(warning)
         self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
         set_field(self.process)
         self.abstract.append("INFO: Threshold for Q30 was set to {0}."
@@ -242,7 +250,6 @@ class UndemuxInd():
                                                         "set to 40 by default.")
             return 40
 
-
     def _QC_threshold_nr_read(self, pool, nr_lane_samps):
         lane = pool.location[1][0]
         pool_udfs = dict(pool.udf.items())
@@ -262,14 +269,16 @@ class UndemuxInd():
                 exp_lane_clust = 188000000
             elif self.run_type == 'HiSeqX10':
                 exp_lane_clust = 250000000
+            else:
+                sys.exit('Unrecognized run type: {0}. Report to developer! Set '
+                    'Threshold for # Reads if you want to run bcl conversion '
+                    'and demultiplexing again'.format(self.run_type)) 
             exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
                    "Value based on nr of sampels: {2}, and run type {3}.".format(
                                 lane, reads_threshold, nr_lane_samps, self.run_type))
             return reads_threshold
-        #else:
-            # do some log
 
 
     def _get_fields(self, t_file, sample_info):
@@ -304,47 +313,6 @@ class UndemuxInd():
         else:
             self.read_pairs = np.true_divide(float(t_file.udf['# Reads']), 2)
         t_file.udf['# Read Pairs'] = self.read_pairs
-
-    def make_demultiplexed_counts_file(self, demuxfile):
-        """Reformats the content of the demultiplex and undemultiplexed files
-        to be more easy to read."""
-
-        demuxfile = demuxfile + '.csv'
-        keys = ['Project', 'Sample ID', 'Lane', '# Reads', 'Index', 
-                                    'Index name', '% of >= Q30 Bases (PF)']
-        toCSV = []
-        for pool in self.input_pools:
-            if self.run_type == 'MiSeq':
-                lane = '1'
-            else:
-                lane = pool.location[1][0]
-            for row in self.dem_stat['Barcode_lane_statistics']:
-                if row['Lane'] == lane:
-                    row_dict = dict([(x, row[x]) for x in keys if x in row])
-                    row_dict['Index name'] = ''
-                    toCSV.append(row_dict)
-            if lane in self.undem_stat.keys():
-                undet_per_lane = self.undem_stat[lane]['undemultiplexed_barcodes']
-                nr_undet = len(undet_per_lane['count'])
-                for row in range(nr_undet):
-                    row_dict = dict([(x, '') for x in keys])
-                    row_dict['# Reads'] = undet_per_lane['count'][row]
-                    row_dict['Index'] = undet_per_lane['sequence'][row]
-                    row_dict['Index name'] = undet_per_lane['index_name'][row]
-                    row_dict['Lane'] = undet_per_lane['lane'][row]
-                    toCSV.append(row_dict)    
-        try:
-            f = open(demuxfile, 'w')
-            dict_writer = csv.DictWriter(f, keys, dialect='excel')
-            dict_writer.writer.writerow(keys)
-            dict_writer.writerows(toCSV)
-            f.close
-            self.abstract.append("INFO: A Metrics file has been created with "
-                      "demultiplexed and undemultiplexed counts for debugging.")
-        except:
-            self.abstract.append("WARNING: Could not generate a Metrics file "
-                               "with demultiplexed and undemultiplexed counts.")
-
 
 
     def check_unexpected_yield(self):
@@ -388,6 +356,47 @@ class UndemuxInd():
         else:
             return 500000
 
+    def make_demultiplexed_counts_file(self, demuxfile):
+        """Reformats the content of the demultiplex and undemultiplexed files
+        to be more easy to read."""
+
+        demuxfile = demuxfile + '.csv'
+        keys = ['Project', 'Sample ID', 'Lane', '# Reads', 'Index',
+                                    'Index name', '% of >= Q30 Bases (PF)']
+        toCSV = []
+        for pool in self.input_pools:
+            if self.run_type == 'MiSeq':
+                lane = '1'
+            else:
+                lane = pool.location[1][0]
+            for row in self.dem_stat['Barcode_lane_statistics']:
+                if row['Lane'] == lane:
+                    row_dict = dict([(x, row[x]) for x in keys if x in row])
+                    row_dict['Index name'] = ''
+                    toCSV.append(row_dict)
+            if lane in self.undem_stat.keys():
+                undet_per_lane = self.undem_stat[lane]['undemultiplexed_barcodes']
+                nr_undet = len(undet_per_lane['count'])
+                for row in range(nr_undet):
+                    row_dict = dict([(x, '') for x in keys])
+                    row_dict['# Reads'] = undet_per_lane['count'][row]
+                    row_dict['Index'] = undet_per_lane['sequence'][row]
+                    row_dict['Index name'] = undet_per_lane['index_name'][row]
+                    row_dict['Lane'] = undet_per_lane['lane'][row]
+                    toCSV.append(row_dict)
+        try:
+            f = open(demuxfile, 'w')
+            dict_writer = csv.DictWriter(f, keys, dialect='excel')
+            dict_writer.writer.writerow(keys)
+            dict_writer.writerows(toCSV)
+            f.close
+            self.abstract.append("INFO: A Metrics file has been created with "
+                      "demultiplexed and undemultiplexed counts for debugging.")
+        except:
+            self.abstract.append("WARNING: Could not generate a Metrics file "
+                               "with demultiplexed and undemultiplexed counts.")
+
+
     def logging(self):
         """Collects and prints logging info."""
         self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
@@ -405,8 +414,8 @@ def main(lims, pid, epp_logger, demuxfile):
     UDI = UndemuxInd(process)
     UDI.get_run_info()
     UDI.set_result_file_udfs()
-    UDI.make_demultiplexed_counts_file(demuxfile)
     UDI.check_unexpected_yield()
+    UDI.make_demultiplexed_counts_file(demuxfile)
     UDI.logging()
     
 
