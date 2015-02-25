@@ -83,9 +83,9 @@ class UndemuxInd():
         hiseq = lims.get_processes(
                                 udf = {'Flow Cell ID' : cont_name},
                                 type = 'Illumina Sequencing (Illumina SBS) 4.0')
-        hiseq_X10 = None #lims.get_processes(
-#                                udf = {'Flow Cell ID' : cont_name},
-#                                type = 'Illumina Sequencing (HiSeq X) 1.0')
+        hiseq_X10 = lims.get_processes(
+                                udf = {'Flow Cell ID' : cont_name},
+                                type = 'Illumina Sequencing (HiSeq X) 1.0')
         if miseq:
             self.seq_run = miseq[0]
             self.run_type = 'MiSeq'
