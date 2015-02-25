@@ -311,7 +311,7 @@ class UndemuxInd():
         else:
             return False
 
-    def _check_un_exp_ind_yield(index_count):    
+    def _check_un_exp_ind_yield(self, index_count):    
         if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
             threshold_undem_yield =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
         else:
