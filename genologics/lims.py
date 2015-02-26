@@ -30,6 +30,7 @@ class Lims(object):
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
+        version: The optional LIMS API version, by default 'v2' 
         """
         self.baseuri = baseuri.rstrip('/') + '/'
         self.username = username
