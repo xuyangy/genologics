@@ -8,7 +8,7 @@ Copyright (C) 2012 Per Kraulis
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
-           'Artifact', 'Lims']
+           'Artifact', 'Lims', 'Step']
 
 import urllib
 from cStringIO import StringIO

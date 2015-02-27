@@ -1001,15 +1001,62 @@ class Artifact(Entity):
     # XXX set_state ?
     state = property(get_state)
 
+
+class NextAction():
+    '''Holds an action entry. Actions are specified in the next-actions XML element of a
+    step. They control what happens to a sample after a protocol step is completed.
+    '''
+
+    def __init__(self, lims, xml_node):
+        """Creates a NextAction from an XML element."""
+
+        self.xml_node = xml_node
+        
+        self.action = xml_node.attrib.get('action')
+        artifact_uri = xml_node.attrib.get('artifact-uri') 
+        if artifact_uri:
+            self.artifact = Artifact(lims, uri=artifact_uri)
+        else:
+            self.artifact = None
+        next_step_uri = xml_node.attrib.get('step-uri')
+        if next_step_uri:
+            self.next_step = Step(lims, uri=next_step_uri)
+        else:
+            self.next_step = None
+        rework_step_uri = xml_node.attrib.get('rework-step-uri')
+        if rework_step_uri:
+            self.rework_step = Step(lims, uri=rework_step_uri)
+        else:
+            self.rework_step = None
+
+    def update(self):
+        self.xml_node.attrib['action'] = self.action
+        if self.artifact:
+            self.xml_node.attrib['artifact-uri'] = self.artifact.uri
+        if self.next_step:
+            self.xml_node.attrib['step-uri'] = self.next_step.uri
+        if self.rework_step:
+            self.xml_node.attrib['rework-step-uri'] = self.next_step.uri
+
+
+    def __str__(self):
+        s = "NextAction(action='" + (self.action or "") + "'"
+        if self.artifact: s += ",artifact='" + self.artifact.id + "'"
+        if self.next_step: s += ",next_step='" + self.next_step.id + "'"
+        if self.rework_step: s += ",rework_step='" + self.rework_step.id + "'"
+        s += ")"
+        return s
+
 class StepActions():
     """Small hack to be able to query the actions subentity of
-    the Step entity. Right now, only the escalation is parsed."""
+    the Step entity."""
 
     def __init__(self, lims, uri=None, id=None):
         self.lims=lims
         self.uri="{0}/actions".format(uri)
         self.root=lims.get(self.uri)
         self.escalation={}
+        self.next_actions=[]
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
             self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
@@ -1023,8 +1070,25 @@ class StepActions():
                 art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
                 self.escalation['artifacts'].extend(art)
 
+        for node in self.root.findall('next-actions'):
+            for action_node in node:
+                na = NextAction(lims, action_node)
+                self.next_actions.append(na)
+
+
+    def put(self):
+        """Updates next actions and escalations""" 
+        for na in self.next_actions:
+            na.update()
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+
+        print "SENDING DATA: ", data
+        self.lims.put(self.uri, data)
+
+
+
 class Step(Entity):
-    "Step, as defined by the genologics API."
+    "Step, as defined by the genologics API. Step ID is the same as the process ID."
 
     _URI = 'steps'
     def __init__(self, lims, uri=None, id=None):
@@ -1037,6 +1101,14 @@ class Step(Entity):
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
+
+    def advance(self):
+        "Advances to next stage (placement, record details, finish, etc)"
+        self.get()
+        advance_uri = "{0}/advance".format(self.uri)
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+        self.lims.post(advance_uri, data)
+
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
 StepActions.step    = EntityDescriptor('step', Step)
