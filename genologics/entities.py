@@ -578,11 +578,20 @@ class EntityListDescriptor(EntityDescriptor):
     represented by multiple XML elements.
     """
 
+    def __init__(self, tag, cls, parent_tag = None):
+        super(EntityListDescriptor, self).__init__(tag, cls)
+        self.parent_tag = parent_tag
+
     def __get__(self, instance, cls):
         instance.get()
         result = []
-        for node in instance.root.findall(self.tag):
-            result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+        if self.parent_tag:
+            parents = instance.root.findall(self.parent_tag)
+        else:
+            parents = [instance.root]
+        for parent in parents:
+            for node in parent.findall(self.tag):
+                result.append(self.klass(instance.lims, uri=node.attrib['uri']))
         return result
 
 
@@ -1129,6 +1138,7 @@ class Step(Entity):
     _URI = 'steps'
 
     configuration       = EntityDescriptor('configuration', StepConfiguration)
+    current_state       = StringAttributeDescriptor('current-state')
 
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
@@ -1141,7 +1151,17 @@ class Step(Entity):
         self.get()
         advance_uri = "{0}/advance".format(self.uri)
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
-        self.lims.post(advance_uri, data)
+        self.root = self.lims.post(advance_uri, data)
+
+
+class Queue(Entity):
+    '''Get the queue of analytes ready to start on a protocol step. 
+    Give the protocol configuration ID'''
+
+    _URI = 'queues'
+
+    artifacts = EntityListDescriptor('artifact', Artifact, 'artifacts')
+
 
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
