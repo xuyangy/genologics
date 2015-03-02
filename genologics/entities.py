@@ -1045,12 +1045,12 @@ class NextAction():
             self.artifact = None
         next_step_uri = xml_node.attrib.get('step-uri')
         if next_step_uri:
-            self.next_step = Step(lims, uri=next_step_uri)
+            self.next_step = StepConfiguration(lims, uri=next_step_uri)
         else:
             self.next_step = None
         rework_step_uri = xml_node.attrib.get('rework-step-uri')
         if rework_step_uri:
-            self.rework_step = Step(lims, uri=rework_step_uri)
+            self.rework_step = StepConfiguration(lims, uri=rework_step_uri)
         else:
             self.rework_step = None
 
@@ -1071,6 +1071,7 @@ class NextAction():
         if self.rework_step: s += ",rework_step='" + self.rework_step.id + "'"
         s += ")"
         return s
+
 
 class StepActions():
     """Small hack to be able to query the actions subentity of
@@ -1107,7 +1108,6 @@ class StepActions():
             na.update()
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
 
-        print "SENDING DATA: ", data
         self.lims.put(self.uri, data)
 
 
