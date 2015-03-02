@@ -372,10 +372,12 @@ class Lims(object):
 
 
     def create_step(self, step_configuration, inputs):
+        """Creates a new protocol step instance, and this also creates a Process.
+        The inputs parameter is a list of artifact inputs. Returns the new step."""
         root = ElementTree.Element('stp:step-creation', {'xmlns:stp': 'http://genologics.com/ri/step'})
         ElementTree.SubElement(root, "configuration", {'uri': step_configuration.uri})
         inputs_element = ElementTree.SubElement(root, "inputs")
-        for i,replicates in inputs.items():
+        for i in inputs:
             ElementTree.SubElement(inputs_element, "input", {'uri': i.uri})
 
         root = self.post(self.get_uri("steps"), ElementTree.tostring(root))
