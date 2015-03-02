@@ -20,6 +20,11 @@ except:
 	warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
 	sys.exit(-1)
 
+if config.has_section('genologics') and config.has_option('genologics','VERSION'):
+	VERSION = config.get('genologics', 'VERSION').rstrip()
+else:
+	VERSION = 'v2'
+	
 if config.has_section('logging') and config.has_option('logging','MAIN_LOG'):
 	MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
 else:
