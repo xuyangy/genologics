@@ -1097,7 +1097,7 @@ class Step(Entity):
         self.actions= StepActions(lims,uri=self.uri)
 
 
-    #configuration      = EntityDescriptor('configuration', StepConfiguration)
+    configuration      = EntityDescriptor('configuration', StepConfiguration)
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
@@ -1112,5 +1112,18 @@ class Step(Entity):
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
 StepActions.step    = EntityDescriptor('step', Step)
+
+
+
+
+class StepConfiguration(Entity):
+    "Protocol step configuration object. Located under a protocol, at
+    configuration/protocols/<p-id>/steps/<step-id>"
+
+    # This is not resolveable using a URL and an ID.
+    _URI = None
+
+    next_step      = EntityDescriptor('', StepConfiguration)
+    type           = EntityDescriptor('type', Containertype)
 
 
