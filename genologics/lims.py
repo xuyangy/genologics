@@ -74,7 +74,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type': 'application/xml',
                                    'accept': 'application/xml'})
-        return self.parse_response(r)
+        return self.parse_response(r, success_status = [200, 201])
 
     def check_version(self):
         """Raise ValueError if the version for this interface
@@ -89,11 +89,11 @@ class Lims(object):
             if node.attrib['major'] == self.VERSION: return
         raise ValueError('version mismatch')
 
-    def parse_response(self, response):
+    def parse_response(self, response, success_status = [200]):
         """Parse the XML returned in the response.
         Raise an HTTP error if the response status is not 200.
         """
-        if response.status_code != 200:
+        if not response.status_code in success_status:
             try:
                 root = ElementTree.fromstring(response.content)
                 node = root.find('message')
@@ -369,3 +369,18 @@ class Lims(object):
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='UTF-8')
+
+
+    def create_step(self, step_configuration, inputs):
+        root = ElementTree.Element('stp:step-creation', {'xmlns:stp': 'http://genologics.com/ri/step'})
+        ElementTree.SubElement(root, "configuration", {'uri': step_configuration.uri})
+        inputs_element = ElementTree.SubElement(root, "inputs")
+        for i,replicates in inputs.items():
+            ElementTree.SubElement(inputs_element, "input", {'uri': i.uri})
+
+        root = self.post(self.get_uri("steps"), ElementTree.tostring(root))
+        limsid = root.attrib.get('limsid')
+        step = Step(self, id = limsid)
+        step.root = root
+        return step
+

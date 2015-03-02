@@ -573,6 +573,24 @@ class EntityDescriptor(TagDescriptor):
             return self.klass(instance.lims, uri=node.attrib['uri'])
 
 
+class EntityAttributeDescriptor(BaseDescriptor):
+    """An instance attribute referencing another entity instance, implemented
+    as an attribute on the root node."""
+
+    def __init__(self, attribute, klass):
+        super(EntityAttributeDescriptor, self).__init__()
+        self.attribute = attribute
+        self.klass = klass
+
+    def __get__(self, instance, cls):
+        instance.get()
+        attr = instance.root.attrib.get(self.attribute)
+        if attr is None:
+            return None
+        else:
+            return self.klass(instance.lims, uri=attr)
+
+
 class EntityListDescriptor(EntityDescriptor):
     """An instance attribute yielding a list of entity instances
     represented by multiple XML elements.
@@ -1169,8 +1187,12 @@ class Queue(Entity):
 
     _URI = 'queues'
 
-    artifacts = EntityListDescriptor('artifact', Artifact, 'artifacts')
+    artifacts              = EntityListDescriptor('artifact', Artifact, 'artifacts')
+    protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', StepConfiguration)
 
+    def step_configuration(self):
+        '''Get the step configuration corresponding to this queue.'''
+        return Queue(self.lims, id = self.id)
 
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
