@@ -610,6 +610,7 @@ class LocationDescriptor(TagDescriptor):
         uri = node.find('container').attrib['uri']
         return Container(instance.lims, uri=uri), node.find('value').text
 
+
 class ReagentLabelList(BaseDescriptor):
     """An instance attribute yielding a list of reagent labels"""
     def __get__(self, instance, cls):
@@ -621,6 +622,7 @@ class ReagentLabelList(BaseDescriptor):
 	    except:
 		pass
 	return self.value
+
 
 class InputOutputMapList(BaseDescriptor):
     """An instance attribute yielding a list of tuples (input, output)
@@ -653,6 +655,29 @@ class InputOutputMapList(BaseDescriptor):
         node = node.find('parent-process')
         if node is not None:
             result['parent-process'] = Process(lims, node.attrib['uri'])
+        return result
+
+
+class TransitionDescriptor(TagDescriptor):
+    """Lisf of transition elements: next steps for a protocol step configuration
+    item. Only read access is implemented.
+    """
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+
+        for parent in instance.root.findall(self.tag):
+            for node in parent.findall('transition'):
+                step = None
+                step_uri = node.attrib['next-step-uri']
+                if node.attrib['next-step-uri']:
+                    step = StepConfiguration(instance.lims, uri = step_uri)
+                
+                name = node.attrib['name']
+                sequence = node.attrib['sequence']
+    
+                result.append((int(sequence), name, step))
         return result
 
 
@@ -1051,7 +1076,7 @@ class StepActions():
     """Small hack to be able to query the actions subentity of
     the Step entity."""
 
-    def __init__(self, lims, uri=None, id=None):
+    def __init__(self, lims, uri):
         self.lims=lims
         self.uri="{0}/actions".format(uri)
         self.root=lims.get(self.uri)
@@ -1086,21 +1111,30 @@ class StepActions():
         self.lims.put(self.uri, data)
 
 
+class StepConfiguration(Entity):
+    """Protocol step configuration object. Located under a protocol, at
+    configuration/protocols/<p-id>/steps/<step-id>"""
+
+    # Step config is not resolveable using a URI and an ID alone, because
+    # it's nested under a protocol.
+    
+    _URI = None
+
+    transitions    = TransitionDescriptor('transitions')
+
 
 class Step(Entity):
     "Step, as defined by the genologics API. Step ID is the same as the process ID."
 
     _URI = 'steps'
+
+    configuration       = EntityDescriptor('configuration', StepConfiguration)
+
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
         self.actions= StepActions(lims,uri=self.uri)
 
-
-    configuration      = EntityDescriptor('configuration', StepConfiguration)
-    #placements         = EntityDescriptor('placements', StepPlacements)
-    #program_status     = EntityDescriptor('program-status',StepProgramStatus)
-    #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
     def advance(self):
         "Advances to next stage (placement, record details, finish, etc)"
@@ -1113,17 +1147,5 @@ class Step(Entity):
 Sample.artifact = EntityDescriptor('artifact', Artifact)
 StepActions.step    = EntityDescriptor('step', Step)
 
-
-
-
-class StepConfiguration(Entity):
-    "Protocol step configuration object. Located under a protocol, at
-    configuration/protocols/<p-id>/steps/<step-id>"
-
-    # This is not resolveable using a URL and an ID.
-    _URI = None
-
-    next_step      = EntityDescriptor('', StepConfiguration)
-    type           = EntityDescriptor('type', Containertype)
 
 
