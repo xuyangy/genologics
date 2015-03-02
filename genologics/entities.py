@@ -983,6 +983,7 @@ class Process(Entity):
                 cs.append(o_a.container)
         return list(frozenset(cs))
 
+
 class Artifact(Entity):
     "Any process input or output; analyte or file."
 
@@ -1131,6 +1132,10 @@ class StepConfiguration(Entity):
 
     transitions    = TransitionDescriptor('transitions')
 
+    def queue(self):
+        '''Get the queue corresponding to this step.'''
+        return Queue(self.lims, id = self.id)
+
 
 class Step(Entity):
     "Step, as defined by the genologics API. Step ID is the same as the process ID."
@@ -1152,6 +1157,10 @@ class Step(Entity):
         advance_uri = "{0}/advance".format(self.uri)
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.root = self.lims.post(advance_uri, data)
+
+    def process(self):
+        '''Get the Process object corresponding to this protocol step.'''
+        return Process(self.lims, id = self.id)
 
 
 class Queue(Entity):
