@@ -308,6 +308,12 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def get_protocols(self, name=None):
+        """Get a list of protocol configuration entities.
+        Optionally filter by protocol name."""
+        params = self._get_params(name=name)
+        return self._get_instances(ProtocolConfiguration, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()

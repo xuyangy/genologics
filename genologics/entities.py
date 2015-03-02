@@ -348,6 +348,20 @@ class IntegerDescriptor(StringDescriptor):
             return int(node.text)
 
 
+class IntegerAttributeDescriptor(StringAttributeDescriptor):
+    """An instance attribute containing an integer value
+    represented by an XMl element.
+    """
+
+    def __get__(self, instance, cls):
+        instance.get()
+        str_val = instance.root.attrib.get(self.tag)
+        if str_val is None:
+            return None
+        else:
+            return int(str_val)
+
+
 class BooleanDescriptor(StringDescriptor):
     """An instance attribute containing a boolean value
     represented by an XMl element.
@@ -596,9 +610,10 @@ class EntityListDescriptor(EntityDescriptor):
     represented by multiple XML elements.
     """
 
-    def __init__(self, tag, cls, parent_tag = None):
+    def __init__(self, tag, cls, parent_tag = None, save_body = False):
         super(EntityListDescriptor, self).__init__(tag, cls)
         self.parent_tag = parent_tag
+        self.save_body = save_body
 
     def __get__(self, instance, cls):
         instance.get()
@@ -609,7 +624,10 @@ class EntityListDescriptor(EntityDescriptor):
             parents = [instance.root]
         for parent in parents:
             for node in parent.findall(self.tag):
-                result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+                entity = self.klass(instance.lims, uri=node.attrib['uri'])
+                if self.save_body:
+                    entity.root = node
+                result.append(entity)
         return result
 
 
@@ -1148,11 +1166,23 @@ class StepConfiguration(Entity):
     
     _URI = None
 
+    # Transitions represent the potential next steps for samples
     transitions    = TransitionDescriptor('transitions')
 
     def queue(self):
         '''Get the queue corresponding to this step.'''
         return Queue(self.lims, id = self.id)
+
+
+class ProtocolConfiguration(Entity):
+    """Protocol configuration entity"""
+
+    _URI = 'configuration/protocols'
+    _TAG = 'protocol'
+
+    name           = StringAttributeDescriptor('name')
+    index          = IntegerAttributeDescriptor('index')
+    steps          = EntityListDescriptor('step', StepConfiguration, 'steps', save_body = True)
 
 
 class Step(Entity):
