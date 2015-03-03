@@ -1223,6 +1223,9 @@ class AvailableProgram():
     def trigger(self):
         self.lims.post(self.uri, "")
 
+    def __str__(self):
+        return "%s(%s)" % (self.__class__.__name__, self.id)
+
 
 class Step(Entity):
     "Step, as defined by the genologics API. Step ID is the same as the process ID."
