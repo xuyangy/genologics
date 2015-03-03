@@ -125,11 +125,16 @@ class UndemuxInd():
     def _get_file_path(self, cont_name):
         if self.run_type == 'MiSeq':
             path_id = self.run_udfs['Flow Cell ID']
+            data_folder = 'miseq_data'
+        elif self.run_type == 'HiSeqX10':
+            path_id = cont_name
+            data_folder = 'HiSeq_X_data'
         else:
+            data_folder = 'hiseq_data'
             path_id = cont_name
         try:
-            self.file_path = glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/"
-                                        "Basecall_Stats_*/".format(path_id)))[0]
+            self.file_path = glob.glob(("/srv/mfs/{0}/*{1}/Unaligned/"
+                                        "Basecall_Stats_*/".format(data_folder, path_id)))[0]
         except:
             sys.exit("Failed to get file path")
 
