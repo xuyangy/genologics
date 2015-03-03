@@ -319,6 +319,32 @@ class StringListDescriptor(TagDescriptor):
         return result
 
 
+class GenericListDescriptor(TagDescriptor):
+    """A tag containing a list of tags. This descriptor allows read-only 
+    access to a generic list of sub-tags. The parent tag name should be given
+    to this descriptor.  In the following example, it would be available-programs:
+    <available-programs>
+      <available-program />
+    </available-programs>
+
+    This descriptor passes all sub-tags (e.g. available-program) one by one to
+    the constructor of cls with a named argument "element". It also passes the lims
+    object.
+    """
+
+    def __init__(self, tag, klass):
+        super(GenericListDescriptor, self).__init__(tag)
+        self.klass = klass
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        for node in instance.root.findall(self.tag):
+            for sub_node in node:
+                result.append(self.klass(lims=instance.lims, element=sub_node))
+        return result
+
+
 class StringDictionaryDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary of string key/values
     represented by a hierarchical XML element.
@@ -1185,6 +1211,19 @@ class ProtocolConfiguration(Entity):
     steps          = EntityListDescriptor('step', StepConfiguration, 'steps', save_body = True)
 
 
+class AvailableProgram():
+    '''Script registered on the process type, which can be referenced directly from
+    the step instance.'''
+
+    def __init__(self, lims, element):
+        self.uri = element.attrib['uri']
+        self.name = element.attrib['name']
+        self.lims = lims
+
+    def trigger(self):
+        self.lims.post(self.uri, "")
+
+
 class Step(Entity):
     "Step, as defined by the genologics API. Step ID is the same as the process ID."
 
@@ -1192,6 +1231,7 @@ class Step(Entity):
 
     configuration       = EntityDescriptor('configuration', StepConfiguration)
     current_state       = StringAttributeDescriptor('current-state')
+    available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
 
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
@@ -1209,6 +1249,7 @@ class Step(Entity):
     def process(self):
         '''Get the Process object corresponding to this protocol step.'''
         return Process(self.lims, id = self.id)
+
 
 
 class Queue(Entity):
