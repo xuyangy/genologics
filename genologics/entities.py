@@ -729,28 +729,6 @@ class InputOutputMapList(BaseDescriptor):
         return result
 
 
-class TransitionDescriptor(TagDescriptor):
-    """Lisf of transition elements: next steps for a protocol step configuration
-    item. Only read access is implemented.
-    """
-
-    def __get__(self, instance, cls):
-        instance.get()
-        result = []
-
-        for parent in instance.root.findall(self.tag):
-            for node in parent.findall('transition'):
-                step = None
-                step_uri = node.attrib['next-step-uri']
-                if node.attrib['next-step-uri']:
-                    step = StepConfiguration(instance.lims, uri = step_uri)
-                
-                name = node.attrib['name']
-                sequence = node.attrib['sequence']
-    
-                result.append((int(sequence), name, step))
-        return result
-
 
 class Entity(object):
     "Base class for the entities in the LIMS database."
@@ -1182,6 +1160,17 @@ class StepActions():
 
         self.lims.put(self.uri, data)
 
+class Transition:
+    def __init__(self, lims, element):
+        step_uri = element.attrib['next-step-uri']
+        if step_uri:
+            self.step = StepConfiguration(lims, uri = step_uri)
+        else:
+            self.step = None
+
+        self.sequence = element.attrib['sequence']
+        self.name = element.attrib['name']
+    
 
 class StepConfiguration(Entity):
     """Protocol step configuration object. Located under a protocol, at
@@ -1193,7 +1182,8 @@ class StepConfiguration(Entity):
     _URI = None
 
     # Transitions represent the potential next steps for samples
-    transitions    = TransitionDescriptor('transitions')
+    name           = StringAttributeDescriptor('name')
+    transitions    = GenericListDescriptor('transitions', Transition)
 
     def queue(self):
         '''Get the queue corresponding to this step.'''
