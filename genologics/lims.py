@@ -24,16 +24,18 @@ class Lims(object):
 
     VERSION = 'v2'
 
-    def __init__(self, baseuri, username, password):
+    def __init__(self, baseuri, username, password, version = VERSION):
         """baseuri: Base URI for the GenoLogics server, excluding
                     the 'api' or version parts!
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
+        version: The optional LIMS API version, by default 'v2' 
         """
         self.baseuri = baseuri.rstrip('/') + '/'
         self.username = username
         self.password = password
+        self.VERSION = version
         self.cache = dict()
         # For optimization purposes, enables requests to persist connections
         self.request_session = requests.Session()
