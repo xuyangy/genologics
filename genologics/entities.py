@@ -836,6 +836,13 @@ class File(Entity):
     original_location = StringDescriptor('original-location')
     is_published      = BooleanDescriptor('is-published')
 
+    def download(self):
+        lims = self.lims
+        url = "{0}/download".format(self.uri)
+        r = lims.request_session.get(url,
+                auth=(lims.username, lims.password))
+        return r.content
+
 
 class Project(Entity):
     "Project concerning a number of samples; associated with a researcher."
