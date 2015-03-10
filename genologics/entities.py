@@ -827,6 +827,19 @@ class Note(Entity):
 
     content = StringDescriptor(None)    # root element
 
+class ProtoFile():
+    '''File object which is not an entity, for use while allocating
+    a new file.'''
+
+    attached_to        = StringListDescriptor('attached-to')
+    content_location 
+
+    def __init__(self, attached_to = None, original_location = None):
+        self.root = None
+
+
+
+
 
 class File(Entity):
     "File attached to a project or a sample."

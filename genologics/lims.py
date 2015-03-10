@@ -394,3 +394,23 @@ class Lims(object):
         step.root = root
         return step
 
+    def glsstorage(self, proto_file):
+        '''Allocates and returns a file resource in the glsstorage area. This 
+        doesn't actually upload the file, it only sets up the metadata.
+        
+        Accepts and returns a ProtoFile object, which contains information about
+        a file or storage location, but does not yet have a LIMS ID. This 
+        function fills in the content-location attribute.'''
+
+        root = ElementTree.Element('file')
+        a_t = ElementTree.SubElement(root, 'attached-to')
+        a_t.text = attached_to.url
+        o_l = ElementTree.SubElement(root, 'original-location')
+        o_l.text = original_location
+        
+        glss_uri = self.get_uri("glsstorage")
+        self.post(glss_uri, None)
+
+        f = File()
+
+
