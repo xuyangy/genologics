@@ -8,7 +8,7 @@ Copyright (C) 2012 Per Kraulis
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
-           'Artifact', 'Lims', 'Step', 'Queue']
+           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile']
 
 import urllib
 from cStringIO import StringIO
@@ -402,15 +402,9 @@ class Lims(object):
         a file or storage location, but does not yet have a LIMS ID. This 
         function fills in the content-location attribute.'''
 
-        root = ElementTree.Element('file')
-        a_t = ElementTree.SubElement(root, 'attached-to')
-        a_t.text = attached_to.url
-        o_l = ElementTree.SubElement(root, 'original-location')
-        o_l.text = original_location
-        
         glss_uri = self.get_uri("glsstorage")
-        self.post(glss_uri, None)
-
-        f = File()
-
+        xml_data = self.tostring(ElementTree.ElementTree(proto_file.root))
+        print xml_data
+        response = self.post(glss_uri, xml_data)
+        return ProtoFile(self, root=response)
 

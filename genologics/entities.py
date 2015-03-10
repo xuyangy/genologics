@@ -827,15 +827,44 @@ class Note(Entity):
 
     content = StringDescriptor(None)    # root element
 
-class ProtoFile():
-    '''File object which is not an entity, for use while allocating
-    a new file.'''
+
+class ProtoFile(object):
+    '''File object for use while allocating a new file. It is not an
+    Entity because it doesn't have a unique identifier.'''
 
     attached_to        = StringListDescriptor('attached-to')
-    content_location 
+    content_location   = StringDescriptor('content-location')
+    original_location  = StringDescriptor('original-location')
 
-    def __init__(self, attached_to = None, original_location = None):
-        self.root = None
+    def __init__(self, lims, attached_to = None, original_location = None, root = None): 
+        self.lims = lims
+        if root is not None:
+            self.root = root
+            if attached_to or original_location:
+                raise ValueError("Can't specify both data and XML root element")
+        else:
+            self.root = ElementTree.Element(nsmap('file:file'))
+            if attached_to:
+                ElementTree.SubElement(self.root, 'attached-to').text = attached_to
+            if original_location:
+                ElementTree.SubElement(self.root, 'original-location').text = original_location
+
+    def get(self):
+        '''Get is a no-op for ProtoFile, but required to use the descriptors
+        which are intended for Entities. There is no ultimate correct copy in 
+        the LIMS, only the local data'''
+        pass
+
+
+    def post(self):
+        '''Posts to the files resource. Returns an actual File entity object'''
+
+        xml_data = self.lims.tostring(ElementTree.ElementTree(self.root))
+        response = self.lims.post(self.lims.get_uri('files'), xml_data)
+        uri = response.attrib['uri']
+        f = File(self.lims, uri)
+        f.root = response
+        return f
 
 
 
@@ -855,6 +884,12 @@ class File(Entity):
         r = lims.request_session.get(url,
                 auth=(lims.username, lims.password))
         return r.content
+
+    def upload(self, data):
+        url = "{0}/upload".format(self.uri)
+        r = self.lims.request_session.post(
+                url, auth=(self.lims.username, self.lims.password),
+                files=dict(file=data))
 
 
 class Project(Entity):
@@ -1143,43 +1178,6 @@ class NextAction():
         return s
 
 
-class StepActions():
-    """Small hack to be able to query the actions subentity of
-    the Step entity."""
-
-    def __init__(self, lims, uri):
-        self.lims=lims
-        self.uri="{0}/actions".format(uri)
-        self.root=lims.get(self.uri)
-        self.escalation={}
-        self.next_actions=[]
-        for node in self.root.findall('escalation'):
-            self.escalation['artifacts']=[]
-            self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
-            if node.find('review') is not None: #recommended by the Etree doc
-                self.escalation['status']='Reviewed'
-                self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
-            else:
-                self.escalation['status']='Pending'
-
-            for node2 in node.findall('escalated-artifacts'):
-                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
-                self.escalation['artifacts'].extend(art)
-
-        for node in self.root.findall('next-actions'):
-            for action_node in node:
-                na = NextAction(lims, action_node)
-                self.next_actions.append(na)
-
-
-    def put(self):
-        """Updates next actions and escalations""" 
-        for na in self.next_actions:
-            na.update()
-        data = self.lims.tostring(ElementTree.ElementTree(self.root))
-
-        self.lims.put(self.uri, data)
-
 class Transition:
     def __init__(self, lims, element):
         step_uri = element.attrib['next-step-uri']
@@ -1235,6 +1233,45 @@ class AvailableProgram():
 
     def __str__(self):
         return "%s(%s)" % (self.__class__.__name__, self.id)
+
+
+class StepActions():
+    """Small hack to be able to query the actions subentity of
+    the Step entity."""
+
+    def __init__(self, lims, uri):
+        self.lims=lims
+        self.uri="{0}/actions".format(uri)
+        self.root=lims.get(self.uri)
+        self.escalation={}
+        self.next_actions=[]
+        for node in self.root.findall('escalation'):
+            self.escalation['artifacts']=[]
+            self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
+            if node.find('review') is not None: #recommended by the Etree doc
+                self.escalation['status']='Reviewed'
+                self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
+            else:
+                self.escalation['status']='Pending'
+
+            for node2 in node.findall('escalated-artifacts'):
+                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
+                self.escalation['artifacts'].extend(art)
+
+        for node in self.root.findall('next-actions'):
+            for action_node in node:
+                na = NextAction(lims, action_node)
+                self.next_actions.append(na)
+
+
+    def put(self):
+        """Updates next actions and escalations""" 
+        for na in self.next_actions:
+            na.update()
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+
+        self.lims.put(self.uri, data)
+
 
 
 class Step(Entity):
