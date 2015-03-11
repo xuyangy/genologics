@@ -404,7 +404,6 @@ class Lims(object):
 
         glss_uri = self.get_uri("glsstorage")
         xml_data = self.tostring(ElementTree.ElementTree(proto_file.root))
-        print xml_data
         response = self.post(glss_uri, xml_data)
         return ProtoFile(self, root=response)
 
