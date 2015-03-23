@@ -307,7 +307,7 @@ class LaneQC():
                             self.QC_fail.append(samp)
         self._check_un_exp_lane_yield()
         for index_count in self.counts:
-            self._check_un_exp_ind_yield(index_count):
+            self._check_un_exp_ind_yield(index_count)
 
     def set_tresholds(self, qc_log_file):
         print >> qc_log_file, ''
