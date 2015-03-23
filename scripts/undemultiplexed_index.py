@@ -268,7 +268,7 @@ class UndemuxInd():
             'Ave Q Score' : stats['Mean Quality Score (PF)'],
             '% Perfect Index Read' : stats['% Perfect Index Reads']}
 
-        for key, val in samp_udfs:
+        for key, val in samp_udfs.items():
             try:
                 t_file.udf[key] = float(val)
             except:
