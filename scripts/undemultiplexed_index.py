@@ -234,7 +234,7 @@ class UndemuxInd():
                             self.nr_lane_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
-        if self._check_un_exp_lane_yield(counts, thres_un_exp_lane_yielde:
+        if self._check_un_exp_lane_yield(counts, thres_un_exp_lane_yield):
             self.high_lane_yield.append(lane)
         for index_count in counts:
             if self._check_un_exp_ind_yield(index_count, thres_un_exp_ind_yield):
