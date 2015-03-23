@@ -262,21 +262,23 @@ class UndemuxInd():
         t_file -   output artifact of the bcl-conv & demux process (run 
                         lane index resolution)"""
         print sample_info
-        omr = float(sample_info['% One Mismatch Reads (Index)'])
-        rcl = float(sample_info['% of raw clusters per lane'])
-        pf  = float(sample_info['% PF'])
-        mqs = float(sample_info['Mean Quality Score (PF)'])
-        yMb = float(sample_info['Yield (Mbases)'].replace(',',''))
-        pir = float(sample_info['% Perfect Index Reads'])
-        q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        nrr = float(sample_info['# Reads'].replace(',',''))
+        if sample_info['% One Mismatch Reads (Index)']:
 
-        t_file.udf['% One Mismatch Reads (Index)'] = omr
-        t_file.udf['% of Raw Clusters Per Lane'] = rcl
-        t_file.udf['%PF'] = pf
-        t_file.udf['Ave Q Score'] = mqs
-        t_file.udf['Yield PF (Gb)'] = np.true_divide(yMb, 1000)
-        t_file.udf['% Perfect Index Read'] = pir
+        omr = sample_info['% One Mismatch Reads (Index)']
+        rcl = sample_info['% of raw clusters per lane']
+        pf  = sample_info['% PF']
+        mqs = sample_info['Mean Quality Score (PF)']
+        yMb = sample_info['Yield (Mbases)'].replace(',','')
+        pir = sample_info['% Perfect Index Reads']
+        q30 = sample_info['% of >= Q30 Bases (PF)']
+        nrr = sample_info['# Reads'].replace(',','')
+
+        t_file.udf['% One Mismatch Reads (Index)'] = float(omr) if omr else omr
+        t_file.udf['% of Raw Clusters Per Lane'] = float(rcl) if rcl else rcl
+        t_file.udf['%PF'] = float(pf) if pf else pf
+        t_file.udf['Ave Q Score'] = float(mqs) if mqs else mqs
+        t_file.udf['Yield PF (Gb)'] = np.true_divide(float(yMb), 1000) if yMb else yMb
+        t_file.udf['% Perfect Index Read'] = float(pir) if pir else pir
 
         if not dict(t_file.udf.items()).has_key('% Bases >=Q30'):
             t_file.udf['% Bases >=Q30'] = q30
