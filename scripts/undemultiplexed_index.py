@@ -199,6 +199,7 @@ class UndemuxInd():
             LQC.lane_QC()
             self.nr_lane_samps_tot += LQC.nr_lane_samps
             self.nr_lane_samps_updat += LQC.nr_samps_updat
+            self.QC_fail += LQC.QC_fail
             if LQC.high_lane_yield:
                 self.high_lane_yield.append(LQC.lane)
             if LQC.high_index_yield:
@@ -264,7 +265,7 @@ class UndemuxInd():
                                                         self.nr_lane_samps_tot))
         if self.QC_fail:
             self.abstract.append('Failed to make qc for samples: {0}'.format(
-                ', '.join(self.QC_fail)))
+                ', '.join(list(set(self.QC_fail)))))
         if 'WARNING' in ' '.join(self.abstract):
             sys.exit(' '.join(self.abstract))
         else:
@@ -294,6 +295,7 @@ class LaneQC():
         self.BLS = dem_stat['Barcode_lane_statistics']
         self.nr_samps_updat = 0
         self.html_file_error = False
+        self.QC_fail = []
 
     def lane_QC(self):
         for target_file in self.out_arts:
