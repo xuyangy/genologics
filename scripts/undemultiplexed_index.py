@@ -208,6 +208,18 @@ class UndemuxInd():
         outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
         nr_lane_samps = len(outarts_per_lane)
         thres_read_per_samp, thres_read_per_lane = self._QC_threshold_nr_read(pool, nr_lane_samps)
+        thres_un_exp_lane_yield = thres_read_per_lane*0.05 if self.single else thres_read_per_lane*0.1
+        if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
+            thres_un_exp_ind_yield =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
+        else:
+            thres_un_exp_ind_yield = thres_read_per_samp*0.1
+        print >> self.qc_log_file, lane
+        print >> self.qc_log_file ,thres_read_per_samp
+        print >> self.qc_log_file, thres_read_per_lane
+        print >> self.qc_log_file, self.Q30_treshold
+        print >> self.qc_log_file, thres_un_exp_lane_yield
+        print >> self.qc_log_file, thres_un_exp_ind_yield
+
         for target_file in outarts_per_lane:
             self.nr_lane_samps_tot += 1
             samp_name = target_file.samples[0].name
@@ -222,15 +234,10 @@ class UndemuxInd():
                             self.nr_lane_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
-        print >> self.qc_log_file, lane
-        print >> self.qc_log_file ,thres_read_per_samp
-        print >> self.qc_log_file, thres_read_per_lane
-        print >> self.qc_log_file, self.Q30_treshold
-
-        if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
+        if self._check_un_exp_lane_yield(counts, thres_un_exp_lane_yielde:
             self.high_lane_yield.append(lane)
         for index_count in counts:
-            if self._check_un_exp_ind_yield(index_count, thres_read_per_samp):
+            if self._check_un_exp_ind_yield(index_count, thres_un_exp_ind_yield):
                 self.high_index_yield.append(lane)
 
     def _QC_threshold_nr_read(self, pool, nr_lane_samps):
@@ -325,22 +332,13 @@ class UndemuxInd():
 
     def _check_un_exp_lane_yield(self, counts, threshold):
         unexp_lane_yield = sum([int(x) for x in counts])
-        threshold = threshold*0.05 if self.single else threshold*0.1
-        print >> self.qc_log_file, threshold
         if unexp_lane_yield > threshold:
             return True
         else:
             return False
 
-    def _check_un_exp_ind_yield(self, index_count, threshold = None):    
-        if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
-            threshold_undem_yield =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
-        elif threshold:
-            threshold_undem_yield = threshold
-        else:
-            sys.exit('Threshold for Undemultiplexed Index Yield not set. Select treshold.')
-        print >> self.qc_log_file, threshold
-        if int(index_count) > threshold_undem_yield:
+    def _check_un_exp_ind_yield(self, index_count, threshold):    
+        if int(index_count) > threshold:
             return True
         else:
             return False
