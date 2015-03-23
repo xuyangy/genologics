@@ -239,9 +239,9 @@ class UndemuxInd():
         print >> self.qc_log_file, 'TRESHOLDS - LANE {0}:'.format(lane)
         print >> self.qc_log_file ,'Index yield - expected index: {0}'.format(thres_read_per_samp)
         print >> self.qc_log_file, 'Lane yield - expected index: {0}'.format(exp_lane_clust)
-        print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
         print >> self.qc_log_file, 'Index yield - un expected index: {0}'.format(thres_un_exp_ind_yield)
-        print >> self.qc_log_file, 'Q30: {0}'.format(self.Q30_treshold)
+        print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
+        print >> self.qc_log_file, '%Q30: {0}'.format(self.Q30_treshold)
         print >> self.qc_log_file, ''
         return {'un_exp_ind' : thres_un_exp_ind_yield, 
                 'un_exp_lane' : thres_un_exp_lane_yield,
