@@ -409,7 +409,7 @@ def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     UDI = UndemuxInd(process)
     UDI.make_qc_log_file(qc_log_file)
     UDI.get_run_info()
-    UDI.run_QC(qc_log_file)
+    UDI.run_QC()
     UDI.make_demultiplexed_counts_file(demuxfile)
     UDI.logging()
     
