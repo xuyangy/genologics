@@ -315,7 +315,7 @@ class LaneQC():
 
     def set_tresholds(self, qc_log_file):
         print >> qc_log_file, ''
-        print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(lane)
+        print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
         if self.run_type == 'MiSeq':
             if self.read_length in [76, 301]:   # ver3
                 exp_lane_clust = 18000000
