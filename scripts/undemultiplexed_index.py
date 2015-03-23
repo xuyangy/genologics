@@ -227,32 +227,33 @@ class UndemuxInd():
     def _QC_threshold_nr_read(self, pool, nr_lane_samps):
         lane = pool.location[1][0]
         pool_udfs = dict(pool.udf.items())
-        if self.demux_udfs.has_key('Threshold for # Reads'):
-            return self.demux_udfs['Threshold for # Reads']
+        if self.run_type == 'MiSeq':
+            if self.read_length in [76, 301]:   # ver3
+                exp_lane_clust = 18000000
+            else:                               # ver2
+                exp_lane_clust = 10000000
+        elif self.run_type == 'HiSeq Rapid Flow Cell v1':
+            exp_lane_clust = 114000000
+        elif self.run_type == 'HiSeq Flow Cell v3':
+            exp_lane_clust = 143000000
+        elif self.run_type == 'HiSeq Flow Cell v4':
+            exp_lane_clust = 188000000
+        elif self.run_type == 'HiSeqX10':
+            exp_lane_clust = 250000000
         else:
-            if self.run_type == 'MiSeq':
-                if self.read_length in [76, 301]:   # ver3
-                    exp_lane_clust = 18000000
-                else:                               # ver2
-                    exp_lane_clust = 10000000
-            elif self.run_type == 'HiSeq Rapid Flow Cell v1':
-                exp_lane_clust = 114000000
-            elif self.run_type == 'HiSeq Flow Cell v3':
-                exp_lane_clust = 143000000
-            elif self.run_type == 'HiSeq Flow Cell v4':
-                exp_lane_clust = 188000000
-            elif self.run_type == 'HiSeqX10':
-                exp_lane_clust = 250000000
-            else:
-                sys.exit('Unrecognized run type: {0}. Report to developer! Set '
+            sys.exit('Unrecognized run type: {0}. Report to developer! Set '
                     'Threshold for # Reads if you want to run bcl conversion '
                     'and demultiplexing again'.format(self.run_type))
-            exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
+        exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
+        #if self.demux_udfs.has_key('Threshold for # Reads'):
+            #reads_threshold = self.demux_udfs['Threshold for # Reads']
+        #else:
+        if 1==1: 
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
                    "Value based on nr of sampels in the lane: {2}, and run type {3}.".format(
                                 lane, reads_threshold, nr_lane_samps, self.run_type))
-            return reads_threshold, exp_lane_clust
+        return reads_threshold, exp_lane_clust
 
     def _sample_fields(self, t_file, sample_info):
         """ Populates the target file udfs. (run lane index resolution)
