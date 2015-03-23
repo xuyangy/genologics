@@ -219,10 +219,10 @@ class UndemuxInd():
                         self._sample_fields(target_file, lane_samp)
                         try:
                             self._sample_QC(target_file, lane_samp, thres_read_per_samp)
+                            set_field(target_file)
+                            self.nr_lane_samps_updat += 
                         except:
                             self.QC_fail.append(samp)
-                        set_field(target_file)
-                        self.nr_lane_samps_updat += 1
         if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
             self.high_lane_yield.append(lane)
         for index_count in counts:
