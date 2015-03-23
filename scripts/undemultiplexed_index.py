@@ -195,7 +195,7 @@ class UndemuxInd():
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
             LQC = LaneQC(pool, outarts_per_lane, self.run_type, self.undem_stat,
                      self.dem_stat, self.single,self.Q30_treshold)
-            LQC.set_tresholds(self.qc_log_file)
+            LQC.set_tresholds(self.qc_log_file, self.demux_udfs)
             LQC.lane_QC()
             self.nr_lane_samps_tot += LQC.nr_lane_samps
             self.nr_lane_samps_updat += LQC.nr_samps_updat
@@ -313,7 +313,7 @@ class LaneQC():
         for index_count in self.counts:
             self._check_un_exp_ind_yield(index_count)
 
-    def set_tresholds(self, qc_log_file):
+    def set_tresholds(self, qc_log_file, demux_udfs):
         print >> qc_log_file, ''
         print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
         if self.run_type == 'MiSeq':
@@ -333,8 +333,8 @@ class LaneQC():
             sys.exit('Unrecognized run type: {0}. Report to developer! Set '
                     'Threshold for # Reads if you want to run bcl conversion '
                     'and demultiplexing again'.format(self.run_type))
-        if self.demux_udfs.has_key('Threshold for # Reads'):
-            self.reads_threshold = self.demux_udfs['Threshold for # Reads']
+        if demux_udfs.has_key('Threshold for # Reads'):
+            self.reads_threshold = demux_udfs['Threshold for # Reads']
             print >> self.qc_log_file , "Index yield - expected index: {0}".format(self.reads_threshold)
         else:
             exp_samp_clust = np.true_divide(exp_lane_clust, self.nr_lane_samps)
@@ -342,8 +342,8 @@ class LaneQC():
             print >> self.qc_log_file , "Index yield - expected index: {0}. Value based on nr of sampels in the lane: {1}, and run type {2}.".format(self.reads_threshold, self.nr_lane_samps, self.run_type)
         self.un_exp_lane = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
         print >> self.qc_log_file, 'Lane yield - un expected index: {0}. Value based on run type {1}, and run setings: {2}'.format(self.un_exp_lane, self.run_type, 'Single End' if self.single else 'Paired End')
-        if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
-            self.thres_un_exp_ind =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
+        if demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
+            self.thres_un_exp_ind =  demux_udfs['Threshold for Undemultiplexed Index Yield']
             print >> qc_log_file, 'Index yield - un expected index: {0}. Value set by user.'.format(self.thres_un_exp_ind)
         else:
             self.thres_un_exp_ind = int(self.reads_threshold*0.1)
