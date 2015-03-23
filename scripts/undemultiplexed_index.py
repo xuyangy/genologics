@@ -271,7 +271,9 @@ class UndemuxInd():
         pir = sample_info['% Perfect Index Reads']
         q30 = sample_info['% of >= Q30 Bases (PF)']
         nrr = sample_info['# Reads'].replace(',','')
-    
+
+        print omr
+        print type(omr)
         if omr:
             t_file.udf['% One Mismatch Reads (Index)'] = float(omr)
         t_file.udf['% of Raw Clusters Per Lane'] = float(rcl) if rcl else rcl
