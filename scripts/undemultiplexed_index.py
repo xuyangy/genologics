@@ -262,7 +262,6 @@ class UndemuxInd():
         t_file -   output artifact of the bcl-conv & demux process (run 
                         lane index resolution)"""
         print sample_info
-        if sample_info['% One Mismatch Reads (Index)']:
 
         omr = sample_info['% One Mismatch Reads (Index)']
         rcl = sample_info['% of raw clusters per lane']
