@@ -239,7 +239,6 @@ class UndemuxInd():
         else:
             thres_un_exp_ind_yield = int(thres_read_per_samp*0.1)
         print >> self.qc_log_file, 'Index yield - un expected index: {0}'.format(thres_un_exp_ind_yield)
-        #print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
         return {'un_exp_ind' : thres_un_exp_ind_yield, 
                 'un_exp_lane' : thres_un_exp_lane_yield,
                 'exp_ind' : thres_read_per_samp}
@@ -271,10 +270,9 @@ class UndemuxInd():
             print >> self.qc_log_file , "Index yield - expected index: {0}".format(reads_threshold)
         else:
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            print >> self.qc_log_file , "Index yield - expected index: {0} Value based on nr of sampels in the lane: {1}, and run type {2}.".format(reads_threshold, nr_lane_samps, self.run_type)
+            print >> self.qc_log_file , "Index yield - expected index: {0}. Value based on nr of sampels in the lane: {1}, and run type {2}.".format(reads_threshold, nr_lane_samps, self.run_type)
         thres_un_exp_lane_yield = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
-        print >> self.qc_log_file, 'Lane yield - un expected index: {0}. Value based on run type {1}, and run setings: {2}'.format(thres_un_exp_lane_yield, self.run_type, 'single end' if self.single else 'paired end')
-#        print >> self.qc_log_file, 'Lane yield - expected index: {0}'.format(exp_lane_clust)
+        print >> self.qc_log_file, 'Lane yield - un expected index: {0}. Value based on run type "{1}", and run setings: "{2}"'.format(thres_un_exp_lane_yield, self.run_type, 'Single End' if self.single else 'Paired End')
         return reads_threshold, thres_un_exp_lane_yield
 
     def _sample_fields(self, t_file, stats):
