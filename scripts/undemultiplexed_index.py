@@ -220,7 +220,7 @@ class UndemuxInd():
                         try:
                             self._sample_QC(target_file, lane_samp, thres_read_per_samp)
                             set_field(target_file)
-                            self.nr_lane_samps_updat += 
+                            self.nr_lane_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
         if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
