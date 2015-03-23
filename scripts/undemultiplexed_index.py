@@ -270,6 +270,10 @@ class UndemuxInd():
         else:
             print >> sys.stderr, ' '.join(self.abstract)
 
+    def make_qc_log_file(self, qc_log_file):
+            self.qc_log_file = open(qc_log_file, 'a')
+
+
 
 class LaneQC():
     def __init__(self, pool ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
@@ -415,9 +419,6 @@ class LaneQC():
     def _check_un_exp_ind_yield(self, index_count):    
         if int(index_count) > self.thres_un_exp_ind:
             self.high_index_yield = True
-
-    def make_qc_log_file(self, qc_log_file):
-        self.qc_log_file = open(qc_log_file, 'a')
 
 ######################### 
 
