@@ -305,7 +305,7 @@ class LaneQC():
                             self.nr_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
-        self._check_un_exp_lane_yield():
+        self._check_un_exp_lane_yield()
         for index_count in self.counts:
             self._check_un_exp_ind_yield(index_count):
 
