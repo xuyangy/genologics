@@ -185,9 +185,8 @@ class UndemuxInd():
                     Q30_threshold = 75
                 else:
                     sys.exit(warning)
-            print >> self.qc_log_file, "Threshold for Q30 was set to {0}."
-                   "Value based on read length: {1}, and run type {2}.".format(
-                               Q30_threshold, self.read_length, self.run_type))
+            print >> self.qc_log_file, "Threshold for Q30 was set to {0}. Value based on read length: {1}, and run type {2}.".format(
+                               Q30_threshold, self.read_length, self.run_type)
             self.Q30_treshold = Q30_threshold
 
     def run_QC(self):
