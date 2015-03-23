@@ -58,6 +58,7 @@ class UndemuxInd():
         self.process = process
         self.input_pools = process.all_inputs()
         self.dem_stat = None
+        self.QC_fail = []
         self.undem_stat = None 
         self.abstract = []
         self.nr_lane_samps_updat = 0
@@ -216,7 +217,10 @@ class UndemuxInd():
                     samp = lane_samp['Sample ID']
                     if samp == samp_name:
                         self._sample_fields(target_file, lane_samp)
-                        self._sample_QC(target_file, lane_samp, thres_read_per_samp)
+                        try:
+                            self._sample_QC(target_file, lane_samp, thres_read_per_samp)
+                        except:
+                            self.QC_fail.append(samp)
                         set_field(target_file)
                         self.nr_lane_samps_updat += 1
         if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
@@ -306,7 +310,6 @@ class UndemuxInd():
         file system!!! This is to take into account yield and quality after 
         quality filtering if performed."""
 
-        perf_ind_read = float(sample_info['% Perfect Index Reads'])
         Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
         QC2 = (Q30 >= self.Q30_treshold)
         QC3 = (target_file.udf['# Read Pairs'] >= thres_read_per_samp)
@@ -384,6 +387,9 @@ class UndemuxInd():
         self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
               " out of {1} analytes.".format(self.nr_lane_samps_updat, 
                                                         self.nr_lane_samps_tot))
+        if self.QC_fail:
+            self.abstract.append('Failed to make qc for samples: {0}'.format(
+                ', '.join(self.QC_fail))
         if 'WARNING' in ' '.join(self.abstract):
             sys.exit(' '.join(self.abstract))
         else:
