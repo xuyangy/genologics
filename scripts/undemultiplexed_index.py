@@ -71,6 +71,7 @@ class UndemuxInd():
         self.Q30_treshold = None
         self.high_index_yield = []
         self.high_lane_yield = []
+        self.html_file_error = False
 
     def get_run_info(self):
         try:
@@ -255,40 +256,43 @@ class UndemuxInd():
                                 lane, reads_threshold, nr_lane_samps, self.run_type))
         return reads_threshold, exp_lane_clust
 
-    def _sample_fields(self, t_file, sample_info):
+    def _sample_fields(self, t_file, stats):
         """ Populates the target file udfs. (run lane index resolution)
-        sample_info -   Barcode lane statistics fetched from demultiplexed 
+        stats -   Barcode lane statistics fetched from demultiplexed 
                         stats file
         t_file -   output artifact of the bcl-conv & demux process (run 
                         lane index resolution)"""
-        print sample_info
+        samp_udfs = {'%PF' : stats['% PF'],
+            '% One Mismatch Reads (Index)' : stats['% One Mismatch Reads (Index)'],
+            '% of Raw Clusters Per Lane' : stats['% of raw clusters per lane'],
+            'Ave Q Score' : stats['Mean Quality Score (PF)'],
+            '% Perfect Index Read' : stats['% Perfect Index Reads']}
 
-        omr = sample_info['% One Mismatch Reads (Index)']
-        rcl = sample_info['% of raw clusters per lane']
-        pf  = sample_info['% PF']
-        mqs = sample_info['Mean Quality Score (PF)']
-        yMb = sample_info['Yield (Mbases)'].replace(',','')
-        pir = sample_info['% Perfect Index Reads']
-        q30 = sample_info['% of >= Q30 Bases (PF)']
-        nrr = sample_info['# Reads'].replace(',','')
+        for key, val in samp_udfs:
+            try:
+                t_file.udf[key] = float(val)
+            except:
+                self.html_file_error = True
 
-        print omr
-        print type(omr)
-        if omr:
-            t_file.udf['% One Mismatch Reads (Index)'] = float(omr)
-        t_file.udf['% of Raw Clusters Per Lane'] = float(rcl) if rcl else rcl
-        t_file.udf['%PF'] = float(pf) if pf else pf
-        t_file.udf['Ave Q Score'] = float(mqs) if mqs else mqs
-        t_file.udf['Yield PF (Gb)'] = np.true_divide(float(yMb), 1000) if yMb else yMb
-        t_file.udf['% Perfect Index Read'] = float(pir) if pir else pir
+        try:
+            yMb = stats['Yield (Mbases)'].replace(',','')
+            t_file.udf['Yield PF (Gb)'] = np.true_divide(float(yMb), 1000)
+        except:
+            self.html_file_error = True
 
         if not dict(t_file.udf.items()).has_key('% Bases >=Q30'):
-            t_file.udf['% Bases >=Q30'] = q30
+            t_file.udf['% Bases >=Q30'] = stats['% of >= Q30 Bases (PF)']
+
         if not dict(t_file.udf.items()).has_key('# Reads'):
-            t_file.udf['# Reads'] = nrr
-        if self.single:
+            try:
+                nrr = float(stats['# Reads'].replace(',',''))
+                t_file.udf['# Reads'] = nrr
+            except:
+                self.html_file_error = True
+
+        if self.single and t_file.udf['# Reads']:
             t_file.udf['# Read Pairs'] = int(t_file.udf['# Reads'])
-        else:
+        elif t_file.udf['# Reads']:
             t_file.udf['# Read Pairs'] = np.true_divide(float(t_file.udf['# Reads']), 2)
 
     def _sample_QC(self, target_file, sample_info, thres_read_per_samp):
