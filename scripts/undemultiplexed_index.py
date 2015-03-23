@@ -195,7 +195,7 @@ class UndemuxInd():
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
             LQC = LaneQC(pool, outarts_per_lane, self.run_type, self.undem_stat,
                      self.dem_stat, self.single,self.Q30_treshold)
-            LQC.set_tresholds(self.qc_log_file, self.demux_udfs)
+            LQC.set_tresholds(self.qc_log_file, self.demux_udfs, self.read_length)
             LQC.lane_QC()
             self.nr_lane_samps_tot += LQC.nr_lane_samps
             self.nr_lane_samps_updat += LQC.nr_samps_updat
@@ -313,11 +313,11 @@ class LaneQC():
         for index_count in self.counts:
             self._check_un_exp_ind_yield(index_count)
 
-    def set_tresholds(self, qc_log_file, demux_udfs):
+    def set_tresholds(self, qc_log_file, demux_udfs, read_length):
         print >> qc_log_file, ''
         print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
         if self.run_type == 'MiSeq':
-            if self.read_length in [76, 301]:   # ver3
+            if read_length in [76, 301]:   # ver3
                 exp_lane_clust = 18000000
             else:                               # ver2
                 exp_lane_clust = 10000000
