@@ -190,7 +190,7 @@ class UndemuxInd():
 
     def run_QC(self):
         for pool in self.input_pools:
-            self._lane_QC(pool, qc_log_file)
+            self._lane_QC(pool)
         if self.high_index_yield or self.high_lane_yield:
             warn = "WARNING: "
             if self.high_index_yield:
