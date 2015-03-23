@@ -272,7 +272,7 @@ class UndemuxInd():
             print >> self.qc_log_file , "Index yield - expected index: {0}".format(reads_threshold)
         else:
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            print >> self.qc_log_file , "Index yield - expected index: {0} Value based on nr of sampels in the lane: {1}, and run type {2}.".format(lane, reads_threshold, nr_lane_samps, self.run_type)
+            print >> self.qc_log_file , "Index yield - expected index: {0} Value based on nr of sampels in the lane: {1}, and run type {2}.".format(reads_threshold, nr_lane_samps, self.run_type)
         print >> self.qc_log_file, 'Lane yield - expected index: {0}'.format(exp_lane_clust)
         return reads_threshold, exp_lane_clust
 
