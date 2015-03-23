@@ -222,10 +222,10 @@ class UndemuxInd():
                             self.nr_lane_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
-        print >> lane, self.qc_log_file
-        print >> thres_read_per_samp , self.qc_log_file
-        print >> thres_read_per_lane, self.qc_log_file
-        print >> self.Q30_treshold , self.qc_log_file
+        print >> self.qc_log_file, lane
+        print >> self.qc_log_file ,thres_read_per_samp
+        print >> self.qc_log_file, thres_read_per_lane
+        print >> self.qc_log_file, self.Q30_treshold
 
         if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
             self.high_lane_yield.append(lane)
@@ -326,7 +326,7 @@ class UndemuxInd():
     def _check_un_exp_lane_yield(self, counts, threshold):
         unexp_lane_yield = sum([int(x) for x in counts])
         threshold = threshold*0.05 if self.single else threshold*0.1
-        print >> threshold, self.qc_log_file
+        print >> self.qc_log_file, threshold
         if unexp_lane_yield > threshold:
             return True
         else:
@@ -339,7 +339,7 @@ class UndemuxInd():
             threshold_undem_yield = threshold
         else:
             sys.exit('Threshold for Undemultiplexed Index Yield not set. Select treshold.')
-        print >> threshold, self.qc_log_file
+        print >> self.qc_log_file, threshold
         if int(index_count) > threshold_undem_yield:
             return True
         else:
