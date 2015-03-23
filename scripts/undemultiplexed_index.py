@@ -233,14 +233,13 @@ class UndemuxInd():
     def _set_tresholds(self, lane, pool, nr_lane_samps):
         print >> self.qc_log_file, ''
         print >> self.qc_log_file, 'TRESHOLDS - LANE {0}:'.format(lane)
-        thres_read_per_samp, exp_lane_clust = self._QC_threshold_nr_read(pool, nr_lane_samps)
-        thres_un_exp_lane_yield = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
+        thres_read_per_samp, thres_un_exp_lane_yield = self._QC_threshold_nr_read(pool, nr_lane_samps)
         if self.demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
             thres_un_exp_ind_yield =  self.demux_udfs['Threshold for Undemultiplexed Index Yield']
         else:
             thres_un_exp_ind_yield = int(thres_read_per_samp*0.1)
         print >> self.qc_log_file, 'Index yield - un expected index: {0}'.format(thres_un_exp_ind_yield)
-        print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
+        #print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
         return {'un_exp_ind' : thres_un_exp_ind_yield, 
                 'un_exp_lane' : thres_un_exp_lane_yield,
                 'exp_ind' : thres_read_per_samp}
@@ -273,8 +272,10 @@ class UndemuxInd():
         else:
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             print >> self.qc_log_file , "Index yield - expected index: {0} Value based on nr of sampels in the lane: {1}, and run type {2}.".format(reads_threshold, nr_lane_samps, self.run_type)
-        print >> self.qc_log_file, 'Lane yield - expected index: {0}'.format(exp_lane_clust)
-        return reads_threshold, exp_lane_clust
+        thres_un_exp_lane_yield = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
+        print >> self.qc_log_file, 'Lane yield - un expected index: {0}. Value based on run type {1}, and run setings: {2}'.format(thres_un_exp_lane_yield, self.run_type, 'single end' if self.single else 'paired end')
+#        print >> self.qc_log_file, 'Lane yield - expected index: {0}'.format(exp_lane_clust)
+        return reads_threshold, thres_un_exp_lane_yield
 
     def _sample_fields(self, t_file, stats):
         """ Populates the target file udfs. (run lane index resolution)
