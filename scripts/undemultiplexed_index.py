@@ -73,6 +73,7 @@ class UndemuxInd():
         self.high_index_yield = []
         self.high_lane_yield = []
         self.html_file_error = False
+        self.qc_log_file = None
 
     def get_run_info(self):
         try:
@@ -182,8 +183,6 @@ class UndemuxInd():
                 Q30_threshold = 75
             else:
                 sys.exit(warning)
-        #self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
-        #set_field(self.process)
         self.abstract.append("INFO: Threshold for Q30 was set to {0}."
                    "Value based on read length: {1}, and run type {2}.".format(
                                Q30_threshold, self.read_length, self.run_type))
@@ -191,7 +190,7 @@ class UndemuxInd():
 
     def run_QC(self):
         for pool in self.input_pools:
-            self._lane_QC(pool)
+            self._lane_QC(pool, qc_log_file)
         if self.high_index_yield or self.high_lane_yield:
             warn = "WARNING: "
             if self.high_index_yield:
@@ -223,6 +222,11 @@ class UndemuxInd():
                             self.nr_lane_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
+        print >> lane, self.qc_log_file
+        print >> thres_read_per_samp , self.qc_log_file
+        print >> thres_read_per_lane, self.qc_log_file
+        print >> self.Q30_treshold , self.qc_log_file
+
         if self._check_un_exp_lane_yield(counts, thres_read_per_lane):
             self.high_lane_yield.append(lane)
         for index_count in counts:
@@ -250,10 +254,9 @@ class UndemuxInd():
                     'Threshold for # Reads if you want to run bcl conversion '
                     'and demultiplexing again'.format(self.run_type))
         exp_samp_clust = np.true_divide(exp_lane_clust, nr_lane_samps)
-        #if self.demux_udfs.has_key('Threshold for # Reads'):
-            #reads_threshold = self.demux_udfs['Threshold for # Reads']
-        #else:
-        if 1==1: 
+        if self.demux_udfs.has_key('Threshold for # Reads'):
+            reads_threshold = self.demux_udfs['Threshold for # Reads']
+        else:
             reads_threshold = int(np.true_divide(exp_samp_clust, 2))
             self.abstract.append("INFO: Threshold for # Reads on lane {0} is {1}. "
                    "Value based on nr of sampels in the lane: {2}, and run type {3}.".format(
@@ -323,6 +326,7 @@ class UndemuxInd():
     def _check_un_exp_lane_yield(self, counts, threshold):
         unexp_lane_yield = sum([int(x) for x in counts])
         threshold = threshold*0.05 if self.single else threshold*0.1
+        print >> threshold, self.qc_log_file
         if unexp_lane_yield > threshold:
             return True
         else:
@@ -335,13 +339,14 @@ class UndemuxInd():
             threshold_undem_yield = threshold
         else:
             sys.exit('Threshold for Undemultiplexed Index Yield not set. Select treshold.')
+        print >> threshold, self.qc_log_file
         if int(index_count) > threshold_undem_yield:
             return True
         else:
             return False
 
     def make_qc_log_file(self, qc_log_file):
-        f = open(qc_log_file, 'a')
+        self.qc_log_file = open(qc_log_file, 'a')
 
     def make_demultiplexed_counts_file(self, demuxfile):
         """Reformats the content of the demultiplex and undemultiplexed files
@@ -399,11 +404,12 @@ class UndemuxInd():
 
 ######################### 
 
-def main(lims, pid, epp_logger, demuxfile):
+def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     process = Process(lims,id = pid)
     UDI = UndemuxInd(process)
+    UDI.make_qc_log_file(qc_log_file)
     UDI.get_run_info()
-    UDI.run_QC()
+    UDI.run_QC(qc_log_file)
     UDI.make_demultiplexed_counts_file(demuxfile)
     UDI.logging()
     
@@ -416,10 +422,12 @@ if __name__ == "__main__":
                         help=('File name for standard log file, '
                               'for runtime information and problems.'))
     parser.add_argument('--file', dest = 'file', default = 'demux',
-                        help=('File path to demultiplexed metrics files'))
+                        help=('File path to demultiplexed metrics file'))
+    parser.add_argument('--qc_log_file', dest = 'qc_log_file', default = 'qc_log_file',
+                            help=('File path to qc logfile file'))
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
 
     with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
-        main(lims, args.pid, epp_logger, args.file)
+        main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
