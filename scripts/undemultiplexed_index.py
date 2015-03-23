@@ -389,7 +389,7 @@ class UndemuxInd():
                                                         self.nr_lane_samps_tot))
         if self.QC_fail:
             self.abstract.append('Failed to make qc for samples: {0}'.format(
-                ', '.join(self.QC_fail))
+                ', '.join(self.QC_fail)))
         if 'WARNING' in ' '.join(self.abstract):
             sys.exit(' '.join(self.abstract))
         else:
