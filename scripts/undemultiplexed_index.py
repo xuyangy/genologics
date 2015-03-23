@@ -231,6 +231,7 @@ class UndemuxInd():
                 self.high_index_yield.append(lane)
 
     def _set_tresholds(self, lane, pool, nr_lane_samps):
+        print >> self.qc_log_file, ''
         print >> self.qc_log_file, 'TRESHOLDS - LANE {0}:'.format(lane)
         thres_read_per_samp, exp_lane_clust = self._QC_threshold_nr_read(pool, nr_lane_samps)
         thres_un_exp_lane_yield = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
@@ -240,7 +241,6 @@ class UndemuxInd():
             thres_un_exp_ind_yield = int(thres_read_per_samp*0.1)
         print >> self.qc_log_file, 'Index yield - un expected index: {0}'.format(thres_un_exp_ind_yield)
         print >> self.qc_log_file, 'Lane yield - un expected index: {0}'.format(thres_un_exp_lane_yield)
-        print >> self.qc_log_file, ''
         return {'un_exp_ind' : thres_un_exp_ind_yield, 
                 'un_exp_lane' : thres_un_exp_lane_yield,
                 'exp_ind' : thres_read_per_samp}
