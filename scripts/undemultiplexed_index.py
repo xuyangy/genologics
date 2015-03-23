@@ -158,7 +158,7 @@ class UndemuxInd():
 
     def _get_threshold_Q30(self):
         if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
-            return self.demux_udfs['Threshold for % bases >= Q30']
+            self.Q30_treshold = self.demux_udfs['Threshold for % bases >= Q30']
         warning = "Un recognized read length: {0}. Report this to developers! set Threshold for % bases >= Q30 if you want to run bcl conversion and demultiplexing anyway.".format(self.read_length)
         if self.run_type == 'MiSeq':
             if self.read_length < 101:
@@ -182,8 +182,8 @@ class UndemuxInd():
                 Q30_threshold = 75
             else:
                 sys.exit(warning)
-        self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
-        set_field(self.process)
+        #self.process.udf['Threshold for % bases >= Q30'] = Q30_threshold
+        #set_field(self.process)
         self.abstract.append("INFO: Threshold for Q30 was set to {0}."
                    "Value based on read length: {1}, and run type {2}.".format(
                                Q30_threshold, self.read_length, self.run_type))
