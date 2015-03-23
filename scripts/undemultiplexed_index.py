@@ -261,7 +261,7 @@ class UndemuxInd():
                         stats file
         t_file -   output artifact of the bcl-conv & demux process (run 
                         lane index resolution)"""
-
+        print sample_info
         omr = float(sample_info['% One Mismatch Reads (Index)'])
         rcl = float(sample_info['% of raw clusters per lane'])
         pf  = float(sample_info['% PF'])
