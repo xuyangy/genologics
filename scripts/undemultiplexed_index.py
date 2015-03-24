@@ -385,7 +385,7 @@ class IndexQC():
         self.t_file = t_file
         self.stats = stats
         self.samp_udfs = {}
-        self.html_file_error False
+        self.html_file_error = False
 
     def set_target_file_udfs(self):
         """ Populates the target file udfs (run lane index resolution) with 
