@@ -126,7 +126,6 @@ class RunQC():
         else:
             sys.exit("run not found")
 
-
     def _get_run_id(self):
         if self.run_udfs.has_key('Run ID'):
             self.process.udf['Run ID'] = self.run_udfs['Run ID']
@@ -207,7 +206,6 @@ class RunQC():
             self.Q30_treshold = Q30_threshold
 
     def run_QC(self):
-        ## dirty. needs clean up
         for pool in self.input_pools:
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
             lane_number = '1' if self.run_type == 'MiSeq' else pool.location[1][0]
@@ -275,7 +273,6 @@ class RunQC():
             self.abstract.append("WARNING: Could not generate a Metrics file "
                                "with demultiplexed and undemultiplexed counts.")
 
-
     def logging(self):
         """Collects and prints logging info."""
         self.abstract.append("INFO: QC-data found and QC-flags uploaded for {0}"
@@ -323,10 +320,14 @@ class LaneQC():
                 if self.lane == lane_samp['Lane']:
                     samp = lane_samp['Sample ID']
                     if samp == samp_name:
-                        self._sample_fields(target_file, lane_samp)
+                        IQC = IndexQC(target_file, lane_samp)
+                        IQC.set_target_file_udfs()
                         try:
-                            self._sample_QC(target_file, lane_samp)
-                            set_field(target_file)
+                            IQC.lane_index_QC(self.reads_threshold, self.Q30_treshold)
+                            IQC.set_read_pairs(self.single)
+                            if IQC.html_file_error:
+                                self.html_file_error = IQC.html_file_error
+                            set_field(IQC.t_file)
                             self.nr_samps_updat +=1 
                         except:
                             self.QC_fail.append(samp)
@@ -370,76 +371,81 @@ class LaneQC():
             self.thres_un_exp_ind = int(self.reads_threshold*0.1)
             print >> qc_log_file, 'Index yield - un expected index: {0}. Value set to 10% of expected index yield'.format(self.thres_un_exp_ind)
 
-    def _sample_fields(self, t_file, stats):
-        """ Populates the target file udfs. (run lane index resolution)
-        stats -   Barcode lane statistics fetched from demultiplexed 
-                        stats file
-        t_file -   output artifact of the bcl-conv & demux process (run 
-                        lane index resolution)"""
-        samp_udfs = {'%PF' : stats['% PF'],
-            '% One Mismatch Reads (Index)' : stats['% One Mismatch Reads (Index)'],
-            '% of Raw Clusters Per Lane' : stats['% of raw clusters per lane'],
-            'Ave Q Score' : stats['Mean Quality Score (PF)'],
-            '% Perfect Index Read' : stats['% Perfect Index Reads']}
-
-        for key, val in samp_udfs.items():
-            try:
-                t_file.udf[key] = float(val)
-            except:
-                self.html_file_error = True
-
-        try:
-            yMb = stats['Yield (Mbases)'].replace(',','')
-            t_file.udf['Yield PF (Gb)'] = np.true_divide(float(yMb), 1000)
-        except:
-            self.html_file_error = True
-
-        if not dict(t_file.udf.items()).has_key('% Bases >=Q30'):
-            t_file.udf['% Bases >=Q30'] = stats['% of >= Q30 Bases (PF)']
-
-        if not dict(t_file.udf.items()).has_key('# Reads'):
-            try:
-                nrr = float(stats['# Reads'].replace(',',''))
-                t_file.udf['# Reads'] = nrr
-            except:
-                self.html_file_error = True
-
-        if self.single and t_file.udf['# Reads']:
-            t_file.udf['# Read Pairs'] = int(t_file.udf['# Reads'])
-        elif t_file.udf['# Reads']:
-            t_file.udf['# Read Pairs'] = np.true_divide(float(t_file.udf['# Reads']), 2)
-
-    def _sample_QC(self, target_file, sample_info):
-        """Makes per sample warnings if any of the following holds: 
-                % Perfect Index Reads < ..
-                % of >= Q30 Bases (PF) < ..
-                # Reads < ..
-            sets qc flaggs        
-            Sets the include reads field
-        OBS: Reads from target file udf if they are already set. Otherwise from 
-        file system!!! This is to take into account yield and quality after 
-        quality filtering if performed."""
-
-        Q30 = float(sample_info['% of >= Q30 Bases (PF)'])
-        QC2 = (Q30 >= self.Q30_treshold)
-        QC3 = (target_file.udf['# Read Pairs'] >= self.reads_threshold)
-        if QC2 and QC3:
-            target_file.udf['Include reads'] = 'YES'
-            target_file.qc_flag = 'PASSED'
-        else:
-            target_file.udf['Include reads'] = 'NO'
-            target_file.qc_flag = 'FAILED'
-
     def _check_un_exp_lane_yield(self):
         unexp_lane_yield = sum([int(x) for x in self.counts])
         if unexp_lane_yield > self.un_exp_lane:
             self.high_lane_yield = True
 
-    def _check_un_exp_ind_yield(self, index_count):    
+    def _check_un_exp_ind_yield(self, index_count):
         if int(index_count) > self.thres_un_exp_ind:
             self.high_index_yield = True
 
-######################### 
+class IndexQC():
+    def __init__(self, t_file, stats):
+        self.t_file = t_file
+        self.stats = stats
+        self.samp_udfs = {}
+        self.html_file_error False
+
+    def set_target_file_udfs(self):
+        """ Populates the target file udfs (run lane index resolution) with 
+        Barcode lane statistics fetched from demultiplexed stats file"""
+
+        self.samp_udfs = {'%PF' : self.stats['% PF'],
+            '% One Mismatch Reads (Index)' : self.stats['% One Mismatch Reads (Index)'],
+            '% of Raw Clusters Per Lane' : self.stats['% of raw clusters per lane'],
+            'Ave Q Score' : self.stats['Mean Quality Score (PF)'],
+            '% Perfect Index Read' : self.stats['% Perfect Index Reads']}
+        self._make_float()
+        self._set_Yield_Mbases()
+        self._set_Q30()
+        self._set_reads()
+
+    def _make_float(self):
+        for key, val in self.samp_udfs.items():
+            try:
+                self.t_file.udf[key] = float(val)
+            except:
+                self.html_file_error = True
+
+    def _set_Yield_Mbases(self):
+        try:
+            yMb = self.stats['Yield (Mbases)'].replace(',','')
+            self.t_file.udf['Yield PF (Gb)'] = np.true_divide(float(yMb), 1000)
+        except:
+            self.html_file_error = True
+
+    def _set_Q30(self):
+        if not dict(self.t_file.udf.items()).has_key('% Bases >=Q30'):
+            self.t_file.udf['% Bases >=Q30'] = self.stats['% of >= Q30 Bases (PF)']
+
+    def _set_reads(self):
+        if not dict(self.t_file.udf.items()).has_key('# Reads'):
+            try:
+                self.t_file.udf['# Reads'] = float(self.stats['# Reads'].replace(',',''))
+            except:
+                self.html_file_error = True
+
+    def set_read_pairs(self, single):
+        if single and self.t_file.udf['# Reads']:
+            self.t_file.udf['# Read Pairs'] = int(self.t_file.udf['# Reads'])
+        elif self.t_file.udf['# Reads']:
+            self.t_file.udf['# Read Pairs'] = np.true_divide(float(self.t_file.udf['# Reads']), 2)
+
+    def lane_index_QC(self, reads_threshold, Q30_treshold):
+        """Index-lane level QC based on derieved QC-tresholds.
+        OBS: Fetches info from target file udf if they are already set. Otherwise from 
+        file system!!! This is to take into account yield and quality after quality filtering if performed."""
+
+        Q30 = float(self.stats['% of >= Q30 Bases (PF)'])
+        QC2 = (Q30 >= Q30_treshold)
+        QC3 = (self.t_file.udf['# Read Pairs'] >= reads_threshold)
+        if QC2 and QC3:
+            self.t_file.udf['Include reads'] = 'YES'
+            self.t_file.qc_flag = 'PASSED'
+        else:
+            self.t_file.udf['Include reads'] = 'NO'
+            self.t_file.qc_flag = 'FAILED'
 
 def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     process = Process(lims,id = pid)
@@ -449,7 +455,6 @@ def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     RQC.run_QC()
     RQC.make_demultiplexed_counts_file(demuxfile)
     RQC.logging()
-    
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
