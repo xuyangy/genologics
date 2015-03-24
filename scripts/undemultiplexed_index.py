@@ -320,7 +320,7 @@ class LaneQC():
                     if samp == samp_name:
                         IQC = IndexQC(target_file, lane_samp)
                         IQC.set_target_file_udfs()
-                        QC.set_read_pairs(self.single)
+                        IQC.set_read_pairs(self.single)
                         #try:
                         if 1==1:
                             IQC.lane_index_QC(self.reads_threshold, self.Q30_treshold)
