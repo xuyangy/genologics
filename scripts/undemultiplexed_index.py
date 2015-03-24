@@ -4,33 +4,23 @@ system and then does the following
 
 1)  Sets the output artifact udfs based demultiplex resultfile.
  
-2)  Sets the output artifact qc-flaggs based on the threshold-udfs if the process: 
-        % Perfect Index Reads < 60 (default)
-        %Q30 < 80 (default)
-        expected index < 0.1 M (default)
+2)  Generated qc tresholds based on sequencing run setings. These can allso be 
+    set by user.
+ 
+3)  Loggs the tresholds to a qc log file
 
-3)  Warns if anny unexpected index has yield > 0.5M
+4)  Sets the output artifact qc-flaggs based on the threshold
 
-4)  Loads a result file with demultiplex end undemultiplexed yields. This should
+5)  Warns if anny unexpected index has high yield ore if a lane has high yield 
+    of un expected indexes
+
+6)  Loads a result file with demultiplex end undemultiplexed yields. This should
     be checked if warnings are given.
 
 Reads from:
     --files--
     Demultiplex_Stats.htm                           in mfs file system
     Undemultiplexed_stats.metrics                   in mfs file system
-
-Writes to:
-    --Lims fields--
-    qc-flag                                         per artifact (result file)
-    % One Mismatch Reads (Index)                    per artifact (result file)
-    % of Raw Clusters Per Lane                      per artifact (result file)
-    %PF                                             per artifact (result file)
-    Ave Q Score                                     per artifact (result file)
-    Yield PF (Gb)                                   per artifact (result file)
-    % Perfect Index Read                            per artifact (result file)
-    % Bases >=Q30                                   per artifact (result file)
-    # Reads                                         per artifact (result file)
-    # Read Pairs
 
 Logging:
     The script outputs a regular log file with regular execution information.
