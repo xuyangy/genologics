@@ -53,41 +53,63 @@ from genologics.epp import EppLogger
 from genologics.epp import set_field
 from qc_parsers import FlowcellRunMetricsParser
 
-class UndemuxInd():
+class RunQC():
     def __init__(self, process):
+        ## Processes, artifacts and udfs 
         self.process = process
         self.input_pools = process.all_inputs()
-        self.dem_stat = None
-        self.QC_fail = []
-        self.undem_stat = None 
-        self.abstract = []
-        self.nr_lane_samps_updat = 0
-        self.nr_lane_samps_tot = 0
         self.seq_run = None
-        self.single = True
-        self.file_path = None
         self.run_udfs = {}
         self.demux_udfs = dict(self.process.udf.items())
-        self.read_length = None
-        self.Q30_treshold = None
+
+        ##  Stuff for logging 
+        self.qc_log_file = None
+        self.nr_lane_samps_updat = 0
+        self.nr_lane_samps_tot = 0
+        self.abstract = []
+        self.QC_fail = []
         self.high_index_yield = []
         self.high_lane_yield = []
-        self.html_file_error = False
-        self.qc_log_file = None
+        self.html_file_error = False ## Never used????
+
+        ##  Demultiplexing result files
+        self.file_path = None
+        self.dem_stat = None
+        self.undem_stat = None 
+
+        ##  Other variables
+        self.single = True
+        self.read_length = None
+        self.Q30_treshold = None
+
+    def make_qc_log_file(self, qc_log_file):
+        """File to logg qc tresholds."""
+        self.qc_log_file = open(qc_log_file, 'a')
 
     def get_run_info(self):
+        cont_name = self._get_container()
+        self._get_run(cont_name)
+        self.run_udfs = dict(self.seq_run.udf.items())
+        self._get_run_id()
+        self._get_cycles()
+        self._get_file_path(cont_name)
+        self._get_demultiplex_files()
+        self._get_threshold_Q30()
+
+    def _get_container(self):
+        """Need container name to fetch parrent sequencing process"""
         try:
-            cont_name = self.process.all_inputs()[0].location[0].name
+            return self.process.all_inputs()[0].location[0].name
         except:
             sys.exit('Could not find container name.')
-        miseq = lims.get_processes(
-                                udf={'Reagent Cartridge ID' : cont_name},
+    
+    def _get_run(self, cont_name):
+        """Getting parrent sequencing process and process type"""
+        miseq = lims.get_processes(udf = {'Reagent Cartridge ID' : cont_name},
                                 type = 'MiSeq Run (MiSeq) 4.0')
-        hiseq = lims.get_processes(
-                                udf = {'Flow Cell ID' : cont_name},
+        hiseq = lims.get_processes(udf = {'Flow Cell ID' : cont_name},
                                 type = 'Illumina Sequencing (Illumina SBS) 4.0')
-        hiseq_X10 = lims.get_processes(
-                                udf = {'Flow Cell ID' : cont_name},
+        hiseq_X10 = lims.get_processes(udf = {'Flow Cell ID' : cont_name},
                                 type = 'Illumina Sequencing (HiSeq X) 1.0')
         if miseq:
             self.seq_run = miseq[0]
@@ -98,19 +120,12 @@ class UndemuxInd():
                 self.run_type = self.seq_run.udf['Flow Cell Version']
             except:
                 sys.exit("Missing field 'Flow Cell Version' in sequencing process")
-            path_id = cont_name
         elif hiseq_X10:
             self.seq_run = hiseq_X10[0]
             self.run_type = 'HiSeqX10'
-            path_id = cont_name
         else:
             sys.exit("run not found")
-        self.run_udfs = dict(self.seq_run.udf.items())
-        self._get_run_id()
-        self._get_cycles()
-        self._get_file_path(cont_name)
-        self._get_demultiplex_files()
-        self._get_threshold_Q30()
+
 
     def _get_run_id(self):
         if self.run_udfs.has_key('Run ID'):
@@ -118,6 +133,7 @@ class UndemuxInd():
             set_field(self.process)
 
     def _get_cycles(self):
+        """To find out if it was a single end or paired end run."""
         if self.run_udfs.has_key('Read 1 Cycles'):
             self.read_length = self.run_udfs['Read 1 Cycles']
         else:
@@ -126,6 +142,7 @@ class UndemuxInd():
             self.single = False
 
     def _get_file_path(self, cont_name):
+        """File path for HiSeq, Miseq and Xten"""
         if self.run_type == 'MiSeq':
             path_id = self.run_udfs['Flow Cell ID']
             data_folder = 'miseq_data'
@@ -193,8 +210,9 @@ class UndemuxInd():
         ## dirty. needs clean up
         for pool in self.input_pools:
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
-            LQC = LaneQC(pool, outarts_per_lane, self.run_type, self.undem_stat,
-                     self.dem_stat, self.single,self.Q30_treshold)
+            lane_number = '1' if run_type == 'MiSeq' else pool.location[1][0]
+            LQC = LaneQC(lane_number, outarts_per_lane, self.run_type, self.undem_stat,
+                     self.dem_stat, self.single, self.Q30_treshold)
             LQC.set_tresholds(self.qc_log_file, self.demux_udfs, self.read_length)
             LQC.lane_QC()
             self.nr_lane_samps_tot += LQC.nr_lane_samps
@@ -271,31 +289,32 @@ class UndemuxInd():
         else:
             print >> sys.stderr, ' '.join(self.abstract)
 
-    def make_qc_log_file(self, qc_log_file):
-            self.qc_log_file = open(qc_log_file, 'a')
-
-
 
 class LaneQC():
-    def __init__(self, pool ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
-        self.single = single
-        self.pool = pool
+    def __init__(self, llane_number ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
+        ##  Processes, artifacts and udfs
         self.out_arts = out_arts
-        self.pool_udfs = dict(pool.udf.items()) ##will be used??
-        self.run_type = run_type
-        self.lane  = '1' if run_type == 'MiSeq' else pool.location[1][0]
         self.counts = undem_stat[self.lane]['undemultiplexed_barcodes']['count']
-        self.nr_lane_samps = len(out_arts)
+        self.BLS = dem_stat['Barcode_lane_statistics']
+
+        ##  Tresholds
         self.reads_threshold = None #tres
         self.un_exp_lane = None #tres
         self.thres_un_exp_ind = None #tres
-        self.Q30_treshold = Q30_treshold
+        self.Q30_treshold = Q30_treshold #tres
+
+        ##  Stuff for logging 
         self.high_lane_yield = False
         self.high_index_yield = False
-        self.BLS = dem_stat['Barcode_lane_statistics']
         self.nr_samps_updat = 0
         self.html_file_error = False
         self.QC_fail = []
+
+        ##  Other variables
+        self.single = single
+        self.run_type = run_type
+        self.lane  = lane_number
+        self.nr_lane_samps = len(out_arts)
 
     def lane_QC(self):
         for target_file in self.out_arts:
@@ -350,8 +369,6 @@ class LaneQC():
         else:
             self.thres_un_exp_ind = int(self.reads_threshold*0.1)
             print >> qc_log_file, 'Index yield - un expected index: {0}. Value set to 10% of expected index yield'.format(self.thres_un_exp_ind)
-
-
 
     def _sample_fields(self, t_file, stats):
         """ Populates the target file udfs. (run lane index resolution)
@@ -426,12 +443,12 @@ class LaneQC():
 
 def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     process = Process(lims,id = pid)
-    UDI = UndemuxInd(process)
-    UDI.make_qc_log_file(qc_log_file)
-    UDI.get_run_info()
-    UDI.run_QC()
-    UDI.make_demultiplexed_counts_file(demuxfile)
-    UDI.logging()
+    RQC = RunQC(process)
+    RQC.make_qc_log_file(qc_log_file)
+    RQC.get_run_info()
+    RQC.run_QC()
+    RQC.make_demultiplexed_counts_file(demuxfile)
+    RQC.logging()
     
 
 if __name__ == "__main__":
