@@ -431,6 +431,7 @@ class IndexQC():
             self.t_file.udf['% Bases >=Q30'] = self.stats['% of >= Q30 Bases (PF)']
 
     def _set_reads(self):
+        print 'ssssssssss'
         if not dict(self.t_file.udf.items()).has_key('# Reads'):
             try:
                 self.t_file.udf['# Reads'] = float(self.stats['# Reads'].replace(',',''))
@@ -438,6 +439,7 @@ class IndexQC():
                 self.html_file_error = True
 
     def set_read_pairs(self, single):
+        print 'asssssssssssssssssss'
         print singel
         print self.t_file.udf['# Reads']
         if single and self.t_file.udf['# Reads']:
