@@ -210,7 +210,7 @@ class RunQC():
         ## dirty. needs clean up
         for pool in self.input_pools:
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
-            lane_number = '1' if run_type == 'MiSeq' else pool.location[1][0]
+            lane_number = '1' if self.run_type == 'MiSeq' else pool.location[1][0]
             LQC = LaneQC(lane_number, outarts_per_lane, self.run_type, self.undem_stat,
                      self.dem_stat, self.single, self.Q30_treshold)
             LQC.set_tresholds(self.qc_log_file, self.demux_udfs, self.read_length)
