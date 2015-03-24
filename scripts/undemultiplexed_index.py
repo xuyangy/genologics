@@ -438,6 +438,8 @@ class IndexQC():
                 self.html_file_error = True
 
     def set_read_pairs(self, single):
+        print singel
+        print self.t_file.udf['# Reads']
         if single and self.t_file.udf['# Reads']:
             self.t_file.udf['# Read Pairs'] = int(self.t_file.udf['# Reads'])
         elif self.t_file.udf['# Reads']:
