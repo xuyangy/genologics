@@ -336,12 +336,13 @@ class LaneQC():
             self._check_un_exp_ind_yield(index_count)
 
     def set_tresholds(self, qc_log_file, demux_udfs, read_length):
+        """Generating tresholds for ... Writing the tresholds to log file."""
         print >> qc_log_file, ''
         print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
         if self.run_type == 'MiSeq':
-            if read_length in [76, 301]:   # ver3
+            if read_length in [76, 301]:  
                 exp_lane_clust = 18000000
-            else:                               # ver2
+            else:                               
                 exp_lane_clust = 10000000
         elif self.run_type == 'HiSeq Rapid Flow Cell v1':
             exp_lane_clust = 114000000
@@ -357,19 +358,30 @@ class LaneQC():
                     'and demultiplexing again'.format(self.run_type))
         if demux_udfs.has_key('Threshold for # Reads'):
             self.reads_threshold = demux_udfs['Threshold for # Reads']
-            print >> qc_log_file , "Index yield - expected index: {0}".format(self.reads_threshold)
+            error = "Index yield - expected index: {0}".format(self.reads_threshold)
+            print >> qc_log_file , error
         else:
             exp_samp_clust = np.true_divide(exp_lane_clust, self.nr_lane_samps)
             self.reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            print >> qc_log_file , "Index yield - expected index: {0}. Value based on nr of sampels in the lane: {1}, and run type {2}.".format(self.reads_threshold, self.nr_lane_samps, self.run_type)
+            error = ("Index yield - expected index: {0}. Value based on nr of "
+                    "sampels in the lane: {1}, and run type {2}.".format(
+                    self.reads_threshold, self.nr_lane_samps, self.run_type))
+            print >> qc_log_file , error
         self.un_exp_lane = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
-        print >> qc_log_file, 'Lane yield - un expected index: {0}. Value based on run type {1}, and run setings: {2}'.format(self.un_exp_lane, self.run_type, 'Single End' if self.single else 'Paired End')
+        error = ("Lane yield - un expected index: {0}. Value based on run type "
+                 "{1}, and run setings: {2}".format(self.un_exp_lane, 
+                 self.run_type, 'Single End' if self.single else 'Paired End'))
+        print >> qc_log_file, error
         if demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
-            self.thres_un_exp_ind =  demux_udfs['Threshold for Undemultiplexed Index Yield']
-            print >> qc_log_file, 'Index yield - un expected index: {0}. Value set by user.'.format(self.thres_un_exp_ind)
+            self.thres_un_exp_ind = demux_udfs['Threshold for Undemultiplexed Index Yield']
+            error = ("Index yield - un expected index: {0}. Value set by user."
+                     "".format(self.thres_un_exp_ind))
+            print >> qc_log_file, error
         else:
             self.thres_un_exp_ind = int(self.reads_threshold*0.1)
-            print >> qc_log_file, 'Index yield - un expected index: {0}. Value set to 10% of expected index yield'.format(self.thres_un_exp_ind)
+            error = ("Index yield - un expected index: {0}. Value set to 10% "
+                    "of expected index yield".format(self.thres_un_exp_ind))
+            print >> qc_log_file, error
 
     def _check_un_exp_lane_yield(self):
         unexp_lane_yield = sum([int(x) for x in self.counts])
