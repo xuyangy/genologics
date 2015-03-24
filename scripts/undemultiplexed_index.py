@@ -291,7 +291,7 @@ class RunQC():
 
 
 class LaneQC():
-    def __init__(self, llane_number ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
+    def __init__(self, lane_number ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
         ##  Processes, artifacts and udfs
         self.out_arts = out_arts
         self.counts = undem_stat[lane_number]['undemultiplexed_barcodes']['count']
