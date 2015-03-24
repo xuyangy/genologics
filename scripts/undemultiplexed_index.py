@@ -153,7 +153,7 @@ class RunQC():
             path_id = cont_name
         try:
             self.file_path = glob.glob(("/srv/mfs/{0}/*{1}/Unaligned/"
-                                        "Basecall_Stats_*/".format(data_folder, path_id)))[0]
+                           "Basecall_Stats_*/".format(data_folder, path_id)))[0]
         except:
             sys.exit("Failed to get file path")
 
@@ -176,9 +176,13 @@ class RunQC():
     def _get_threshold_Q30(self):
         if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
             self.Q30_treshold = self.demux_udfs['Threshold for % bases >= Q30']
-            print >> self.qc_log_file, "THRESHOLD FOR %Q30 was set by user to {0}.".format(self.Q30_treshold)
+            qc_logg = ("THRESHOLD FOR %Q30 was set by user to {0}.".format(
+                        self.Q30_treshold))
+            print >> self.qc_log_file, qc_logg
         else:
-            warning = "Un recognized read length: {0}. Report this to developers! set Threshold for % bases >= Q30 if you want to run bcl conversion and demultiplexing anyway.".format(self.read_length)
+            warning = ("Un recognized read length: {0}. Report this to "
+                "developers! set Threshold for % bases >= Q30 if you want to "
+                "run bcl conversion and demultiplexing anyway.".format(self.read_length))
             if self.run_type == 'MiSeq':
                 if self.read_length < 101:
                     Q30_threshold = 80
@@ -201,8 +205,10 @@ class RunQC():
                     Q30_threshold = 75
                 else:
                     sys.exit(warning)
-            print >> self.qc_log_file, "THRESHOLD FOR %Q30 was set to {0}. Value based on read length: {1}, and run type {2}.".format(
-                               Q30_threshold, self.read_length, self.run_type)
+            qc_logg = ("THRESHOLD FOR %Q30 was set to {0}. Value based on read"
+                       " length: {1}, and run type {2}.".format(Q30_threshold, 
+                                               self.read_length, self.run_type))
+            print >> self.qc_log_file, qc_logg
             self.Q30_treshold = Q30_threshold
 
     def run_QC(self):
@@ -226,10 +232,12 @@ class RunQC():
             warn = "WARNING: "
             if self.high_index_yield:
                 self.high_index_yield = ', '.join(list(set(self.high_index_yield)))
-                warn = warn + "High yield of unexpected index on lane(s): {0} .".format(self.high_index_yield)
+                warn = ("{0} High yield of unexpected index on lane(s): {1} ."
+                        "".format(warn, self.high_index_yield))
             if self.high_lane_yield:
                 self.high_lane_yield = ', '.join(list(set(self.high_lane_yield)))
-                warn = warn + "High total yield of unexpected index on lane(s): {0}.".format(self.high_lane_yield)
+                warn = ("{0} High total yield of unexpected index on lane(s): "
+                        "{1}.".format(warn, self.high_lane_yield))
             warn = warn + "Please check the Metrics file!"
             self.abstract.insert(0, warn)
 
@@ -336,7 +344,7 @@ class LaneQC():
             self._check_un_exp_ind_yield(index_count)
 
     def set_tresholds(self, qc_log_file, demux_udfs, read_length):
-        """Generating tresholds for ... Writing the tresholds to log file."""
+        """Generating tresholds and writing the tresholds to log file."""
         print >> qc_log_file, ''
         print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
         if self.run_type == 'MiSeq':
@@ -358,30 +366,30 @@ class LaneQC():
                     'and demultiplexing again'.format(self.run_type))
         if demux_udfs.has_key('Threshold for # Reads'):
             self.reads_threshold = demux_udfs['Threshold for # Reads']
-            error = "Index yield - expected index: {0}".format(self.reads_threshold)
-            print >> qc_log_file , error
+            qc_logg = "Index yield - expected index: {0}".format(self.reads_threshold)
+            print >> qc_log_file , qc_logg
         else:
             exp_samp_clust = np.true_divide(exp_lane_clust, self.nr_lane_samps)
             self.reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            error = ("Index yield - expected index: {0}. Value based on nr of "
+            qc_logg = ("Index yield - expected index: {0}. Value based on nr of "
                     "sampels in the lane: {1}, and run type {2}.".format(
                     self.reads_threshold, self.nr_lane_samps, self.run_type))
-            print >> qc_log_file , error
+            print >> qc_log_file , qc_logg
         self.un_exp_lane = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
-        error = ("Lane yield - un expected index: {0}. Value based on run type "
-                 "{1}, and run setings: {2}".format(self.un_exp_lane, 
+        qc_logg = ("Lane yield - un expected index: {0}. Value based on run "
+                 "type {1}, and run setings: {2}".format(self.un_exp_lane, 
                  self.run_type, 'Single End' if self.single else 'Paired End'))
-        print >> qc_log_file, error
+        print >> qc_log_file, qc_logg
         if demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
             self.thres_un_exp_ind = demux_udfs['Threshold for Undemultiplexed Index Yield']
-            error = ("Index yield - un expected index: {0}. Value set by user."
+            qc_logg = ("Index yield - un expected index: {0}. Value set by user."
                      "".format(self.thres_un_exp_ind))
-            print >> qc_log_file, error
+            print >> qc_log_file, qc_logg
         else:
             self.thres_un_exp_ind = int(self.reads_threshold*0.1)
-            error = ("Index yield - un expected index: {0}. Value set to 10% "
+            qc_logg = ("Index yield - un expected index: {0}. Value set to 10% "
                     "of expected index yield".format(self.thres_un_exp_ind))
-            print >> qc_log_file, error
+            print >> qc_log_file, qc_logg
 
     def _check_un_exp_lane_yield(self):
         unexp_lane_yield = sum([int(x) for x in self.counts])
@@ -442,12 +450,14 @@ class IndexQC():
         if single and self.t_file.udf['# Reads']:
             self.t_file.udf['# Read Pairs'] = int(self.t_file.udf['# Reads'])
         elif self.t_file.udf['# Reads']:
-            self.t_file.udf['# Read Pairs'] = np.true_divide(float(self.t_file.udf['# Reads']), 2)
+            reads = float(self.t_file.udf['# Reads'])
+            self.t_file.udf['# Read Pairs'] = np.true_divide(reads, 2)
 
     def lane_index_QC(self, reads_threshold, Q30_treshold):
-        """Index-lane level QC based on derieved QC-tresholds.
-        OBS: Fetches info from target file udf if they are already set. Otherwise from 
-        file system!!! This is to take into account yield and quality after quality filtering if performed."""
+        """Index-lane level QC based on derieved QC-tresholds. OBS: Fetches info
+        from target file udf if they are already set. Otherwise from file 
+        system!!! This is to take into account yield and quality after quality 
+        filtering if performed."""
 
         Q30 = float(self.stats['% of >= Q30 Bases (PF)'])
         QC2 = (Q30 >= Q30_treshold)
@@ -477,8 +487,9 @@ if __name__ == "__main__":
                               'for runtime information and problems.'))
     parser.add_argument('--file', dest = 'file', default = 'demux',
                         help=('File path to demultiplexed metrics file'))
-    parser.add_argument('--qc_log_file', dest = 'qc_log_file', default = 'qc_log_file',
-                            help=('File path to qc logfile file'))
+    parser.add_argument('--qc_log_file', dest = 'qc_log_file', 
+                        default = 'qc_log_file',
+                        help=('File path to qc logfile file'))
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
