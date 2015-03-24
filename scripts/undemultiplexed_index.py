@@ -440,7 +440,6 @@ class IndexQC():
 
     def set_read_pairs(self, single):
         print 'asssssssssssssssssss'
-        print singel
         print self.t_file.udf['# Reads']
         if single and self.t_file.udf['# Reads']:
             self.t_file.udf['# Read Pairs'] = int(self.t_file.udf['# Reads'])
