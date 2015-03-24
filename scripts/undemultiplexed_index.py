@@ -320,15 +320,16 @@ class LaneQC():
                     if samp == samp_name:
                         IQC = IndexQC(target_file, lane_samp)
                         IQC.set_target_file_udfs()
-                        try:
+                        #try:
+                        if 1==1:
                             IQC.lane_index_QC(self.reads_threshold, self.Q30_treshold)
                             IQC.set_read_pairs(self.single)
                             if IQC.html_file_error:
                                 self.html_file_error = IQC.html_file_error
                             set_field(IQC.t_file)
                             self.nr_samps_updat +=1 
-                        except:
-                            self.QC_fail.append(samp)
+                        #except:
+                        #    self.QC_fail.append(samp)
         self._check_un_exp_lane_yield()
         for index_count in self.counts:
             self._check_un_exp_ind_yield(index_count)
