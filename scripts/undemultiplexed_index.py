@@ -50,7 +50,7 @@ class RunQC():
         self.input_pools = process.all_inputs()
         self.seq_run = None
         self.run_udfs = {}
-        self.demux_udfs = dict(self.process.udf.items())
+        self.user_def_tresh = dict(self.process.udf.items())
 
         ##  Stuff for logging 
         self.qc_log_file = None
@@ -164,8 +164,8 @@ class RunQC():
             sys.exit("Failed to find or parse Undemultiplexed_stats.metrics")
 
     def _get_threshold_Q30(self):
-        if self.demux_udfs.has_key('Threshold for % bases >= Q30'):
-            self.Q30_treshold = self.demux_udfs['Threshold for % bases >= Q30']
+        if self.user_def_tresh.has_key('Threshold for % bases >= Q30'):
+            self.Q30_treshold = self.user_def_tresh['Threshold for % bases >= Q30']
             qc_logg = ("THRESHOLD FOR %Q30 was set by user to {0}.".format(
                         self.Q30_treshold))
             print >> self.qc_log_file, qc_logg
@@ -205,9 +205,10 @@ class RunQC():
         for pool in self.input_pools:
             outarts_per_lane = self.process.outputs_per_input(pool.id, ResultFile = True)
             lane_number = '1' if self.run_type == 'MiSeq' else pool.location[1][0]
-            LQC = LaneQC(lane_number, outarts_per_lane, self.run_type, self.undem_stat,
-                     self.dem_stat, self.single, self.Q30_treshold)
-            LQC.set_tresholds(self.qc_log_file, self.demux_udfs, self.read_length)
+            LQC = LaneQC(lane_number, outarts_per_lane, self.run_type, 
+                         self.undem_stat, self.dem_stat, self.single, 
+                         self.Q30_treshold, self.qc_log_file, self.user_def_tresh, self.read_length)
+            LQC.set_and_log_tresholds()
             LQC.lane_QC()
             self.nr_lane_samps_tot += LQC.nr_lane_samps
             self.nr_lane_samps_updat += LQC.nr_samps_updat
@@ -286,19 +287,25 @@ class RunQC():
 
 
 class LaneQC():
-    def __init__(self, lane_number ,out_arts, run_type, undem_stat, dem_stat, single, Q30_treshold):
-        ##  Processes, artifacts and udfs
+    def __init__(self, lane_number ,out_arts, run_type, undem_stat, dem_stat, 
+                 single, Q30_treshold, qc_log_file, user_def_tresholds, read_length):
+        ##  Output artifacts and user defined tresholds
         self.out_arts = out_arts
+        self.user_def_tresh = user_def_tresholds
+
+        ##  Info from files in file system
         self.counts = undem_stat[lane_number]['undemultiplexed_barcodes']['count']
         self.BLS = dem_stat['Barcode_lane_statistics']
 
         ##  Tresholds
-        self.reads_threshold = None #tres
-        self.un_exp_lane = None #tres
-        self.thres_un_exp_ind = None #tres
-        self.Q30_treshold = Q30_treshold #tres
+        self.exp_lane_clust = None
+        self.reads_threshold = None 
+        self.un_exp_lane = None 
+        self.thres_un_exp_ind = None 
+        self.Q30_treshold = Q30_treshold 
 
         ##  Stuff for logging 
+        self.qc_log_file = qc_log_file
         self.high_lane_yield = False
         self.high_index_yield = False
         self.nr_samps_updat = 0
@@ -307,9 +314,87 @@ class LaneQC():
 
         ##  Other variables
         self.single = single
+        self.read_length = read_length
         self.run_type = run_type
         self.lane  = lane_number
         self.nr_lane_samps = len(out_arts)
+
+    def set_and_log_tresholds(self):
+        """Generating tresholds and writing the tresholds to log file."""
+        print >> self.qc_log_file, ''
+        print >> self.qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
+        self._get_exp_lane_and_ind_clust()
+        self._set_reads_threshold()
+        self._set_tresh_un_exp_lane()
+        self._set_tresh_un_exp_ind()
+
+    def _get_exp_lane_and_ind_clust():
+        """The expected number of lane clusters depends on run type and run mode.
+        The expected number of clusters per index (sample) is then:
+        (expected nr clusters on the lane)/(nr indexes on the lane)"""
+        if self.run_type == 'MiSeq':
+            if self.read_length in [76, 301]:  
+                self.exp_lane_clust = 18000000
+            else:                               
+                self.exp_lane_clust = 10000000
+        elif self.run_type == 'HiSeq Rapid Flow Cell v1':
+            self.exp_lane_clust = 114000000
+        elif self.run_type == 'HiSeq Flow Cell v3':
+            self.exp_lane_clust = 143000000
+        elif self.run_type == 'HiSeq Flow Cell v4':
+            self.exp_lane_clust = 188000000
+        elif self.run_type == 'HiSeqX10':
+            self.exp_lane_clust = 250000000
+        else:
+            sys.exit('Unrecognized run type: {0}. Report to developer! Set '
+                    'Threshold for # Reads if you want to run bcl conversion '
+                    'and demultiplexing again'.format(self.run_type))
+        self.exp_samp_clust = np.true_divide(self.exp_lane_clust, self.nr_lane_samps)
+
+    def _set_reads_threshold():
+        """Treshold for nr reads per index: 
+            exp_samp_clust*0.5"""
+
+        if self.user_def_tresh.has_key('Threshold for # Reads'):
+            self.reads_threshold = self.user_def_tresh['Threshold for # Reads']
+            qc_logg = "Index yield - expected index: {0}".format(self.reads_threshold)
+            print >> self.qc_log_file , qc_logg
+        else:
+            exp_samp_clust = np.true_divide(self.exp_lane_clust, self.nr_lane_samps)
+            self.reads_threshold = int(self.exp_samp_clust*0.5)
+            qc_logg = ("Index yield - expected index: {0}. Value based on nr of "
+                        "sampels in the lane: {1}, and run type {2}.".format(
+                        self.reads_threshold, self.nr_lane_samps, self.run_type))
+            print >> self.qc_log_file , qc_logg
+
+    def _set_tresh_un_exp_lane():
+        """Treshold for un expected indexes on a hole lane:
+            If single end: exp_lane_clust*0.05
+            If paired end: exp_lane_clust*0.1"""
+
+        if self.single: 
+            self.un_exp_lane = int(self.exp_lane_clust*0.05) 
+        else:
+            self.un_exp_lane = int(self.exp_lane_clust*0.1)
+        qc_logg = ("Lane yield - un expected index: {0}. Value based on run "
+                 "type {1}, and run setings: {2}".format(self.un_exp_lane, 
+                 self.run_type, 'Single End' if self.single else 'Paired End'))
+        print >> self.qc_log_file, qc_logg
+
+    def _set_tresh_un_exp_ind():
+        """Threshold for un expected index:
+            exp_samp_clust*0.1"""
+
+        if self.user_def_tresh.has_key('Threshold for Undemultiplexed Index Yield'):
+            self.thres_un_exp_ind = self.user_def_tresh['Threshold for Undemultiplexed Index Yield']
+            qc_logg = ("Index yield - un expected index: {0}. Value set by user."
+                     "".format(self.thres_un_exp_ind))
+            print >> self.qc_log_file, qc_logg
+        else:
+            self.thres_un_exp_ind = int(self.exp_samp_clust*0.1)
+            qc_logg = ("Index yield - un expected index: {0}. Value set to 10% "
+                    "of expected index yield".format(self.thres_un_exp_ind))
+            print >> self.qc_log_file, qc_logg
 
     def lane_QC(self):
         for target_file in self.out_arts:
@@ -326,60 +411,12 @@ class LaneQC():
                             if IQC.html_file_error:
                                 self.html_file_error = IQC.html_file_error
                             set_field(IQC.t_file)
-                            self.nr_samps_updat +=1 
+                            self.nr_samps_updat +=1
                         except:
                             self.QC_fail.append(samp)
         self._check_un_exp_lane_yield()
         for index_count in self.counts:
             self._check_un_exp_ind_yield(index_count)
-
-    def set_tresholds(self, qc_log_file, demux_udfs, read_length):
-        """Generating tresholds and writing the tresholds to log file."""
-        print >> qc_log_file, ''
-        print >> qc_log_file, 'TRESHOLDS - LANE {0}:'.format(self.lane)
-        if self.run_type == 'MiSeq':
-            if read_length in [76, 301]:  
-                exp_lane_clust = 18000000
-            else:                               
-                exp_lane_clust = 10000000
-        elif self.run_type == 'HiSeq Rapid Flow Cell v1':
-            exp_lane_clust = 114000000
-        elif self.run_type == 'HiSeq Flow Cell v3':
-            exp_lane_clust = 143000000
-        elif self.run_type == 'HiSeq Flow Cell v4':
-            exp_lane_clust = 188000000
-        elif self.run_type == 'HiSeqX10':
-            exp_lane_clust = 250000000
-        else:
-            sys.exit('Unrecognized run type: {0}. Report to developer! Set '
-                    'Threshold for # Reads if you want to run bcl conversion '
-                    'and demultiplexing again'.format(self.run_type))
-        if demux_udfs.has_key('Threshold for # Reads'):
-            self.reads_threshold = demux_udfs['Threshold for # Reads']
-            qc_logg = "Index yield - expected index: {0}".format(self.reads_threshold)
-            print >> qc_log_file , qc_logg
-        else:
-            exp_samp_clust = np.true_divide(exp_lane_clust, self.nr_lane_samps)
-            self.reads_threshold = int(np.true_divide(exp_samp_clust, 2))
-            qc_logg = ("Index yield - expected index: {0}. Value based on nr of "
-                    "sampels in the lane: {1}, and run type {2}.".format(
-                    self.reads_threshold, self.nr_lane_samps, self.run_type))
-            print >> qc_log_file , qc_logg
-        self.un_exp_lane = int(exp_lane_clust*0.05) if self.single else int(exp_lane_clust*0.1)
-        qc_logg = ("Lane yield - un expected index: {0}. Value based on run "
-                 "type {1}, and run setings: {2}".format(self.un_exp_lane, 
-                 self.run_type, 'Single End' if self.single else 'Paired End'))
-        print >> qc_log_file, qc_logg
-        if demux_udfs.has_key('Threshold for Undemultiplexed Index Yield'):
-            self.thres_un_exp_ind = demux_udfs['Threshold for Undemultiplexed Index Yield']
-            qc_logg = ("Index yield - un expected index: {0}. Value set by user."
-                     "".format(self.thres_un_exp_ind))
-            print >> qc_log_file, qc_logg
-        else:
-            self.thres_un_exp_ind = int(self.reads_threshold*0.1)
-            qc_logg = ("Index yield - un expected index: {0}. Value set to 10% "
-                    "of expected index yield".format(self.thres_un_exp_ind))
-            print >> qc_log_file, qc_logg
 
     def _check_un_exp_lane_yield(self):
         unexp_lane_yield = sum([int(x) for x in self.counts])
@@ -389,6 +426,7 @@ class LaneQC():
     def _check_un_exp_ind_yield(self, index_count):
         if int(index_count) > self.thres_un_exp_ind:
             self.high_index_yield = True
+
 
 class IndexQC():
     def __init__(self, t_file, stats):
@@ -430,7 +468,6 @@ class IndexQC():
             self.t_file.udf['% Bases >=Q30'] = self.stats['% of >= Q30 Bases (PF)']
 
     def _set_reads(self):
-        print 'ssssssssss'
         if not dict(self.t_file.udf.items()).has_key('# Reads'):
             try:
                 self.t_file.udf['# Reads'] = float(self.stats['# Reads'].replace(',',''))
@@ -438,8 +475,6 @@ class IndexQC():
                 self.html_file_error = True
 
     def set_read_pairs(self, single):
-        print 'asssssssssssssssssss'
-        print self.t_file.udf['# Reads']
         if single and self.t_file.udf['# Reads']:
             self.t_file.udf['# Read Pairs'] = int(self.t_file.udf['# Reads'])
         elif self.t_file.udf['# Reads']:
