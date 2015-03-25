@@ -328,7 +328,7 @@ class LaneQC():
         self._set_tresh_un_exp_lane()
         self._set_tresh_un_exp_ind()
 
-    def _get_exp_lane_and_ind_clust():
+    def _get_exp_lane_and_ind_clust(self):
         """The expected number of lane clusters depends on run type and run mode.
         The expected number of clusters per index (sample) is then:
         (expected nr clusters on the lane)/(nr indexes on the lane)"""
@@ -351,7 +351,7 @@ class LaneQC():
                     'and demultiplexing again'.format(self.run_type))
         self.exp_samp_clust = np.true_divide(self.exp_lane_clust, self.nr_lane_samps)
 
-    def _set_reads_threshold():
+    def _set_reads_threshold(self):
         """Treshold for nr reads per index: 
             exp_samp_clust*0.5"""
 
@@ -367,7 +367,7 @@ class LaneQC():
                         self.reads_threshold, self.nr_lane_samps, self.run_type))
             print >> self.qc_log_file , qc_logg
 
-    def _set_tresh_un_exp_lane():
+    def _set_tresh_un_exp_lane(self):
         """Treshold for un expected indexes on a hole lane:
             If single end: exp_lane_clust*0.05
             If paired end: exp_lane_clust*0.1"""
@@ -381,7 +381,7 @@ class LaneQC():
                  self.run_type, 'Single End' if self.single else 'Paired End'))
         print >> self.qc_log_file, qc_logg
 
-    def _set_tresh_un_exp_ind():
+    def _set_tresh_un_exp_ind(self):
         """Threshold for un expected index:
             exp_samp_clust*0.1"""
 
