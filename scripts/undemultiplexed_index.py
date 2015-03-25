@@ -41,7 +41,8 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process
 from genologics.epp import EppLogger
 from genologics.epp import set_field
-from qc_parsers import FlowcellRunMetricsParser
+from scilifelab_parsers.qc.qc import FlowcellRunMetricsParser
+#from qc_parsers import FlowcellRunMetricsParser
 
 class RunQC():
     def __init__(self, process):
