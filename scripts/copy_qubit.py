@@ -39,7 +39,7 @@ def main(lims, pid, epp_logger):
     files = file_handler.shared_files['Qubit Result File']
     qubit_result_file = file_handler.format_file(files, 
                                                  name = 'Qubit Result File',
-                                                 first_header = 'Sample',
+                                                 first_header = ['Test','Sample'],
                                                  find_keys = sample_names)
     missing_samples = 0
     low_conc = 0
