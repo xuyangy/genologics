@@ -84,7 +84,7 @@ def get_data(file_path):
 
 def convert_to_ng_ul(conc, unit):
     factor=1
-    units=split('/',unit)
+    units=unit.split('/')
     if units[0] == 'µg' or units[0] == 'ug':
         factor*=1000
     elif units[0] == 'mg':
