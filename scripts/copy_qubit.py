@@ -143,9 +143,9 @@ def get_qbit_csv_data(process):
         else:
             missing_samples += 1
     if low_conc:
-        log.append('{0}/{1} samples have low concentration.'.format(low_conc, len(target_files)))
+        log.append('{0}/{1} samples have low concentration.'.format(low_conc, len(process.result_files()))
     if missing_samples:
-        log.append('{0}/{1} samples are missing in the Qubit Result File.'.format(missing_samples, len(target_files)))
+        log.append('{0}/{1} samples are missing in the Qubit Result File.'.format(missing_samples, len(process.result_files()))
     if bad_format:
         log.append('There are {0} badly formatted samples in Qubit Result File. Please fix these to get proper results.'.format(bad_format))
 
