@@ -107,7 +107,7 @@ class UndemuxInd():
         try:
             return glob.glob(("/srv/mfs/*iseq_data/*{0}/Unaligned/Basecall_Stats_*/".format(ID)))[0]
         except:
-            sys.exit("Failed to get file path") 
+            sys.exit("Failed to get file path for id {0}".format(ID)) 
 
     def get_demultiplex_files(self):
         """ Files are read from the file msf system. Path hard coded."""
