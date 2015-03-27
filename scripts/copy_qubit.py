@@ -72,9 +72,16 @@ def get_data(file_path):
                 read=True
             elif(read and row[sample_index]):
                 #this is every other row
-                data[row[sample_index]]={}
-                data[row[sample_index]]['concentration']=row[conc_index]
-                data[row[sample_index]]['unit']=row[unit_index]
+                if row[sample_index] in data:
+                    #Sample is duplicated, drop the key
+                    print("sample {0} has two rows in the Qubit CSV file. Please check the file manually.".format(row[sample_index]), file=sys.stderr)
+                    del data[row[sample_index]]
+
+                else:
+                    #normal procedure
+                    data[row[sample_index]]={}
+                    data[row[sample_index]]['concentration']=row[conc_index]
+                    data[row[sample_index]]['unit']=row[unit_index]
             elif (not read  and 'Sample' in row):
                 sample_index=row.index('Sample')
                 conc_index=row.index('Sample Concentration')
@@ -117,6 +124,7 @@ def get_qbit_csv_data(process):
         log.append("Set 'Minimum required concentration (ng/ul)' to get qc-flags based on this threshold!")
 
     for target_file in process.result_files():
+        conc=None
         file_sample=target_file.samples[0].name
         if file_sample in data:
             try:
@@ -135,7 +143,7 @@ def get_qbit_csv_data(process):
                     low_conc +=1
                 else:
                     target_file.qc_flag = "PASSED"
-                    target_file.udf['Concentration'] = conc
+                    target_file.udf['Concentration'] = new_conc
                     target_file.udf['Conc. Units'] = 'ng/ul'
 
             #actually set the data
@@ -143,9 +151,9 @@ def get_qbit_csv_data(process):
         else:
             missing_samples += 1
     if low_conc:
-        log.append('{0}/{1} samples have low concentration.'.format(low_conc, len(process.result_files()))
+        log.append('{0}/{1} samples have low concentration.'.format(low_conc, len(process.result_files())))
     if missing_samples:
-        log.append('{0}/{1} samples are missing in the Qubit Result File.'.format(missing_samples, len(process.result_files()))
+        log.append('{0}/{1} samples are missing in the Qubit Result File.'.format(missing_samples, len(process.result_files())))
     if bad_format:
         log.append('There are {0} badly formatted samples in Qubit Result File. Please fix these to get proper results.'.format(bad_format))
 
