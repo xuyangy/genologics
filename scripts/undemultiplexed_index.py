@@ -4,7 +4,7 @@ system and then does the following
 
 1)  Sets the output artifact udfs based demultiplex resultfile.
  
-2)  Generated qc tresholds based on sequencing run setings. These can allso be 
+2)  Generated qc tresholds based on sequencing run setings. These can also be 
     set by user.
  
 3)  Loggs the tresholds to a qc log file
