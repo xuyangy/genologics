@@ -32,7 +32,7 @@ def main(lims, args, logger):
             #update the total number of reads
             total_reads=sumreads(sample, summary)
             sample.udf['Total Reads (M)']=total_reads
-            sample.udf['Set Total Reads']=total_reads
+            output_artifact.udf['Set Total Reads']=total_reads
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
                 if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
