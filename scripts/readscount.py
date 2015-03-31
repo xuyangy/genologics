@@ -35,7 +35,7 @@ def main(lims, args, logger):
             output_artifact.udf['Set Total Reads']=total_reads
             logging.info("Total reads is {0} for sample {1}".format(sample.udf['Total Reads (M)'],sample.name))
             try:
-                if sample.udf['Reads Min'] > sample.udf['Total Reads (M)']:
+                if sample.udf['Reads Min'] >= sample.udf['Total Reads (M)']:
                     sample.udf['Status (auto)']="In Progress"
                     sample.udf['Passed Sequencing QC']="False"
                 elif sample.udf['Reads Min'] < sample.udf['Total Reads (M)'] : 
@@ -48,6 +48,7 @@ def main(lims, args, logger):
 
             #commit the changes
             sample.put()
+            output_artifact.put()
         elif(output_artifact.type=='Analyte') and len(output_artifact.samples)!=1:
             logging.error("Found {0} samples for the ouput analyte {1}, that should not happen".format(len(output_artifact.samples()),output_artifact.id))
         elif(output_artifact.type=="ResultFile" and output_artifact.name=="AggregationLog"):
