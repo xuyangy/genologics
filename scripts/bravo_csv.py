@@ -52,7 +52,7 @@ def calc_vol(art_tuple, logContext,checkTheLog):
         assert art_tuple[0]['uri'].udf['Conc. Units'] == "ng/ul"
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
         conc=art_tuple[0]['uri'].udf['Concentration']
-        volume=amount_ng/conc
+        volume=float(amount_ng)/float(conc)
         if volume<2:
             #arbitrarily determined by Sverker Lundin
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
