@@ -819,8 +819,23 @@ class Researcher(Entity):
     def name(self):
         return u"%s %s" % (self.first_name, self.last_name)
 
+
 class Reagent_label(Entity):
     reagent_label = StringDescriptor('reagent-label')
+
+
+class ReagentType(Entity):
+
+    _URI = 'reagenttypes'
+
+    name            = StringAttributeDescriptor('name')
+    reagent_category= StringDescriptor('reagent-category') 
+
+    @property
+    def index(self):
+        for st in self.root.find('special-type'):
+            pass # TODO
+
 
 class Note(Entity):
     "Note attached to a project or a sample."
@@ -832,7 +847,7 @@ class ProtoFile(object):
     '''File object for use while allocating a new file. It is not an
     Entity because it doesn't have a unique identifier.'''
 
-    attached_to        = StringListDescriptor('attached-to')
+    attached_to        = StringDescriptor('attached-to')
     content_location   = StringDescriptor('content-location')
     original_location  = StringDescriptor('original-location')
 
@@ -844,10 +859,9 @@ class ProtoFile(object):
                 raise ValueError("Can't specify both data and XML root element")
         else:
             self.root = ElementTree.Element(nsmap('file:file'))
-            if attached_to:
-                ElementTree.SubElement(self.root, 'attached-to').text = attached_to
-            if original_location:
-                ElementTree.SubElement(self.root, 'original-location').text = original_location
+            ElementTree.SubElement(self.root, 'attached-to').text = attached_to
+            ElementTree.SubElement(self.root, 'original-location').text = original_location
+            ElementTree.SubElement(self.root, 'content-location')
 
     def get(self):
         '''Get is a no-op for ProtoFile, but required to use the descriptors
