@@ -316,6 +316,10 @@ class Lims(object):
         params = self._get_params(name=name)
         return self._get_instances(ProtocolConfiguration, params=params)
 
+    def get_reagent_types(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(ReagentType, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
@@ -395,15 +399,17 @@ class Lims(object):
         return step
 
     def glsstorage(self, proto_file):
-        '''Allocates and returns a file resource in the glsstorage area. This 
+        """Allocates and returns a file resource in the glsstorage area. This 
         doesn't actually upload the file, it only sets up the metadata.
         
         Accepts and returns a ProtoFile object, which contains information about
         a file or storage location, but does not yet have a LIMS ID. This 
-        function fills in the content-location attribute.'''
+        function fills in the content-location attribute."""
 
         glss_uri = self.get_uri("glsstorage")
         xml_data = self.tostring(ElementTree.ElementTree(proto_file.root))
         response = self.post(glss_uri, xml_data)
         return ProtoFile(self, root=response)
+        
 
+        

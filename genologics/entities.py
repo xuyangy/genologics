@@ -819,8 +819,23 @@ class Researcher(Entity):
     def name(self):
         return u"%s %s" % (self.first_name, self.last_name)
 
+
 class Reagent_label(Entity):
     reagent_label = StringDescriptor('reagent-label')
+
+
+class ReagentType(Entity):
+
+    _URI = 'reagenttypes'
+
+    name            = StringAttributeDescriptor('name')
+    reagent_category= StringDescriptor('reagent-category') 
+
+    @property
+    def index(self):
+        for st in self.root.find('special-type'):
+            pass # TODO
+
 
 class Note(Entity):
     "Note attached to a project or a sample."
@@ -829,10 +844,10 @@ class Note(Entity):
 
 
 class ProtoFile(object):
-    '''File object for use while allocating a new file. It is not an
-    Entity because it doesn't have a unique identifier.'''
+    """File object for use while allocating a new file. It is not an
+    Entity because it doesn't have a unique identifier."""
 
-    attached_to        = StringListDescriptor('attached-to')
+    attached_to        = StringDescriptor('attached-to')
     content_location   = StringDescriptor('content-location')
     original_location  = StringDescriptor('original-location')
 
@@ -849,14 +864,14 @@ class ProtoFile(object):
             ElementTree.SubElement(self.root, 'content-location')
 
     def get(self):
-        '''Get is a no-op for ProtoFile, but required to use the descriptors
+        """Get is a no-op for ProtoFile, but required to use the descriptors
         which are intended for Entities. There is no ultimate correct copy in 
-        the LIMS, only the local data'''
+        the LIMS, only the local data"""
         pass
 
 
     def post(self):
-        '''Posts to the files resource. Returns an actual File entity object'''
+        """Posts to the files resource. Returns an actual File entity object"""
 
         xml_data = self.lims.tostring(ElementTree.ElementTree(self.root))
         response = self.lims.post(self.lims.get_uri('files'), xml_data)
@@ -1132,9 +1147,9 @@ class Artifact(Entity):
 
 
 class NextAction():
-    '''Holds an action entry. Actions are specified in the next-actions XML element of a
+    """Holds an action entry. Actions are specified in the next-actions XML element of a
     step. They control what happens to a sample after a protocol step is completed.
-    '''
+    """
 
     def __init__(self, lims, xml_node):
         """Creates a NextAction from an XML element."""
@@ -1203,7 +1218,7 @@ class StepConfiguration(Entity):
     transitions    = GenericListDescriptor('transitions', Transition)
 
     def queue(self):
-        '''Get the queue corresponding to this step.'''
+        """Get the queue corresponding to this step."""
         return Queue(self.lims, id = self.id)
 
 
@@ -1219,8 +1234,8 @@ class ProtocolConfiguration(Entity):
 
 
 class AvailableProgram():
-    '''Script registered on the process type, which can be referenced directly from
-    the step instance.'''
+    """Script registered on the process type, which can be referenced directly from
+    the step instance."""
 
     def __init__(self, lims, element):
         self.uri = element.attrib['uri']
@@ -1296,14 +1311,14 @@ class Step(Entity):
         self.root = self.lims.post(advance_uri, data)
 
     def process(self):
-        '''Get the Process object corresponding to this protocol step.'''
+        """Get the Process object corresponding to this protocol step."""
         return Process(self.lims, id = self.id)
 
 
 
 class Queue(Entity):
-    '''Get the queue of analytes ready to start on a protocol step. 
-    Give the protocol configuration ID'''
+    """Get the queue of analytes ready to start on a protocol step. 
+    Give the protocol configuration ID"""
 
     _URI = 'queues'
 
@@ -1311,7 +1326,7 @@ class Queue(Entity):
     protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', StepConfiguration)
 
     def step_configuration(self):
-        '''Get the step configuration corresponding to this queue.'''
+        """Get the step configuration corresponding to this queue."""
         return Queue(self.lims, id = self.id)
 
 
