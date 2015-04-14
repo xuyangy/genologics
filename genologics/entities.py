@@ -844,10 +844,9 @@ class ProtoFile(object):
                 raise ValueError("Can't specify both data and XML root element")
         else:
             self.root = ElementTree.Element(nsmap('file:file'))
-            if attached_to:
-                ElementTree.SubElement(self.root, 'attached-to').text = attached_to
-            if original_location:
-                ElementTree.SubElement(self.root, 'original-location').text = original_location
+            ElementTree.SubElement(self.root, 'attached-to').text = attached_to
+            ElementTree.SubElement(self.root, 'original-location').text = original_location
+            ElementTree.SubElement(self.root, 'content-location')
 
     def get(self):
         '''Get is a no-op for ProtoFile, but required to use the descriptors
