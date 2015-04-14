@@ -18,6 +18,13 @@ import requests
 
 from .entities import *
 
+# Python 2.6 support work-around
+if hasattr(ElementTree, 'ParseError'):
+        ETREE_EXCEPTION = ElementTree.ParseError
+    else:
+        from xml.parsers import expat
+        ETREE_EXCEPTION = expat.ExpatError
+
 
 class Lims(object):
     "LIMS interface through which all entity instances are retrieved."
@@ -105,7 +112,7 @@ class Lims(object):
                 node = root.find('suggested-actions')
                 if node is not None:
                     message += ' ' + node.text
-            except ElementTree.ParseError: # some error messages might not follow the xml standard
+            except ETREE_EXCEPTION: # some error messages might not follow the xml standard
                 message=response.content 
             raise requests.exceptions.HTTPError(message)
         else:
