@@ -263,6 +263,11 @@ class ReadResultFiles():
         error_message = ''
         duplicated_lines = []
         exeptions = ['Sample','Fail', '']
+        if type(first_header) is not list:
+            if first_header:
+                first_header=[first_header]
+            else:
+                first_header=[]
         for row, line in enumerate(parsed_file):
             if keys and len(line)==len(keys):
                 root_key = line[root_key_col]
@@ -281,7 +286,7 @@ class ReadResultFiles():
                                 file_info[root_key][keys[col-1]] = tupl
         
             head = line[root_key_col] if len(line) > root_key_col else None
-            if first_header and head == first_header:
+            if first_header and head in first_header:
                 keys = line
             elif header_row and row == header_row:
                 keys = line
