@@ -20,10 +20,10 @@ from .entities import *
 
 # Python 2.6 support work-around
 if hasattr(ElementTree, 'ParseError'):
-        ETREE_EXCEPTION = ElementTree.ParseError
-    else:
-        from xml.parsers import expat
-        ETREE_EXCEPTION = expat.ExpatError
+    ETREE_EXCEPTION = ElementTree.ParseError
+else:
+    from xml.parsers import expat
+    ETREE_EXCEPTION = expat.ExpatError
 
 
 class Lims(object):
