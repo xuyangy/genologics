@@ -512,11 +512,11 @@ class UdfDictionary(object):
         else:                           # Create new entry; heuristics for type
             if isinstance(value, basestring):
                 type = '\n' in value and 'Text' or 'String'
-            elif isinstance(value, (int, float)):
-                type = 'Numeric'
             elif isinstance(value, bool):
                 type = 'Boolean'
                 value = value and 'True' or 'False'
+            elif isinstance(value, (int, float)):
+                type = 'Numeric'
             elif isinstance(value, datetime.date):
                 type = 'Date'
                 value = str(value)
@@ -892,6 +892,12 @@ class ProtoFile(object):
     original_location  = StringDescriptor('original-location')
 
     def __init__(self, lims, attached_to = None, original_location = None, root = None): 
+        '''Specify an entity to attach the file: set attached_to to an entity object.
+
+        The original location is required, but not used for anything.
+        
+        root is mainly used internally and should be left blank.'''
+
         self.lims = lims
         if root is not None:
             self.root = root
