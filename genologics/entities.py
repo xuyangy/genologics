@@ -10,6 +10,7 @@ import re
 import urlparse
 import datetime
 import time
+from collections import MutableSet
 from xml.etree import ElementTree
 import logging
 
@@ -682,17 +683,54 @@ class LocationDescriptor(TagDescriptor):
         return Container(instance.lims, uri=uri), node.find('value').text
 
 
-class ReagentLabelList(BaseDescriptor):
-    """An instance attribute yielding a list of reagent labels"""
+class ReagentLabelSet(MutableSet):
+    """Holds infomation about reagent labels. Acts like a set, but
+    also updates the underlying XML. It thus supports adding and deleting
+    reagent labels."""
+
+    def __init__(self, root):
+        self.root = root
+        self.value = set()
+        for node in self.root.findall('reagent-label'):
+            try:
+                self.value.add(node.attrib['name'])
+            except KeyError:
+                pass
+
+    def __contains__(self, i): return i in self.value
+
+    def __iter__(self, i): return self.value.__iter__
+
+    def __len__(self): return len(self.value)
+
+    def discard(self, name):
+        remove_node = None
+        for node in self.root.findall('reagent-label'):
+            try:
+                if node.attrib['name'] == name:
+                   remove_node = node
+                   break
+            except (AttributeError, KeyError):
+                pass
+
+        self.root.remove(node)
+        self.value.remove(name)
+
+    def add(self, name):
+        self.value.add(name)
+        ElementTree.SubElement(self.root, 'reagent-label', {'name': name})
+
+    def __str__(self):
+        return str(self.value)
+
+
+class ReagentLabelSetDescriptor(BaseDescriptor):
+    """An instance attribute yielding a list of reagent labels.
+
+    Allows read-write access."""
     def __get__(self, instance, cls):
-	instance.get()
-	self.value = []
-	for node in instance.root.findall('reagent-label'):
-	    try:
-	    	self.value.append(node.attrib['name']) 
-	    except:
-		pass
-	return self.value
+        instance.get()
+        return ReagentLabelSet(instance.root)
 
 
 class InputOutputMapList(BaseDescriptor):
@@ -820,21 +858,23 @@ class Researcher(Entity):
         return u"%s %s" % (self.first_name, self.last_name)
 
 
-class Reagent_label(Entity):
-    reagent_label = StringDescriptor('reagent-label')
-
-
 class ReagentType(Entity):
 
     _URI = 'reagenttypes'
+    _TAG = 'reagent-type'
 
     name            = StringAttributeDescriptor('name')
-    reagent_category= StringDescriptor('reagent-category') 
+    category        = StringDescriptor('reagent-category')
 
     @property
-    def index(self):
-        for st in self.root.find('special-type'):
-            pass # TODO
+    def index_sequence(self):
+        for st in self.root.findall('special-type'):
+            if st.attrib['name'] == 'Index':
+                for elem in st.findall('attribute'):
+                    if elem.attrib['name'] == 'Sequence':
+                        return elem.attrib['value']
+
+        return None
 
 
 class Note(Entity):
@@ -859,7 +899,7 @@ class ProtoFile(object):
                 raise ValueError("Can't specify both data and XML root element")
         else:
             self.root = ElementTree.Element(nsmap('file:file'))
-            ElementTree.SubElement(self.root, 'attached-to').text = attached_to
+            ElementTree.SubElement(self.root, 'attached-to').text = attached_to.uri
             ElementTree.SubElement(self.root, 'original-location').text = original_location
             ElementTree.SubElement(self.root, 'content-location')
 
@@ -1110,7 +1150,7 @@ class Artifact(Entity):
     samples        = EntityListDescriptor('sample', Sample)
     udf            = UdfDictionaryDescriptor()
     files          = EntityListDescriptor(nsmap('file:file'), File)
-    reagent_labels = ReagentLabelList()
+    reagent_labels = ReagentLabelSetDescriptor()
     # artifact_flags XXX
     # artifact_groups XXX
 
