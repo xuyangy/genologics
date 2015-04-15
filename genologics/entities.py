@@ -852,6 +852,12 @@ class ProtoFile(object):
     original_location  = StringDescriptor('original-location')
 
     def __init__(self, lims, attached_to = None, original_location = None, root = None): 
+        '''Specify an entity to attach the file: set attached_to to an entity object.
+
+        The original location is required, but not used for anything.
+        
+        root is mainly used internally and should be left blank.'''
+
         self.lims = lims
         if root is not None:
             self.root = root
@@ -859,7 +865,7 @@ class ProtoFile(object):
                 raise ValueError("Can't specify both data and XML root element")
         else:
             self.root = ElementTree.Element(nsmap('file:file'))
-            ElementTree.SubElement(self.root, 'attached-to').text = attached_to
+            ElementTree.SubElement(self.root, 'attached-to').text = attached_to.uri
             ElementTree.SubElement(self.root, 'original-location').text = original_location
             ElementTree.SubElement(self.root, 'content-location')
 
