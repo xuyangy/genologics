@@ -699,7 +699,7 @@ class ReagentLabelSet(MutableSet):
 
     def __contains__(self, i): return i in self.value
 
-    def __iter__(self, i): return self.value.__iter__
+    def __iter__(self): return self.value.__iter__()
 
     def __len__(self): return len(self.value)
 
