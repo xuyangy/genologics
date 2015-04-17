@@ -13,6 +13,8 @@ import time
 from xml.etree import ElementTree
 import logging
 
+logger = logging.getLogger(__name__)
+
 _NSMAP = dict(
     art='http://genologics.com/ri/artifact',
     artgr='http://genologics.com/ri/artifactgroup',
@@ -74,29 +76,29 @@ class SampleHistory:
                 if output_artifact:
                     self.get_analyte_hist_sorted(output_artifact, input_artifact)
         else:
-            logging.error("Tried to build History without lims")
+            logger.error("Tried to build History without lims")
             raise AttributeError("History cannot be computed without a valid lims object")
 
 
     def control(self):
         """this can be used to check the content of the object.
         """
-        logging.info("SAMPLE NAME: {}".format(self.sample_name))
-        logging.info("outart : {}".format(self.history_list[0]))
-        #logging.info ("\nmap :")
+        logger.info("SAMPLE NAME: {}".format(self.sample_name))
+        logger.info("outart : {}".format(self.history_list[0]))
+        #logger.info ("\nmap :")
         #for key, value in self.art_map.iteritems():
-        #    logging.info(value[1]+"->"+value[0].id+"->"+key)
-        logging.info ("\nHistory :\n\n")
-        logging.info("Input\tProcess\tProcess info")
+        #    logger.info(value[1]+"->"+value[0].id+"->"+key)
+        logger.info ("\nHistory :\n\n")
+        logger.info("Input\tProcess\tProcess info")
         for key, dict in self.history.iteritems():
-            logging.info (key)
+            logger.info (key)
             for key2, dict2 in dict.iteritems():
-                logging.info ("\t{}".format(key2))
+                logger.info ("\t{}".format(key2))
                 for key, value in dict2.iteritems():
-                    logging.info ("\t\t{0}->{1}".format(key,(value if value is not None else "None")))
-        logging.info ("\nHistory List")
+                    logger.info ("\t\t{0}->{1}".format(key,(value if value is not None else "None")))
+        logger.info ("\nHistory List")
         for art in self.history_list:
-            logging.info (art)
+            logger.info (art)
         
     def make_sample_artifact_map(self):
         """samp_art_map: connects each output artifact for a specific sample to its 
@@ -142,13 +144,13 @@ class SampleHistory:
         else:
             starting_art=out_art
         #main iteration    
-        #it is quite heavy on logging at info level
+        #it is quite heavy on logger at info level
         not_done=True
         while not_done:
-            logging.info ("looking for "+(starting_art))
+            logger.info ("looking for "+(starting_art))
             not_done=False 
             for o in artifacts:
-                logging.info (o.id)
+                logger.info (o.id)
                 if o.id == starting_art:
                     if o.parent_process is None:
                         #flow control : if there is no parent process, we can stop iterating, we're done.
@@ -156,11 +158,11 @@ class SampleHistory:
                         break #breaks the for artifacts, we are done anyway.
                     else:
                         not_done=True #keep the loop running
-                    logging.info ("found it")
+                    logger.info ("found it")
                     processes.append(o.parent_process)
-                    logging.info ("looking for inputs of "+o.parent_process.id)
+                    logger.info ("looking for inputs of "+o.parent_process.id)
                     for i in o.parent_process.all_inputs():
-                        logging.info (i.id)
+                        logger.info (i.id)
                         if i in artifacts:
                             history[i.id]={}
                             for tempProcess in (self.processes_per_artifact[i.id] if self.processes_per_artifact else self.lims.get_processes(inputartifactlimsid=i.id)):#If there is a loacl map, use it. else, query the lims.
@@ -173,7 +175,7 @@ class SampleHistory:
 
 
 
-                            logging.info ("found input "+i.id)
+                            logger.info ("found input "+i.id)
                             inputs.append(i.id) #this will be the sorted list of artifacts used to rebuild the history in order
                             # while increment
                             starting_art=i.id
@@ -897,7 +899,7 @@ class Process(Entity):
         try:
             ids = [io[0]['limsid'] for io in self.input_output_maps]
         except TypeError:
-            logging.error("Process ",self," has no input artifacts")
+            logger.error("Process ",self," has no input artifacts")
             raise TypeError
         if unique:
             ids = list(frozenset(ids))
@@ -1013,9 +1015,11 @@ class StepActions():
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
             self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
+            self.escalation['request']=uri=node.find('request').find('comment').text
             if node.find('review') is not None: #recommended by the Etree doc
                 self.escalation['status']='Reviewed'
                 self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
+                self.escalation['answer']=uri=node.find('review').find('comment').text
             else:
                 self.escalation['status']='Pending'
 
