@@ -186,6 +186,9 @@ def main(args,lims,epp_logger):
     elif lines: # Avoid printing empty files
         lp_args = ["lp"]
         if args.hostname:
+            #remove that when all the calls to this script have been updated
+            if args.hostname == 'homer.scilife.lab.se':
+                args.hostname='homer2.scilife.lab.se'
             lp_args += ["-h",args.hostname]
         if args.destination:
             lp_args += ["-d",args.destination]
