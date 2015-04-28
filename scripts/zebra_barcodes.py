@@ -187,8 +187,8 @@ def main(args,lims,epp_logger):
         lp_args = ["lp"]
         if args.hostname:
             #remove that when all the calls to this script have been updated
-            if args.hostname == 'homer.scilife.lab.se':
-                args.hostname='homer2.scilife.lab.se'
+            if args.hostname == 'homer.scilifelab.se:631':
+                args.hostname='homer2.scilifelab.se:631'
             lp_args += ["-h",args.hostname]
         if args.destination:
             lp_args += ["-d",args.destination]
