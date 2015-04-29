@@ -134,7 +134,13 @@ class SampleHistory:
             starting_art=in_art
             inputs.append(in_art)
             history[in_art]={}
-            for tempProcess in ( self.processes_per_artifact[in_art] if self.processes_per_artifact else self.lims.get_processes(inputartifactlimsid=in_art)):#If there is a loacl map, use it. else, query the lims.
+            #If there is a loacl map, use it. else, query the lims.
+            if self.processes_per_artifact and in_art in self.processes_per_artifact:
+                valid_pcs=self.processes_per_artifact[in_art]
+            else:
+                valid_pcs=self.lims.get_processes(inputartifactlimsid=in_art)
+
+            for tempProcess in valid_pcs:
                 history[in_art][tempProcess.id] = {'date' : tempProcess.date_run,
                                                    'id' : tempProcess.id,
                                                    'outart' : (out_art if out_art in [ out.id for out in tempProcess.all_outputs()] else None ),
