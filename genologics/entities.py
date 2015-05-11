@@ -868,6 +868,7 @@ class ReagentType(Entity):
 
     @property
     def index_sequence(self):
+        self.get()
         for st in self.root.findall('special-type'):
             if st.attrib['name'] == 'Index':
                 for elem in st.findall('attribute'):
@@ -932,6 +933,8 @@ class ProtoFile(object):
 
 class File(Entity):
     "File attached to a project or a sample."
+
+    _URI = 'files'
 
     attached_to       = StringDescriptor('attached-to')
     content_location  = StringDescriptor('content-location')
@@ -1332,6 +1335,27 @@ class StepActions():
 
         self.lims.put(self.uri, data)
 
+
+class StepPlacements():
+    """Small hack to be able to query the actions subentity of
+    the Step entity.
+    
+    TODO: this is incomplete!"""
+
+    def __init__(self, lims, uri):
+        self.lims=lims
+        self.uri="{0}/placements".format(uri)
+        self.root=lims.get(self.uri)
+
+
+
+    def put(self):
+        """Updates next actions and escalations""" 
+        for na in self.next_actions:
+            na.update()
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+
+        self.lims.put(self.uri, data)
 
 
 class Step(Entity):
