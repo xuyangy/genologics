@@ -1357,6 +1357,17 @@ class StepPlacements():
 
         self.lims.put(self.uri, data)
 
+class ProgramStatus(Entity):
+    """Status of an EPP script, connected to a Step object"""
+
+    _URI = None
+    _TAG = 'program-status'
+
+    step           = StringDescriptor('step')
+    configuration  = EntityDescriptor('configuration', StepConfiguration)
+    status         = StringDescriptor('status')
+    message        = StringDescriptor('message')
+
 
 class Step(Entity):
     "Step, as defined by the genologics API. Step ID is the same as the process ID."
@@ -1365,6 +1376,7 @@ class Step(Entity):
 
     configuration       = EntityDescriptor('configuration', StepConfiguration)
     current_state       = StringAttributeDescriptor('current-state')
+    program_status      = EntityListDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
 
     def __init__(self, lims, uri=None, id=None):
