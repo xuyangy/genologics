@@ -1265,6 +1265,7 @@ class StepConfiguration(Entity):
     # Transitions represent the potential next steps for samples
     name           = StringAttributeDescriptor('name')
     transitions    = GenericListDescriptor('transitions', Transition)
+    process_type   = EntityDescriptor('process-type', Processtype)
 
     def queue(self):
         """Get the queue corresponding to this step."""
@@ -1382,7 +1383,13 @@ class Step(Entity):
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
-        self.actions= StepActions(lims,uri=self.uri)
+        self._actions = None
+
+    @property
+    def actions(self):
+        if not self._actions:
+            self._actions = StepActions(lims,uri=self.uri)
+        return self._actions
 
 
     def advance(self):
