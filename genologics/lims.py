@@ -232,7 +232,7 @@ class Lims(object):
 
     def get_artifacts(self, name=None, type=None, process_type=None,
                       artifact_flag_name=None, working_flag=None, qc_flag=None,
-                      sample_name=None, artifactgroup=None, containername=None,
+                      sample_name=None, samplelimsid=None, artifactgroup=None, containername=None,
                       containerlimsid=None, reagent_label=None,
                       udf=dict(), udtname=None, udt=dict(), start_index=None):
         """Get a list of artifacts, filtered by keyword arguments.
@@ -243,6 +243,7 @@ class Lims(object):
         working_flag: Having the given working flag; boolean.
         qc_flag: Having the given QC flag: UNKNOWN, PASSED, FAILED.
         sample_name: Related to the given sample name.
+        samplelimsid: Related to the given sample id.
         artifactgroup: Belonging to the artifact group (experiment in client).
         containername: Residing in given container, by name, or list.
         containerlimsid: Residing in given container, by LIMS id, or list.
@@ -260,6 +261,7 @@ class Lims(object):
                                   working_flag=working_flag,
                                   qc_flag=qc_flag,
                                   sample_name=sample_name,
+                                  samplelimsid=samplelimsid,
                                   artifactgroup=artifactgroup,
                                   containername=containername,
                                   containerlimsid=containerlimsid,
