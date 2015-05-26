@@ -474,51 +474,51 @@ class UdfDictionary(object):
         self._lookup[key] = value
         for node in self._elems:
             if node.attrib['name'] != key: continue
-            type = node.attrib['type'].lower()
+            vtype = node.attrib['type'].lower()
 
             if value is None:
                 pass
-            elif type == 'string':
+            elif vtype == 'string':
                 if not isinstance(value, basestring):
                     raise TypeError('String UDF requires str or unicode value')
-            elif type == 'str':
+            elif vtype == 'str':
                 if not isinstance(value, basestring):
                     raise TypeError('String UDF requires str or unicode value')
-            elif type == 'text':
+            elif vtype == 'text':
                 if not isinstance(value, basestring):
                     raise TypeError('Text UDF requires str or unicode value')
-            elif type == 'numeric':
+            elif vtype == 'numeric':
                 if not isinstance(value, (int, float)):
                     raise TypeError('Numeric UDF requires int or float value')
                 value = str(value)
-            elif type == 'boolean':
+            elif vtype == 'boolean':
                 if not isinstance(value, bool):
                     raise TypeError('Boolean UDF requires bool value')
                 value = value and 'True' or 'False'
-            elif type == 'date':
+            elif vtype == 'date':
                 if not isinstance(value, datetime.date): # Too restrictive?
                     raise TypeError('Date UDF requires datetime.date value')
                 value = str(value)
-            elif type == 'uri':
+            elif vtype == 'uri':
                 if not isinstance(value, basestring):
                     raise TypeError('URI UDF requires str or punycode (unicode) value')
                 value = str(value)
             else:
-                raise NotImplemented("UDF type '%s'" % type)
+                raise NotImplemented("UDF type '%s'" % vtype)
             if not isinstance(value, unicode):
                 value = unicode(value, 'UTF-8')
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
             if isinstance(value, basestring):
-                type = '\n' in value and 'Text' or 'String'
+                vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
-                type = 'Boolean'
+                vtype = 'Boolean'
                 value = value and 'True' or 'False'
             elif isinstance(value, (int, float)):
-                type = 'Numeric'
+                vtype = 'Numeric'
             elif isinstance(value, datetime.date):
-                type = 'Date'
+                vtype = 'Date'
                 value = str(value)
             else:
                 raise NotImplementedError("Cannot handle value of type '%s'"
@@ -529,7 +529,7 @@ class UdfDictionary(object):
                 root = self.instance.root
             elem = ElementTree.SubElement(root,
                                           nsmap('udf:field'),
-                                          type=type,
+                                          type=vtype,
                                           name=key)
             if not isinstance(value, unicode):
                 value = unicode(str(value), 'UTF-8')
