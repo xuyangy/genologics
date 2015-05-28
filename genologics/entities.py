@@ -1483,7 +1483,7 @@ class Step(Entity):
     @property
     def actions(self):
         if not self._actions:
-            self._actions = StepActions(lims,uri=self.uri)
+            self._actions = StepActions(self.lims,uri=self.uri)
         return self._actions
 
     def advance(self):
