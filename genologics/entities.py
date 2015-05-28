@@ -666,6 +666,49 @@ class EntityListDescriptor(EntityDescriptor):
         return result
 
 
+class IndirectEntityListDescriptor(EntityListDescriptor):
+    """Generic descriptor for accessing resources related to an entity.
+
+    Primarily used for the steps resource tree. For a step at steps/LIMSID, the reagent
+    lots are available under steps/LIMSID/reagentlots. This class encapsulates the access
+    to the subentity. Provides read-only access.
+
+    Copies the tags from the subentity into the main entity, to allow for caching.
+
+    Parameters:
+    list_tag:       Tag name of the list of entities. The tag is first looked up in
+                    the root entity, and the uri for the subentity is extracted. This
+                    tag name is also used for the parent tag in the subentity, containing
+                    all the entity references.
+    entity_tag:     Tag of individual entities.
+    cls:            Entity class to get.
+    """
+
+    def __init__(self, list_tag, entity_tag, cls):
+        super(IndirectEntityListDescriptor, self).__init__(entity_tag, cls, list_tag)
+        self.list_tag = list_tag
+        self.entity_tag = entity_tag
+
+    def __get__(self, instance, cls):
+        instance.get()
+        for main_node in instance.root.findall(self.list_tag):
+            try:
+                subentity_uri = main_node.attrib['uri']
+            except KeyError:
+                # Either invalid data, or we've fetched this one before
+                subentity_uri = None
+
+            if subentity_uri:
+                subent = instance.lims.get(subentity_uri)
+                main_node.clear()
+                for parent_node in subent.findall(self.list_tag):
+                    for entity_node in parent_node.findall(self.entity_tag):
+                        main_node.append(entity_node)
+        
+        return super(IndirectEntityListDescriptor, self).__get__(instance, cls)
+
+
+
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
@@ -1203,6 +1246,46 @@ class Artifact(Entity):
     state = property(get_state)
 
 
+
+#### Reagent lots ####
+
+class ReagentKit(Entity):
+    """ Class representing a reagent kit type."""
+
+    _URI = 'reagentkits'
+    _TAG = 'reagent-kit'
+
+    name            = StringDescriptor('name')
+    supplier        = StringDescriptor('supplier')
+    catalogue_number= StringDescriptor('catalogue-number')
+    website         = StringDescriptor('website')
+    archived        = BooleanDescriptor('archived')
+    
+
+
+class ReagentLot(Entity):
+    """ Class representing a reagent lot."""
+
+    _URI = 'reagentlots'
+    _TAG = 'reagent-lot'
+    
+    reagent_kit      = EntityDescriptor('reagent-kit', ReagentKit)
+    name             = StringDescriptor('name')
+    lot_number       = StringDescriptor('lot-number')
+    created_date     = StringDescriptor('created-date')
+    last_modified_date= StringDescriptor('last-modified-date')
+    expiry_date      = StringDescriptor('expiry-date')
+    created_by       = EntityDescriptor('created-by', Researcher)
+    last_modified_by = EntityDescriptor('last-modified-by', Researcher)
+    storage_location = StringDescriptor('storage-location')
+    notes            = StringDescriptor('notes')
+    status           = StringDescriptor('status')
+    usage_count      = IntegerDescriptor('usage-count')
+
+
+
+#### Classes related to the steps resource hierarchy ####
+
 class NextAction():
     """Holds an action entry. Actions are specified in the next-actions XML element of a
     step. They control what happens to a sample after a protocol step is completed.
@@ -1389,18 +1472,19 @@ class Step(Entity):
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityListDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
+    reagent_lots        = IndirectEntityListDescriptor('reagent-lots', 'reagent-lot', ReagentLot)
 
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
         self._actions = None
+        self._reagent_lots = None
 
     @property
     def actions(self):
         if not self._actions:
             self._actions = StepActions(lims,uri=self.uri)
         return self._actions
-
 
     def advance(self):
         "Advances to next stage (placement, record details, finish, etc)"

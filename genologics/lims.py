@@ -8,7 +8,8 @@ Copyright (C) 2012 Per Kraulis
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
-           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile']
+           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
+           'ReagentLot', 'ReagentKit']
 
 import urllib
 from cStringIO import StringIO
@@ -328,6 +329,14 @@ class Lims(object):
     def get_reagent_types(self, name=None):
         params = self._get_params(name=name)
         return self._get_instances(ReagentType, params=params)
+
+    def get_reagent_kits(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(ReagentKit, params=params)
+
+    def get_reagent_lots(self, name=None, kitname=None, number=None):
+        params = self._get_params(name=name)
+        return self._get_instances(ReagentLot, params=params)
 
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
