@@ -58,6 +58,19 @@ class Lims(object):
                          headers=dict(accept='application/xml'))
         return self.parse_response(r)
 
+    def get_file_contents(self, id=None, uri=None):
+        """Returns the contents of the file of <ID> or <uri>"""
+        if id:
+            segments = ['api', self.VERSION, 'files', id, 'download']
+        elif uri:
+            segments = [uri, 'download']
+        else:
+            raise ValueError("id or uri required")
+        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        r=self.request_session.get(url, auth=(self.username, self.password))
+        return r.text
+
+
     def put(self, uri, data, params=dict()):
         """PUT the serialized XML to the given URI.
         Return the response XML as an ElementTree.
