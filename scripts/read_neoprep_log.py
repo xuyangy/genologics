@@ -58,8 +58,8 @@ def read_log(lims, pid, logfile):
 
     for inp in pro.all_inputs():
         if inp.name in data:
-            inp.udf['Molar Conc. (nM)']=data[inp.name]['conc']
-            inp.udf['Normalized conc. (nM)']=data[inp.name]['norm']
+            inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
+            inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
             inp.put()
             logger.info("updated sample {0}".format(inp.name))
