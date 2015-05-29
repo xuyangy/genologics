@@ -45,6 +45,7 @@ class Lims(object):
         self.password = password
         self.VERSION = version
         self.cache = dict()
+        self.cache_list = []
         # For optimization purposes, enables requests to persist connections
         self.request_session = requests.Session()
         #The connection pool has a default size of 10

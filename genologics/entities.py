@@ -15,6 +15,7 @@ from xml.etree import ElementTree
 import logging
 
 logger = logging.getLogger(__name__)
+CACHE_N_ENTRIES = 10000
 
 _NSMAP = dict(
     art='http://genologics.com/ri/artifact',
@@ -842,6 +843,9 @@ class Entity(object):
         if not uri:
             uri = lims.get_uri(self._URI, id)
         lims.cache[uri] = self
+        lims.cache_list.append(uri)
+        if len(lims.cache_list) > CACHE_N_ENTRIES:
+            del lims.cache[lims.cache_list.pop(0)]
         self.lims = lims
         self._uri = uri
         self.root = None
