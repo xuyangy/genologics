@@ -1048,6 +1048,21 @@ class Step(Entity):
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
+class ReagentType(Entity):
+    """Reagent Type, usually, indexes for sequencing"""
+    _URI="reagenttypes"
+    _TAG="reagent-type"
+    def __init__(self, lims, uri=None, id=None):
+        super(ReagentType, self).__init__(lims,uri,id)
+        assert self.uri is not None
+        self.root=lims.get(self.uri)
+        self.sequence=None
+        for t in self.root.findall('special-type'):
+            if t.attrib.get("name") == "Index":
+                for child in t.findall("attribute"):
+                    if child.attrib.get("name") == "Sequence":
+                        self.sequence=child.attrib.get("value")
+
 Sample.artifact = EntityDescriptor('artifact', Artifact)
 StepActions.step    = EntityDescriptor('step', Step)
 

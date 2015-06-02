@@ -37,18 +37,17 @@ def generate_data(step):
                 location=out.location[1]
                 row=location.split(':')[0]
                 col=location.split(':')[1]
-                well=(ord(row)-65)*8+int(col)
+                well=(ord(row)-65)*8+int(col)#turns A1, B1 ... B8 into 1,2 ... 16
             except:
                 logger.error("Cannot find the location of analyte {0}".format(out.id))
                 return None
             try:
-                reglab_name=out.reagent_labels[0].split(" ")[0]
-                reglab_seq=out.reagent_labels[0].split(" ")[1][1:-1]
-            except:
+                import pdb;pdb.set_trace()
                 reglab_name=out.reagent_labels[0]
-                reglab_seq=out.reagent_labels[0]
-                #logger.error("Cannot find the reagent label of output analyte {0}".format(out.id))
-                #return False
+                reglab_seq=lims.get_reagent_types(name=reglab_name)[0].sequence
+            except:
+                logger.error("Cannot find the reagent label of output analyte {0}".format(out.id))
+                return None
             try:
                 matches=proto_pattern.search(inp.udf['Covaris Protocol'])
                 ins_size=matches.group(1)

@@ -140,6 +140,15 @@ class Lims(object):
                                     start_index=start_index)
         return self._get_instances(Udfconfig, params=params)
 
+    def get_reagent_types(self, name=None, start_index=None):
+        """Get a list of reqgent types, filtered by keyword arguments.
+        name: reagent type  name, or list of names.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                  start_index=start_index)
+        return self._get_instances(ReagentType, params=params)
+
     def get_labs(self, name=None, last_modified=None,
                  udf=dict(), udtname=None, udt=dict(), start_index=None):
         """Get a list of labs, filtered by keyword arguments.
