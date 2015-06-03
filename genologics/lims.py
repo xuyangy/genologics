@@ -376,7 +376,7 @@ class Lims(object):
         "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
-        klass = instances[0].__class__
+        klass = next(iter(instances)).__class__
         root = ElementTree.Element(nsmap('ri:links'))
         for instance in instances:
             ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
