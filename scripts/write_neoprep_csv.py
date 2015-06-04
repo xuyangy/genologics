@@ -42,7 +42,6 @@ def generate_data(step):
                 logger.error("Cannot find the location of analyte {0}".format(out.id))
                 return None
             try:
-                import pdb;pdb.set_trace()
                 reglab_name=out.reagent_labels[0]
                 reglab_seq=lims.get_reagent_types(name=reglab_name)[0].sequence
             except:
