@@ -37,7 +37,7 @@ def generate_data(step):
                 location=out.location[1]
                 row=location.split(':')[0]
                 col=location.split(':')[1]
-                well=(ord(row)-65)*8+int(col)#turns A1, B1 ... B8 into 1,2 ... 16
+                well=(ord(row)-64)+((int(col)-1)*8)#turns A1, B1 ... B8 into 1,2 ... 16
             except:
                 logger.error("Cannot find the location of analyte {0}".format(out.id))
                 return None
