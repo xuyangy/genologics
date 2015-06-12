@@ -58,6 +58,20 @@ class Lims(object):
                          headers=dict(accept='application/xml'))
         return self.parse_response(r)
 
+    def get_file_contents(self, id=None, uri=None):
+        """Returns the contents of the file of <ID> or <uri>"""
+        if id:
+            segments = ['api', self.VERSION, 'files', id, 'download']
+        elif uri:
+            segments = [uri, 'download']
+        else:
+            raise ValueError("id or uri required")
+        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        r=self.request_session.get(url, auth=(self.username, self.password))
+        #TODO add a returncode check here 
+        return r.text
+
+
     def put(self, uri, data, params=dict()):
         """PUT the serialized XML to the given URI.
         Return the response XML as an ElementTree.
@@ -126,6 +140,15 @@ class Lims(object):
                                     attach_to_category=attach_to_category,
                                     start_index=start_index)
         return self._get_instances(Udfconfig, params=params)
+
+    def get_reagent_types(self, name=None, start_index=None):
+        """Get a list of reqgent types, filtered by keyword arguments.
+        name: reagent type  name, or list of names.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                  start_index=start_index)
+        return self._get_instances(ReagentType, params=params)
 
     def get_labs(self, name=None, last_modified=None,
                  udf=dict(), udtname=None, udt=dict(), start_index=None):
