@@ -13,6 +13,7 @@ from genologics.epp import attach_file
 
 
 def generate_header(step,atype='D'):
+    #generates an almost static header
     header="[Header]\nIEMFileVersion,4\nDate,{date}\nWorkflow,NeoPrep\nApplication,NeoPrep\n"\
     "Assay,TruSeq {atype}NA\nNotes,IEMTemplate\nOperator,{operator}\nRun Name,SciLifeTemplate\nChemistry Default\n\n[Reads]\n\n"\
     "[Settings]\n\n".format(date=datetime.datetime.now().strftime("%d/%m/%Y"), operator=step.technician.first_name, atype=atype)
@@ -22,32 +23,38 @@ def generate_header(step,atype='D'):
 def generate_data(step):
     logger=logging.getLogger(__name__)
     proto_pattern=re.compile("([3,5]50)")
+    #contents of the rows will be taken from both input and output artifacts
     data="[Data]\nSample_Name,Sample_Well,I7_Index_ID,index,Insert Size\n"
     for inout in step.input_output_maps:
         inp=inout[0]['uri']
         out=inout[1]['uri']
         if out.type == "Analyte":
             try:
+                #samplename
                 sname=out.samples[0].name
             except:
                 logger.error("Cannot find the sample of output analyte {0}".format(out.id))
                 return None
 
             try:
+                #well number
                 location=out.location[1]
                 row=location.split(':')[0]
                 col=location.split(':')[1]
+                #neoprep expects wells to be 1-16, lims has A1-B8
                 well=(ord(row)-64)+((int(col)-1)*8)#turns A1, B1 ... B8 into 1,2 ... 16
             except:
                 logger.error("Cannot find the location of analyte {0}".format(out.id))
                 return None
             try:
+                #regent label (barcode) name and sequence
                 reglab_name=out.reagent_labels[0]
                 reglab_seq=lims.get_reagent_types(name=reglab_name)[0].sequence
             except:
                 logger.error("Cannot find the reagent label of output analyte {0}".format(out.id))
                 return None
             try:
+                #insert size
                 matches=proto_pattern.search(inp.udf['Covaris Protocol'])
                 ins_size=matches.group(1)
             except:

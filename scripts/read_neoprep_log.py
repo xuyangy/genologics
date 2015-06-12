@@ -16,10 +16,10 @@ def read_log(lims, pid, logfile):
     for out in pro.all_outputs():
         if out.type == "ResultFile" and out.name == "NeoPrep Output Log File":
             fid=out.files[0].id
-            f=lims.get_file_contents(id=fid)
+            file_contents=lims.get_file_contents(id=fid)
             logger.info("Found the machine log file")
 
-    if f:
+    if file_contents:
         data={}
         read=False
         #default values
@@ -28,12 +28,14 @@ def read_log(lims, pid, logfile):
         norm_idx=7
         stat_idx=8
         logger.info("Reading the file")
-        for line in f.split('\n') :
+        for line in file_contents.split('\n') :
+            #This does something that is close from csv.dictreader, but the file is FUBAR
             if not line.rstrip():
                 read=False
             if read:
                 if "Start Well" in line:
                     #Header row
+                    #identify which column goes with which index
                     elements=line.split('\t')
                     for idx, el in enumerate(elements):
                         if el == "Name":
@@ -57,6 +59,7 @@ def read_log(lims, pid, logfile):
         logger.info("obtained data for samples {0}".format(data.keys()))
 
     for inp in pro.all_inputs():
+        #save the data from the logfile to the lims artifacts
         if inp.name in data:
             inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
             inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
@@ -65,6 +68,7 @@ def read_log(lims, pid, logfile):
             logger.info("updated sample {0}".format(inp.name))
 
     for out in pro.all_outputs():
+        #attach the epp log
         if out.name=="EPP Log":
             attach_file(os.path.join(os.getcwd(), logfile), out)
 

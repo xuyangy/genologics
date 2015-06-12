@@ -68,6 +68,7 @@ class Lims(object):
             raise ValueError("id or uri required")
         url = urlparse.urljoin(self.baseuri, '/'.join(segments))
         r=self.request_session.get(url, auth=(self.username, self.password))
+        #TODO add a returncode check here 
         return r.text
 
 
