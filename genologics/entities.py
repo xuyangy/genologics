@@ -1517,6 +1517,15 @@ class Queue(Entity):
         return Queue(self.lims, id = self.id)
 
 
+class Workflow(Entity):
+    _URI = 'configuration/workflows'
+    _TAG = 'workflow'
+
+    name                   = StringDescriptor('name')
+    status                 = StringDescriptor('status')
+    protocols              = EntityListDescriptor('protocols', ProtocolConfiguration)
+
+
 Sample.artifact = EntityDescriptor('artifact', Artifact)
 StepActions.step    = EntityDescriptor('step', Step)
 

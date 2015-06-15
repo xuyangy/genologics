@@ -9,7 +9,7 @@ Copyright (C) 2012 Per Kraulis
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
-           'ReagentLot', 'ReagentKit']
+           'ReagentLot', 'ReagentKit', 'Workflow']
 
 import urllib
 from cStringIO import StringIO
@@ -339,6 +339,10 @@ class Lims(object):
         params = self._get_params(name=name)
         return self._get_instances(ReagentLot, params=params)
 
+    def get_workflows(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(Workflow, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
@@ -401,7 +405,6 @@ class Lims(object):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='UTF-8')
 
-
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance, and this also creates a Process.
         The inputs parameter is a list of artifact inputs. Returns the new step."""
@@ -430,5 +433,15 @@ class Lims(object):
         response = self.post(glss_uri, xml_data)
         return ProtoFile(self, root=response)
         
+    def route_analytes(self, analytes, workflow):
+        """Adding analytes to workflow (may also support adding to a stage in 
+        the future."""
 
-        
+        root = ElementTree.Element('rt:routing', {'xmlns:rt': 'http://genologics.com/ri/routing'})
+        assign = ElementTree.SubElement(root, "assign", {'workflow-uri': workflow.uri})
+        for i in analytes:
+            ElementTree.SubElement(assign, "artifact", {'uri': i.uri})
+
+        self.post(self.get_uri("route/artifacts"), ElementTree.tostring(root))
+
+
