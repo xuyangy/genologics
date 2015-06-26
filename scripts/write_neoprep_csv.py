@@ -17,6 +17,11 @@ def generate_header(step,atype='D'):
     header="[Header]\nIEMFileVersion,4\nDate,{date}\nWorkflow,NeoPrep\nApplication,NeoPrep\n"\
     "Assay,TruSeq {atype}NA\nNotes,IEMTemplate\nOperator,{operator}\nRun Name,SciLifeTemplate\nChemistry Default\n\n[Reads]\n\n"\
     "[Settings]\n\n".format(date=datetime.datetime.now().strftime("%d/%m/%Y"), operator=step.technician.first_name, atype=atype)
+    if atype == 'D':
+        header+="[Data]\nSample_Name,Sample_Well,I7_Index_ID,index,Insert Size\n"
+    else:
+        header+="[Data]\nSample_Name,Sample_Well,I7_Index_ID,index\n"
+
     return header
 
 
@@ -24,7 +29,7 @@ def generate_data(step):
     logger=logging.getLogger(__name__)
     proto_pattern=re.compile("([3,5]50)")
     #contents of the rows will be taken from both input and output artifacts
-    data="[Data]\nSample_Name,Sample_Well,I7_Index_ID,index,Insert Size\n"
+    data=""
     for inout in step.input_output_maps:
         inp=inout[0]['uri']
         out=inout[1]['uri']
@@ -61,7 +66,11 @@ def generate_data(step):
                 logger.error("Cannot find the insert size of analyte {0} ({1})".format(inp.id, sname))
                 ins_size='350'
 
-            data+="{0},{1},{2},{3},{4}\n".format(sname, well, reglab_name, reglab_seq, ins_size)
+
+            if reglab_name == 'D':
+                data+="{0},{1},{2},{3},{4}\n".format(sname, well, reglab_name, reglab_seq, ins_size)
+            else:
+                data+="{0},{1},{2},{3}\n".format(sname, well, reglab_name, reglab_seq)
     header=generate_header(step, reglab_name[1])
     return header+data
         
