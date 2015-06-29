@@ -21,47 +21,51 @@ def obtain_previous_volumes(currentStep, lims):
         for pp in previous_steps:
             for output in pp.all_outputs():
                 if output.name == "Normalization buffer volumes CSV":
-                    fid=output.files[0].id
-                    file_contents=lims.get_file_contents(id=fid)
-                    sname_idx=0
-                    source_vol_idx=5
-                    buffer_vol_idx=11
-                    read=False
-                    for line in file_contents.split('\n') :
-                        if not line.rstrip():
-                            read=False
-                        if "Sample Name" in line:
-                            read=True
-                            #header line
-                            elements=line.split(',')
-                            for idx, el in enumerate(elements):
-                                if el == "Source Volume (uL)":
-                                    source_vol_idx=idx
-                                elif el == "Volume of Dilution Buffer (uL)":
-                                    buffer_vol_idx=idx
-                                elif el == "Sample Name":
-                                    sname_idx=idx
-                        elif read:
-                            elements=line.split(',')
-                            samplename=elements[sname_idx]
-                            if samplename[0] == '"' and samplename[-1] == '"':
-                                samplename=samplename[1:-1]
+                    try:
+                        fid=output.files[0].id
+                    except:
+                        raise(RuntimeError("Cannot access the normalisation CSV file to read the volumes."))
+                    else:
+                        file_contents=lims.get_file_contents(id=fid)
+                        sname_idx=0
+                        source_vol_idx=5
+                        buffer_vol_idx=11
+                        read=False
+                        for line in file_contents.split('\n') :
+                            if not line.rstrip():
+                                read=False
+                            if "Sample Name" in line:
+                                read=True
+                                #header line
+                                elements=line.split(',')
+                                for idx, el in enumerate(elements):
+                                    if el == "Source Volume (uL)":
+                                        source_vol_idx=idx
+                                    elif el == "Volume of Dilution Buffer (uL)":
+                                        buffer_vol_idx=idx
+                                    elif el == "Sample Name":
+                                        sname_idx=idx
+                            elif read:
+                                elements=line.split(',')
+                                samplename=elements[sname_idx]
+                                if samplename[0] == '"' and samplename[-1] == '"':
+                                    samplename=samplename[1:-1]
 
-                            matches=sn_re.search(samplename)
-                            if matches:
-                                samplename=matches.group(1)
+                                matches=sn_re.search(samplename)
+                                if matches:
+                                    samplename=matches.group(1)
 
 
-                            srcvol=elements[source_vol_idx]
-                            if srcvol[0] == '"' and srcvol[-1] == '"':
-                                srcvol=srcvol[1:-1]
-                            srcvol=float(srcvol)
-                            bufvol=elements[buffer_vol_idx]
-                            if bufvol[0] == '"' and bufvol[-1] == '"':
-                                bufvol=bufvol[1:-1]
-                            bufvol=float(bufvol)
+                                srcvol=elements[source_vol_idx]
+                                if srcvol[0] == '"' and srcvol[-1] == '"':
+                                    srcvol=srcvol[1:-1]
+                                srcvol=float(srcvol)
+                                bufvol=elements[buffer_vol_idx]
+                                if bufvol[0] == '"' and bufvol[-1] == '"':
+                                    bufvol=bufvol[1:-1]
+                                bufvol=float(bufvol)
 
-                            samples_volumes[samplename]=srcvol+bufvol
+                                samples_volumes[samplename]=srcvol+bufvol
 
     return samples_volumes
 
@@ -71,7 +75,10 @@ def make_datastructure(currentStep, lims):
     data=[]
     sn_re=re.compile("(P[0-9]+_[0-9]+)")
 
-    samples_volumes=obtain_previous_volumes(currentStep, lims)
+    try:
+        samples_volumes=obtain_previous_volumes(currentStep, lims)
+    except:
+        log.append("Unable to find previous volumes")
 
     for inp, out in currentStep.input_output_maps:
         if out['output-type'] == 'Analyte':
@@ -107,8 +114,8 @@ def minimize_volume(factor, sample, target_conc, max_vol, valid_inputs):
         return try_vol
 
 
-def compute_transfer_volume(currentStep, lims):
-    data=make_datastructure(currentStep, lims)
+def compute_transfer_volume(currentStep, lims, log):
+    data=make_datastructure(currentStep, lims, log)
     returndata=[]
     min_vol=2 #minimal volume that the robot can do is 2uL
     for pool in currentStep.all_outputs():
@@ -130,20 +137,22 @@ def compute_transfer_volume(currentStep, lims):
     return returndata
 
 def prepooling(currentStep, lims):
-    checkTheLog=[False]
+    log=[]
     #First thing to do is to grab the volumes of the input artifacts. The method is ... rather unique.
-    data=compute_transfer_volume(currentStep, lims)
+    data=compute_transfer_volume(currentStep, lims, log)
     with open("bravo.csv", "w") as csvContext:
-        with open("bravo.log", "w") as logContext:
             for s in data:
                 csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well'])) 
+    if log:
+        with open("bravo.log", "w") as logContext:
+            logContext.write("\n".join(log))
     for out in currentStep.all_outputs():
         #attach the csv file and the log file
         if out.name=="Bravo CSV File":
             attach_file(os.path.join(os.getcwd(), "bravo.csv"), out)
-        if out.name=="Bravo Log":
+        if log and out.name=="Bravo Log":
             attach_file(os.path.join(os.getcwd(), "bravo.log"), out)
-    if checkTheLog[0]:
+    if log:
         #to get an eror display in the lims, you need a non-zero exit code AND a message in STDERR
         sys.stderr.write("Errors were met, please check the Log file\n")
         sys.exit(2)
