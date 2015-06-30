@@ -9,7 +9,7 @@ Copyright (C) 2012 Per Kraulis
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
-           'ReagentLot', 'ReagentKit', 'Workflow']
+           'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
 import urllib
 from cStringIO import StringIO
