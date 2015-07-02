@@ -85,7 +85,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type': 'application/xml',
                                    'accept': 'application/xml'})
-        return self.parse_response(r, success_status = [200, 201])
+        return self.parse_response(r, success_status = [200, 201, 202])
 
     def check_version(self):
         """Raise ValueError if the version for this interface
