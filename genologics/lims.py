@@ -12,6 +12,7 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
 import urllib
+import re
 from cStringIO import StringIO
 
 # http://docs.python-requests.org/
@@ -396,6 +397,25 @@ class Lims(object):
             instance.root = node
             result.append(instance)
         return result
+
+    def put_batch(self, instances):
+        "Update the instances using batch technology."
+
+        if not instances:
+            return
+
+        first = next(iter(instances))
+        klass = first.__class__
+        # Tag is art:details, con:details, etc.
+        example_root = first.root
+        ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
+        root = ElementTree.Element("{%s}details" % (ns_uri))
+        for instance in instances:
+            root.append(instance.root)
+
+        uri = self.get_uri(klass._URI, 'batch/update')
+        data = self.tostring(ElementTree.ElementTree(root))
+        root = self.post(uri, data)
 
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
