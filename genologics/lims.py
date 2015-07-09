@@ -383,8 +383,12 @@ class Lims(object):
         "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
-        klass = next(iter(instances)).__class__
+        inst_iter = iter(instances)
+        first = next(inst_iter)
+        klass = first.__class__
         root = ElementTree.Element(nsmap('ri:links'))
+
+        ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
         for instance in instances:
             ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                       rel=klass._URI))
@@ -404,13 +408,15 @@ class Lims(object):
         if not instances:
             return
 
-        first = next(iter(instances))
+        inst_iter = iter(instances)
+        first = next(inst_iter)
         klass = first.__class__
         # Tag is art:details, con:details, etc.
         example_root = first.root
         ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
         root = ElementTree.Element("{%s}details" % (ns_uri))
-        for instance in instances:
+        root.append(first.root)
+        for instance in inst_iter:
             root.append(instance.root)
 
         uri = self.get_uri(klass._URI, 'batch/update')
