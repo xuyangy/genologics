@@ -591,6 +591,10 @@ class EntityListDescriptor(EntityDescriptor):
         result = []
         for node in instance.root.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+
+        if self.tag == 'sample' and len(result) > 1:
+            instance.lims.get_batch(result)
+            
         return result
 
 
