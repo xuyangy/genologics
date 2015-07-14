@@ -108,7 +108,7 @@ class SampleHistory:
         and creates an entry like this : output -> (process, input)"""
         samp_art_map ={}
         if self.sample_name:
-            artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte') 
+            artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=True) 
             for one_art in artifacts:
                 input_arts = one_art.input_artifact_list()
                 for input_art in input_arts:
@@ -126,7 +126,7 @@ class SampleHistory:
         history = {}
         hist_list = []
        #getting the list of all expected analytes.
-        artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte')
+        artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=True)
         processes=[]
         inputs=[]
         if in_art:
@@ -591,6 +591,10 @@ class EntityListDescriptor(EntityDescriptor):
         result = []
         for node in instance.root.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+
+        if self.tag == 'sample' and len(result) > 1:
+            instance.lims.get_batch(result)
+            
         return result
 
 
@@ -676,6 +680,7 @@ class Entity(object):
                 raise ValueError("Entity uri and id can't be both None")
             else:
                 uri = lims.get_uri(cls._URI, id)
+
         try:
             return lims.cache[uri]
         except KeyError:
@@ -897,7 +902,7 @@ class Process(Entity):
                     ins.append(inp)
         return ins
     
-    def all_inputs(self,unique=True):
+    def all_inputs(self,unique=True, resolve=True):
         """Retrieving all input artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
@@ -909,9 +914,12 @@ class Process(Entity):
             raise TypeError
         if unique:
             ids = list(frozenset(ids))
-        return [Artifact(self.lims,id=id) for id in ids if id is not None]
+        if resolve:
+            return self.lims.get_batch([Artifact(self.lims,id=id) for id in ids if id is not None])
+        else:
+            return [Artifact(self.lims,id=id) for id in ids if id is not None]
 
-    def all_outputs(self,unique=True):
+    def all_outputs(self,unique=True, resolve=True):
         """Retrieving all output artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
@@ -919,7 +927,10 @@ class Process(Entity):
         ids = [io[1]['limsid'] for io in self.input_output_maps if io[1] is not None]
         if unique:
             ids = list(frozenset(ids))
-        return  [Artifact(self.lims,id=id) for id in ids if id is not None]
+        if resolve:
+            return  self.lims.get_batch([Artifact(self.lims,id=id) for id in ids if id is not None])
+        else:
+            return  [Artifact(self.lims,id=id) for id in ids if id is not None]
 
     def shared_result_files(self):
         """Retreve all resultfiles of output-generation-type PerAllInputs."""

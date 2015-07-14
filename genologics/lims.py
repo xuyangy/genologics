@@ -250,7 +250,8 @@ class Lims(object):
                       artifact_flag_name=None, working_flag=None, qc_flag=None,
                       sample_name=None, samplelimsid=None, artifactgroup=None, containername=None,
                       containerlimsid=None, reagent_label=None,
-                      udf=dict(), udtname=None, udt=dict(), start_index=None):
+                      udf=dict(), udtname=None, udt=dict(), start_index=None,
+                      resolve=False):
         """Get a list of artifacts, filtered by keyword arguments.
         name: Artifact name, or list of names.
         type: Artifact type, or list of types.
@@ -284,7 +285,10 @@ class Lims(object):
                                   reagent_label=reagent_label,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Artifact, params=params)
+        if resolve:
+            return self.get_batch(self._get_instances(Artifact, params=params))
+        else:
+            return self._get_instances(Artifact, params=params)
 
     def get_containers(self, name=None, type=None,
                        state=None, last_modified=None,

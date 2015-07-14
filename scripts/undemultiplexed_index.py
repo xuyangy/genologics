@@ -338,7 +338,7 @@ class LaneQC():
                 self.exp_lane_clust = 18000000
             else:                               
                 self.exp_lane_clust = 10000000
-        elif self.run_type == 'HiSeq Rapid Flow Cell v1' or self.run_type == "TruSeq Rapid Flow Cell v2" or self.run_type == "TruSeq Rapid Flow Cell v1":
+        elif self.run_type in ['HiSeq Rapid Flow Cell v1','HiSeq Rapid Flow Cell v2', "TruSeq Rapid Flow Cell v2", "TruSeq Rapid Flow Cell v1"] :
             self.exp_lane_clust = 114000000
         elif self.run_type == 'HiSeq Flow Cell v3':
             self.exp_lane_clust = 143000000
