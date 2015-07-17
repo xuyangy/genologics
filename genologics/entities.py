@@ -597,7 +597,57 @@ class EntityListDescriptor(EntityDescriptor):
             
         return result
 
+class NestedAttributeListDescriptor(StringAttributeDescriptor):
+    def __init__(self, tag, key, *args):
+        super(StringAttributeDescriptor, self).__init__(tag)
+        self.key      = key
+        self.tag      = tag
+        self.rootkeys = args
 
+    def __get__(self, instance, cls):
+        instance.get()
+        result = {}
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result[node.attrib.get(self.key)] = node.attrib
+        return result
+
+class NestedStringListDescriptor(StringListDescriptor):
+    def __init__(self, tag, *args):
+        super(StringListDescriptor, self).__init__(tag)
+        self.tag      = tag
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(node.text)
+        return result
+
+class NestedEntityListDescriptor(EntityListDescriptor):
+    """same as EntityListDescriptor, but allows a use of nested"""
+
+    def __init__(self, tag, klass, *args):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.klass    = klass
+        self.tag      = tag
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+        return result
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
@@ -704,7 +754,10 @@ class Entity(object):
 
     @property
     def uri(self):
-        return self._uri
+        try:
+            return self._uri
+        except:
+            return self._URI
 
     @property
     def id(self):
@@ -1017,10 +1070,20 @@ class Artifact(Entity):
         except:
             return None
 
+    def stateless(self):
+        "returns the artefact independently of it's state"
+        parts = urlparse.urlparse(self.uri)
+        if 'state' in parts[4]:
+            stateless_uri=urlparse.urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
+            return Artifact(self.lims, uri=stateless_uri)
+        else:
+            return self
+
     # XXX set_state ?
     state = property(get_state)
+    stateless = property(stateless) 
 
-class StepActions():
+class StepActions(Entity):
     """Small hack to be able to query the actions subentity of
     the Step entity. Right now, only the escalation is parsed."""
 
@@ -1041,8 +1104,9 @@ class StepActions():
                 self.escalation['status']='Pending'
 
             for node2 in node.findall('escalated-artifacts'):
-                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
+                art= lims.get_batch([Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2])
                 self.escalation['artifacts'].extend(art)
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -1054,10 +1118,44 @@ class Step(Entity):
         self.actions= StepActions(lims,uri=self.uri)
 
 
-    #configuration      = EntityDescriptor('configuration', StepConfiguration)
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
+
+class ProtocolStep(Entity):
+    _TAG='step'
+    """Steps key in the Protocol object"""
+    name                = StringAttributeDescriptor("name")
+    type                = EntityDescriptor('type', Processtype)
+    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
+    queue_fields        = NestedAttributeListDescriptor('queue-field', 'name', 'queue-fields')
+    step_fields         = NestedAttributeListDescriptor('step-field', 'name', 'step-fields')
+    sample_fields       = NestedAttributeListDescriptor('sample-field', 'name', 'sample-fields')
+    step_properties     = NestedAttributeListDescriptor('step_property', 'name', 'step_properties')
+    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'name', 'epp_triggers')
+
+
+class Protocol(Entity):
+    """Protocol, holding ProtocolSteps and protocol-properties"""
+    _URI='configuration/protocols'
+    _TAG='protocol'
+
+    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties  = NestedAttributeListDescriptor('protocol-property', 'name', 'protocol-properties')
+
+
+class Stage(Entity):
+    """Holds Protocol/Workflow"""
+    protocol = EntityDescriptor('protocol', Protocol)
+
+class Workflow(Entity):
+    """ Workflow, introduced in 3.5"""
+    _URI="configuration/workflows"
+    _TAG="workflow"
+    
+    name = StringAttributeDescriptor("name")
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
+    stages    = EntityListDescriptor('stage', Stage)
 
 class ReagentType(Entity):
     """Reagent Type, usually, indexes for sequencing"""
@@ -1074,7 +1172,10 @@ class ReagentType(Entity):
                     if child.attrib.get("name") == "Sequence":
                         self.sequence=child.attrib.get("value")
 
-Sample.artifact = EntityDescriptor('artifact', Artifact)
-StepActions.step    = EntityDescriptor('step', Step)
+Sample.artifact          = EntityDescriptor('artifact', Artifact)
+StepActions.step         = EntityDescriptor('step', Step)
+Stage.workflow            = EntityDescriptor('workflow', Workflow)
+Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
+Step.configuration      = EntityDescriptor('configuration', ProtocolStep)
 
 
