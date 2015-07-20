@@ -598,23 +598,26 @@ class EntityListDescriptor(EntityDescriptor):
         return result
 
 class NestedAttributeListDescriptor(StringAttributeDescriptor):
-    def __init__(self, tag, key, *args):
+    """An instance yielding a list of dictionnaries of attributes
+       for a nested xml list of XML elements"""
+    def __init__(self, tag, *args):
         super(StringAttributeDescriptor, self).__init__(tag)
-        self.key      = key
         self.tag      = tag
         self.rootkeys = args
 
     def __get__(self, instance, cls):
         instance.get()
-        result = {}
+        result = []
         rootnode=instance.root
         for rootkey in self.rootkeys:
             rootnode=rootnode.find(rootkey)
         for node in rootnode.findall(self.tag):
-            result[node.attrib.get(self.key)] = node.attrib
+            result.append(node.attrib)
         return result
 
 class NestedStringListDescriptor(StringListDescriptor):
+    """An instance yielding a list of strings
+        for a nested list of xml elements"""
     def __init__(self, tag, *args):
         super(StringListDescriptor, self).__init__(tag)
         self.tag      = tag
@@ -631,7 +634,7 @@ class NestedStringListDescriptor(StringListDescriptor):
         return result
 
 class NestedEntityListDescriptor(EntityListDescriptor):
-    """same as EntityListDescriptor, but allows a use of nested"""
+    """same as EntityListDescriptor, but works on nested elements"""
 
     def __init__(self, tag, klass, *args):
         super(EntityListDescriptor, self).__init__(tag, klass)
@@ -812,6 +815,7 @@ class Researcher(Entity):
         return u"%s %s" % (self.first_name, self.last_name)
 
 class Reagent_label(Entity):
+    """Reagent label element"""
     reagent_label = StringDescriptor('reagent-label')
 
 class Note(Entity):
@@ -1112,6 +1116,7 @@ class Step(Entity):
     "Step, as defined by the genologics API."
 
     _URI = 'steps'
+
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
@@ -1123,16 +1128,18 @@ class Step(Entity):
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
 class ProtocolStep(Entity):
-    _TAG='step'
     """Steps key in the Protocol object"""
+
+    _TAG='step'
+
     name                = StringAttributeDescriptor("name")
     type                = EntityDescriptor('type', Processtype)
     permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
-    queue_fields        = NestedAttributeListDescriptor('queue-field', 'name', 'queue-fields')
-    step_fields         = NestedAttributeListDescriptor('step-field', 'name', 'step-fields')
-    sample_fields       = NestedAttributeListDescriptor('sample-field', 'name', 'sample-fields')
-    step_properties     = NestedAttributeListDescriptor('step_property', 'name', 'step_properties')
-    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'name', 'epp_triggers')
+    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
+    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
 
 
 class Protocol(Entity):
@@ -1141,7 +1148,7 @@ class Protocol(Entity):
     _TAG='protocol'
 
     steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
-    properties  = NestedAttributeListDescriptor('protocol-property', 'name', 'protocol-properties')
+    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
 
 
 class Stage(Entity):
@@ -1161,6 +1168,9 @@ class ReagentType(Entity):
     """Reagent Type, usually, indexes for sequencing"""
     _URI="reagenttypes"
     _TAG="reagent-type"
+
+    category=StringDescriptor('reagent-category')
+
     def __init__(self, lims, uri=None, id=None):
         super(ReagentType, self).__init__(lims,uri,id)
         assert self.uri is not None
