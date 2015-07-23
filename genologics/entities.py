@@ -597,7 +597,60 @@ class EntityListDescriptor(EntityDescriptor):
             
         return result
 
+class NestedAttributeListDescriptor(StringAttributeDescriptor):
+    """An instance yielding a list of dictionnaries of attributes
+       for a nested xml list of XML elements"""
+    def __init__(self, tag, *args):
+        super(StringAttributeDescriptor, self).__init__(tag)
+        self.tag      = tag
+        self.rootkeys = args
 
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(node.attrib)
+        return result
+
+class NestedStringListDescriptor(StringListDescriptor):
+    """An instance yielding a list of strings
+        for a nested list of xml elements"""
+    def __init__(self, tag, *args):
+        super(StringListDescriptor, self).__init__(tag)
+        self.tag      = tag
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(node.text)
+        return result
+
+class NestedEntityListDescriptor(EntityListDescriptor):
+    """same as EntityListDescriptor, but works on nested elements"""
+
+    def __init__(self, tag, klass, *args):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.klass    = klass
+        self.tag      = tag
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+        return result
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
@@ -704,7 +757,10 @@ class Entity(object):
 
     @property
     def uri(self):
-        return self._uri
+        try:
+            return self._uri
+        except:
+            return self._URI
 
     @property
     def id(self):
@@ -759,6 +815,7 @@ class Researcher(Entity):
         return u"%s %s" % (self.first_name, self.last_name)
 
 class Reagent_label(Entity):
+    """Reagent label element"""
     reagent_label = StringDescriptor('reagent-label')
 
 class Note(Entity):
@@ -1017,10 +1074,20 @@ class Artifact(Entity):
         except:
             return None
 
+    def stateless(self):
+        "returns the artefact independently of it's state"
+        parts = urlparse.urlparse(self.uri)
+        if 'state' in parts[4]:
+            stateless_uri=urlparse.urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
+            return Artifact(self.lims, uri=stateless_uri)
+        else:
+            return self
+
     # XXX set_state ?
     state = property(get_state)
+    stateless = property(stateless) 
 
-class StepActions():
+class StepActions(Entity):
     """Small hack to be able to query the actions subentity of
     the Step entity. Right now, only the escalation is parsed."""
 
@@ -1041,28 +1108,69 @@ class StepActions():
                 self.escalation['status']='Pending'
 
             for node2 in node.findall('escalated-artifacts'):
-                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
+                art= lims.get_batch([Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2])
                 self.escalation['artifacts'].extend(art)
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
 
     _URI = 'steps'
+
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
         self.actions= StepActions(lims,uri=self.uri)
 
 
-    #configuration      = EntityDescriptor('configuration', StepConfiguration)
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
+
+class ProtocolStep(Entity):
+    """Steps key in the Protocol object"""
+
+    _TAG='step'
+
+    name                = StringAttributeDescriptor("name")
+    type                = EntityDescriptor('type', Processtype)
+    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
+    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
+    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
+
+
+class Protocol(Entity):
+    """Protocol, holding ProtocolSteps and protocol-properties"""
+    _URI='configuration/protocols'
+    _TAG='protocol'
+
+    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
+
+
+class Stage(Entity):
+    """Holds Protocol/Workflow"""
+    protocol = EntityDescriptor('protocol', Protocol)
+
+class Workflow(Entity):
+    """ Workflow, introduced in 3.5"""
+    _URI="configuration/workflows"
+    _TAG="workflow"
+    
+    name = StringAttributeDescriptor("name")
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
+    stages    = EntityListDescriptor('stage', Stage)
 
 class ReagentType(Entity):
     """Reagent Type, usually, indexes for sequencing"""
     _URI="reagenttypes"
     _TAG="reagent-type"
+
+    category=StringDescriptor('reagent-category')
+
     def __init__(self, lims, uri=None, id=None):
         super(ReagentType, self).__init__(lims,uri,id)
         assert self.uri is not None
@@ -1074,7 +1182,10 @@ class ReagentType(Entity):
                     if child.attrib.get("name") == "Sequence":
                         self.sequence=child.attrib.get("value")
 
-Sample.artifact = EntityDescriptor('artifact', Artifact)
-StepActions.step    = EntityDescriptor('step', Step)
+Sample.artifact          = EntityDescriptor('artifact', Artifact)
+StepActions.step         = EntityDescriptor('step', Step)
+Stage.workflow            = EntityDescriptor('workflow', Workflow)
+Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
+Step.configuration      = EntityDescriptor('configuration', ProtocolStep)
 
 
