@@ -378,6 +378,7 @@ class UdfDictionary(object):
         self._udt = udt
         self._update_elems()
         self._prepare_lookup()
+        self.location=0
 
     def get_udt(self):
         if self._udt == True:
@@ -516,6 +517,21 @@ class UdfDictionary(object):
         for elem in self._elems:
             self.instance.root.remove(elem)
         self._update_elems()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        try:
+            ret=self._lookup.keys()[self.location]
+        except IndexError:
+            raise StopIteration()
+        self.location = self.location + 1
+        return ret
+
+    def get(self, key, default=None):
+        return self._lookup.get(key, default)
+
 
 
 class UdfDictionaryDescriptor(BaseDescriptor):
