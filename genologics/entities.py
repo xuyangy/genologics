@@ -529,6 +529,9 @@ class UdfDictionary(object):
         self.location = self.location + 1
         return ret
 
+    def get(self, key, default=None):
+        return self._lookup.get(key, default)
+
 
 
 class UdfDictionaryDescriptor(BaseDescriptor):
