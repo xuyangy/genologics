@@ -18,6 +18,7 @@ import requests
 
 from .entities import *
 
+TIMEOUT=7
 
 class Lims(object):
     "LIMS interface through which all entity instances are retrieved."
@@ -55,7 +56,8 @@ class Lims(object):
         "GET data from the URI. Return the response XML as an ElementTree."
         r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
-                         headers=dict(accept='application/xml'))
+                         headers=dict(accept='application/xml'),
+                         timeout=TIMEOUT)
         return self.parse_response(r)
 
     def get_file_contents(self, id=None, uri=None):
@@ -67,7 +69,7 @@ class Lims(object):
         else:
             raise ValueError("id or uri required")
         url = urlparse.urljoin(self.baseuri, '/'.join(segments))
-        r=self.request_session.get(url, auth=(self.username, self.password))
+        r=self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
         #TODO add a returncode check here 
         return r.text
 
