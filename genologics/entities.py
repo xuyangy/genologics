@@ -1108,10 +1108,11 @@ class StepActions(Entity):
     the Step entity. Right now, only the escalation is parsed."""
 
     def __init__(self, lims, uri=None, id=None):
+        super(StepActions, self).__init__(lims,uri,id)
         self.escalation={}
         self.lims=lims
-        self.uri="{0}/actions".format(uri)
-        self.root=lims.get(self.uri)
+        self.uri=uri
+        self.root=self.lims.get(self.uri)
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
             self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
@@ -1136,7 +1137,8 @@ class Step(Entity):
     def __init__(self, lims, uri=None, id=None):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
-        self.actions= StepActions(lims,uri=self.uri)
+        actionsuri="{0}/actions".format(self.uri)
+        self.actions= StepActions(lims,uri=actionsuri)
 
 
     #placements         = EntityDescriptor('placements', StepPlacements)
