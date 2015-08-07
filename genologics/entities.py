@@ -1111,7 +1111,6 @@ class StepActions(Entity):
         super(StepActions, self).__init__(lims,uri,id)
         self.escalation={}
         self.lims=lims
-        self.uri=uri
         self.root=self.lims.get(self.uri)
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
