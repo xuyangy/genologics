@@ -18,7 +18,7 @@ import requests
 
 from .entities import *
 
-TIMEOUT=7
+TIMEOUT=16
 
 class Lims(object):
     "LIMS interface through which all entity instances are retrieved."
@@ -54,11 +54,16 @@ class Lims(object):
 
     def get(self, uri, params=dict()):
         "GET data from the URI. Return the response XML as an ElementTree."
-        r = self.request_session.get(uri, params=params,
+        try:
+            r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
                          headers=dict(accept='application/xml'),
                          timeout=TIMEOUT)
-        return self.parse_response(r)
+        except requests.exceptions.Timeout as e:
+            raise type(e)("{0}, Error trying to reach {1}".format(e.message, uri))
+
+        else:
+            return self.parse_response(r)
 
     def get_file_contents(self, id=None, uri=None):
         """Returns the contents of the file of <ID> or <uri>"""
