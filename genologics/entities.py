@@ -108,7 +108,7 @@ class SampleHistory:
         and creates an entry like this : output -> (process, input)"""
         samp_art_map ={}
         if self.sample_name:
-            artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=True) 
+            artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=False) 
             for one_art in artifacts:
                 input_arts = one_art.input_artifact_list()
                 for input_art in input_arts:
@@ -126,7 +126,7 @@ class SampleHistory:
         history = {}
         hist_list = []
        #getting the list of all expected analytes.
-        artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=True)
+        artifacts = self.lims.get_artifacts(sample_name = self.sample_name, type = 'Analyte', resolve=False)
         processes=[]
         inputs=[]
         if in_art:
@@ -971,7 +971,7 @@ class Process(Entity):
                     ins.append(inp)
         return ins
     
-    def all_inputs(self,unique=True, resolve=True):
+    def all_inputs(self,unique=True, resolve=False):
         """Retrieving all input artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
@@ -988,7 +988,7 @@ class Process(Entity):
         else:
             return [Artifact(self.lims,id=id) for id in ids if id is not None]
 
-    def all_outputs(self,unique=True, resolve=True):
+    def all_outputs(self,unique=True, resolve=False):
         """Retrieving all output artifacts from input_output_maps
         if unique is true, no duplicates are returned.
         """
