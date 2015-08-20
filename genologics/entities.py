@@ -607,6 +607,7 @@ class EntityListDescriptor(EntityDescriptor):
         result = []
         for node in instance.root.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+
         return result
 
 class NestedAttributeListDescriptor(StringAttributeDescriptor):

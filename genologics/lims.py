@@ -385,17 +385,24 @@ class Lims(object):
             return []
         klass = instances[0].__class__
         root = ElementTree.Element(nsmap('ri:links'))
-        for instance in instances:
-            ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                      rel=klass._URI))
-        uri = self.get_uri(klass._URI, 'batch/retrieve')
-        data = self.tostring(ElementTree.ElementTree(root))
-        root = self.post(uri, data)
         result = []
-        for node in root.getchildren():
-            instance = klass(self, uri=node.attrib['uri'])
-            instance.root = node
-            result.append(instance)
+        needs_request=False
+        for instance in instances:
+            try:
+                result.append(self.cache[instance.uri])
+            except:
+                needs_request=True
+                ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
+                                                      rel=klass._URI))
+
+        if needs_request:
+            uri = self.get_uri(klass._URI, 'batch/retrieve')
+            data = self.tostring(ElementTree.ElementTree(root))
+            root = self.post(uri, data)
+            for node in root.getchildren():
+                instance = klass(self, uri=node.attrib['uri'])
+                instance.root = node
+                result.append(instance)
         return result
 
     def tostring(self, etree):
