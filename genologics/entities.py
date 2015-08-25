@@ -1474,7 +1474,7 @@ class Step(Entity):
 
     configuration       = EntityDescriptor('configuration', StepConfiguration)
     current_state       = StringAttributeDescriptor('current-state')
-    program_status      = EntityListDescriptor('program-status', ProgramStatus)
+    program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
     reagent_lots        = IndirectEntityListDescriptor('reagent-lots', 'reagent-lot', ReagentLot)
 
@@ -1523,7 +1523,7 @@ class Workflow(Entity):
 
     name                   = StringDescriptor('name')
     status                 = StringDescriptor('status')
-    protocols              = EntityListDescriptor('protocols', ProtocolConfiguration)
+    protocols              = EntityListDescriptor('protocol', ProtocolConfiguration, 'protocols')
 
 
 Sample.artifact = EntityDescriptor('artifact', Artifact)
