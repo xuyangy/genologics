@@ -71,9 +71,8 @@ def obtain_previous_volumes(currentStep, lims):
 
 
 
-def make_datastructure(currentStep, lims):
+def make_datastructure(currentStep, lims, log):
     data=[]
-    sn_re=re.compile("(P[0-9]+_[0-9]+)")
 
     try:
         samples_volumes=obtain_previous_volumes(currentStep, lims)
