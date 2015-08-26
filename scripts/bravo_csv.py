@@ -89,9 +89,9 @@ def make_datastructure(currentStep, lims):
             obj['pool_id']=out['uri'].id
             obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
             obj['vol']=samples_volumes[obj['name']]
-            obj['src_fc']=inp['uri'].location[0].name
+            obj['src_fc']=inp['uri'].id
             obj['src_well']=inp['uri'].location[1]
-            obj['dst_fc']=out['uri'].location[0].name
+            obj['dst_fc']=out['uri'].id
             obj['dst_well']=out['uri'].location[1]
             data.append(obj)
 
@@ -167,9 +167,9 @@ def setup_workset(currentStep):
             for art_tuple in currentStep.input_output_maps:
                 #filter out result files
                 if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte': 
-                    source_fc=art_tuple[0]['uri'].location[0].name
+                    source_fc=art_tuple[0]['uri'].id
                     source_well=art_tuple[0]['uri'].location[1]
-                    dest_fc=art_tuple[1]['uri'].location[0].name
+                    dest_fc=art_tuple[1]['uri'].id
                     dest_well=art_tuple[1]['uri'].location[1]
                     try:
                         #might not be filled in
