@@ -11,6 +11,8 @@ import sys
 from genologics.entities import *
 
 
+MAX_WARNING_VOLUME=150
+MIN_WARNING_VOLUME=2
 
 def obtain_previous_volumes(currentStep, lims):
     samples_volumes={}
@@ -97,8 +99,8 @@ def make_datastructure(currentStep, lims, log):
     return data
         
 
-def minimize_volume(factor, sample, target_conc, max_vol, valid_inputs):
-    limit_vol=2
+def minimize_volume(factor, sample, target_conc, max_vol, valid_inputs, old_vol=99):
+    limit_vol=MIN_WARNING_VOLUME
     try_vol = factor * sample['vol']
 # The lowest volume to take would then be (sample(s) w highest conc):
     low_vol = min((try_vol * sample['conc'] / s['conc'] for s in valid_inputs))
@@ -107,10 +109,10 @@ def minimize_volume(factor, sample, target_conc, max_vol, valid_inputs):
 # We don't want to pipette less than lim_vol
 # while keeping total volume above pool_vol:
     if low_vol >= limit_vol and tot_vol >= max_vol:
-        return minimize_volume(factor-0.1, sample, target_conc, max_vol, valid_inputs)
+        return  minimize_volume(factor-0.01, sample, target_conc, max_vol, valid_inputs, try_vol)
     else:
 # We can't improve anymore within the given limits... 
-        return try_vol
+        return old_vol
 
 
 def compute_transfer_volume(currentStep, lims, log):
@@ -127,7 +129,7 @@ def compute_transfer_volume(currentStep, lims, log):
             lowest_conc_inputs=filter(lambda x: x['conc']==lowest_conc, valid_inputs)
             starting_input=min(lowest_conc_inputs, key=lambda x:x['vol'] )
 
-            optimal_vol=minimize_volume(0.8, starting_input, lowest_conc, max_vol, valid_inputs)
+            optimal_vol=minimize_volume(0.9, starting_input, lowest_conc, max_vol, valid_inputs)
             for s in valid_inputs:
                 s['vol_to_take']= optimal_vol * starting_input['conc'] / s['conc']
                 returndata.append(s)
@@ -141,7 +143,12 @@ def prepooling(currentStep, lims):
     data=compute_transfer_volume(currentStep, lims, log)
     with open("bravo.csv", "w") as csvContext:
             for s in data:
+                if s['vol_to_take']>MAX_WARNING_VOLUME:
+                    log.append("Volume for sample {} is above {}, redo the calculations manually".format(MAX_WARNING_VOLUME, s['name']))
+                if s['vol_to_take']<MIN_WARNING_VOLUME:
+                    log.append("Volume for sample {} is below {}, redo the calculations manually".format(MIN_WARNING_VOLUME, s['name']))
                 csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well'])) 
+    sys.exit(0)
     if log:
         with open("bravo.log", "w") as logContext:
             logContext.write("\n".join(log))
