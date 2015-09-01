@@ -173,7 +173,7 @@ def setup_workset(currentStep):
             for art_tuple in currentStep.input_output_maps:
                 #filter out result files
                 if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte': 
-                    source_fc=art_tuple[0]['uri'].location[0].id
+                    source_fc=art_tuple[0]['uri'].location[0].name
                     source_well=art_tuple[0]['uri'].location[1]
                     dest_fc=art_tuple[1]['uri'].location[0].id
                     dest_well=art_tuple[1]['uri'].location[1]
