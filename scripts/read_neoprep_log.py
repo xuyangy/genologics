@@ -70,7 +70,13 @@ def read_log(lims, pid, logfile):
     for inp in pro.all_inputs():
         #save the data from the logfile to the lims artifacts
         if inp.name in data:
+            if data[inp.name]['stat'] == 'Pass':
+                inp.qc="PASSED"
+            elif data[inp.name]['stat'] == 'Fail':
+                inp.qc="FAILED"
             inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
+            inp.udf['Concentration']=float(data[inp.name]['conc'])
+            inp.udf['Conc. Units']='nM')
             inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
             inp.put()
