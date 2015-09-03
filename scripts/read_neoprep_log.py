@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-DESC="""EPP used to create csv files for the nanoprep robot"""
+from __future__ import print_function
 import logging
 import os
 import sys
@@ -9,8 +9,8 @@ from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import *
 from genologics.epp import attach_file
+DESC="""EPP used to create csv files for the nanoprep robot"""
 
-from __future__ import print_function
 
 def read_log(lims, pid, logfile):
     logger=setupLog(logfile)
@@ -32,6 +32,7 @@ def read_log(lims, pid, logfile):
         data={}
         read=False
         #default values
+        ist_size_idx=5
         sample_idx=2
         conc_idx=6
         norm_idx=7
@@ -55,6 +56,8 @@ def read_log(lims, pid, logfile):
                             norm_idx=idx
                         elif el == "Status":
                             stat_idx=idx
+                        elif el == "Insert Size":
+                            ist_size_idx=idx
                 else:
                     elements=line.split('\t')
                     #data rows
@@ -62,6 +65,7 @@ def read_log(lims, pid, logfile):
                     data[elements[sample_idx]]['conc']=elements[conc_idx]
                     data[elements[sample_idx]]['norm']=elements[norm_idx]
                     data[elements[sample_idx]]['stat']=elements[stat_idx]
+                    data[elements[sample_idx]]['ist_size']=elements[ist_size_idx]
 
             if "[Sample Information]" in line:
                 read=True
@@ -79,6 +83,7 @@ def read_log(lims, pid, logfile):
             inp.udf['Conc. Units']='nM')
             inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
+            inp.udf['Size (bp)']=data[inp.name]['ist_size']
             inp.put()
             logger.info("updated sample {0}".format(inp.name))
 
