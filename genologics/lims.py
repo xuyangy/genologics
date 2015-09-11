@@ -413,7 +413,7 @@ class Lims(object):
             root = self.get(node.attrib['uri'], params=params)
         return result
 
-    def get_batch(self, instances):
+    def get_batch(self, instances, force=False):
         "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
@@ -423,13 +423,14 @@ class Lims(object):
         root = ElementTree.Element(nsmap('ri:links'))
         ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
         result = []
-        needs_request=False
-        for instance in inst_iter:
-            try:
-                result.append(self.cache[instance.uri])
-            except:
-                needs_request=True
-                ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
+        needs_request=force
+        if not force:
+            for instance in inst_iter:
+                try:
+                    result.append(self.cache[instance.uri])
+                except:
+                    needs_request=True
+                    ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                       rel=klass._URI))
 
         if needs_request:
