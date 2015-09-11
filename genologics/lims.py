@@ -424,7 +424,7 @@ class Lims(object):
         ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
         result = []
         needs_request=False
-        for instance in instances:
+        for instance in inst_iter:
             try:
                 result.append(self.cache[instance.uri])
             except:
