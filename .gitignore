@@ -11,4 +11,3 @@ docs/.doctrees/
 docs/_templates/
 docs/*.html
 .fabfilerc
-version.py

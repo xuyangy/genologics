@@ -27,6 +27,7 @@ else:
     from xml.parsers import expat
     ETREE_EXCEPTION = expat.ExpatError
 
+TIMEOUT=16
 
 class Lims(object):
     "LIMS interface through which all entity instances are retrieved."
@@ -63,10 +64,30 @@ class Lims(object):
 
     def get(self, uri, params=dict()):
         "GET data from the URI. Return the response XML as an ElementTree."
-        r = self.request_session.get(uri, params=params,
+        try:
+            r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
-                         headers=dict(accept='application/xml'))
-        return self.parse_response(r)
+                         headers=dict(accept='application/xml'),
+                         timeout=TIMEOUT)
+        except requests.exceptions.Timeout as e:
+            raise type(e)("{0}, Error trying to reach {1}".format(e.message, uri))
+
+        else:
+            return self.parse_response(r)
+
+    def get_file_contents(self, id=None, uri=None):
+        """Returns the contents of the file of <ID> or <uri>"""
+        if id:
+            segments = ['api', self.VERSION, 'files', id, 'download']
+        elif uri:
+            segments = [uri, 'download']
+        else:
+            raise ValueError("id or uri required")
+        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        r=self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
+        #TODO add a returncode check here 
+        return r.text
+
 
     def put(self, uri, data, params=dict()):
         """PUT the serialized XML to the given URI.
@@ -138,6 +159,15 @@ class Lims(object):
                                     attach_to_category=attach_to_category,
                                     start_index=start_index)
         return self._get_instances(Udfconfig, params=params)
+
+    def get_reagent_types(self, name=None, start_index=None):
+        """Get a list of reqgent types, filtered by keyword arguments.
+        name: reagent type  name, or list of names.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                  start_index=start_index)
+        return self._get_instances(ReagentType, params=params)
 
     def get_labs(self, name=None, last_modified=None,
                  udf=dict(), udtname=None, udt=dict(), start_index=None):
@@ -239,7 +269,8 @@ class Lims(object):
                       artifact_flag_name=None, working_flag=None, qc_flag=None,
                       sample_name=None, samplelimsid=None, artifactgroup=None, containername=None,
                       containerlimsid=None, reagent_label=None,
-                      udf=dict(), udtname=None, udt=dict(), start_index=None):
+                      udf=dict(), udtname=None, udt=dict(), start_index=None,
+                      resolve=False):
         """Get a list of artifacts, filtered by keyword arguments.
         name: Artifact name, or list of names.
         type: Artifact type, or list of types.
@@ -273,7 +304,10 @@ class Lims(object):
                                   reagent_label=reagent_label,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Artifact, params=params)
+        if resolve:
+            return self.get_batch(self._get_instances(Artifact, params=params))
+        else:
+            return self._get_instances(Artifact, params=params)
 
     def get_containers(self, name=None, type=None,
                        state=None, last_modified=None,
@@ -387,19 +421,25 @@ class Lims(object):
         first = next(inst_iter)
         klass = first.__class__
         root = ElementTree.Element(nsmap('ri:links'))
-
         ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
-        for instance in instances:
-            ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                      rel=klass._URI))
-        uri = self.get_uri(klass._URI, 'batch/retrieve')
-        data = self.tostring(ElementTree.ElementTree(root))
-        root = self.post(uri, data)
         result = []
-        for node in root.getchildren():
-            instance = klass(self, uri=node.attrib['uri'])
-            instance.root = node
-            result.append(instance)
+        needs_request=False
+        for instance in instances:
+            try:
+                result.append(self.cache[instance.uri])
+            except:
+                needs_request=True
+                ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
+                                                      rel=klass._URI))
+
+        if needs_request:
+            uri = self.get_uri(klass._URI, 'batch/retrieve')
+            data = self.tostring(ElementTree.ElementTree(root))
+            root = self.post(uri, data)
+            for node in root.getchildren():
+                instance = klass(self, uri=node.attrib['uri'])
+                instance.root = node
+                result.append(instance)
         return result
 
     def put_batch(self, instances):
