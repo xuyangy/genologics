@@ -1330,6 +1330,26 @@ class Artifact(Entity):
     stateless = property(stateless) 
 
 
+class ReagentType(Entity):
+    """Reagent Type, usually, indexes for sequencing"""
+    _URI = 'reagenttypes'
+    _TAG = 'reagent-type'
+
+    name            = StringAttributeDescriptor('name')
+    category        = StringDescriptor('reagent-category')
+
+    @property
+    def sequence(self):
+        self.get()
+        for st in self.root.findall('special-type'):
+            if st.attrib['name'] == 'Index':
+                for elem in st.findall('attribute'):
+                    if elem.attrib['name'] == 'Sequence':
+                        return elem.attrib['value']
+
+        return None
+
+
 #### Reagent lots ####
 
 class ReagentKit(Entity):
@@ -1431,25 +1451,6 @@ class Workflow(Entity):
     protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
     stages    = EntityListDescriptor('stage', Stage)
 
-
-class ReagentType(Entity):
-    """Reagent Type, usually, indexes for sequencing"""
-    _URI = 'reagenttypes'
-    _TAG = 'reagent-type'
-
-    name            = StringAttributeDescriptor('name')
-    category        = StringDescriptor('reagent-category')
-
-    @property
-    def sequence(self):
-        self.get()
-        for st in self.root.findall('special-type'):
-            if st.attrib['name'] == 'Index':
-                for elem in st.findall('attribute'):
-                    if elem.attrib['name'] == 'Sequence':
-                        return elem.attrib['value']
-
-        return None
 
 
 #### Classes related to the steps resource hierarchy ####
