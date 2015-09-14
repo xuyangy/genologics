@@ -1362,7 +1362,6 @@ class ReagentKit(Entity):
     catalogue_number= StringDescriptor('catalogue-number')
     website         = StringDescriptor('website')
     archived        = BooleanDescriptor('archived')
-    
 
 
 class ReagentLot(Entity):
@@ -1383,7 +1382,6 @@ class ReagentLot(Entity):
     notes            = StringDescriptor('notes')
     status           = StringDescriptor('status')
     usage_count      = IntegerDescriptor('usage-count')
-
 
 
 #### Configuration of workflows, protocols, etc. ####
