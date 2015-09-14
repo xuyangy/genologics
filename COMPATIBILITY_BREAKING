@@ -1,0 +1,15 @@
+ReagentType.index_sequence -> ReagentType.sequence
+
+StepConfiguration -> ProtocolStep
+StepConfiguration.process_type -> ProtocolStep.type
+
+ProtocolConfiguration -> Protocol
+
+force flag on get_batch (add to monitor)
+
+TODO: refactor IndirectEntityListDescriptor, use entity for entity list (?)
+confirm workflow name is StringAttributeD. not StringD.
+move things around so we can drop the assignments at the bottom of the file
+give NextAction class some love
+fix the type of ReagentLabelSet.. (it's some nonsense -- change back to MutableSet)
+get_batch is now not equivalent to force, add force flag
