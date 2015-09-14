@@ -1367,6 +1367,91 @@ class ReagentLot(Entity):
 
 
 
+#### Configuration of workflows, protocols, etc. ####
+
+class Transition(object):
+    def __init__(self, lims, element):
+        step_uri = element.attrib['next-step-uri']
+        if step_uri:
+            self.step = ProtocolStep(lims, uri = step_uri)
+        else:
+            self.step = None
+
+        self.sequence = element.attrib['sequence']
+        self.name = element.attrib['name']
+    
+
+class ProtocolStep(Entity):
+    """Steps key in the Protocol object"""
+
+    _TAG='step'
+    # Step config is not resolveable using a URI and an ID alone, because
+    # it's nested under a protocol.    
+    _URI = None
+
+    name                = StringAttributeDescriptor("name")
+    type                = EntityDescriptor('type', Processtype)
+    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
+    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
+    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
+    # Transitions represent the potential next steps for samples
+    transitions         = GenericListDescriptor('transitions', Transition)
+
+    def queue(self):
+        """Get the queue corresponding to this step."""
+        return Queue(self.lims, id = self.id)
+
+
+class Protocol(Entity):
+    """Protocol, holding ProtocolSteps and protocol-properties"""
+    _URI='configuration/protocols'
+    _TAG='protocol'
+
+    name        = StringAttributeDescriptor('name')
+    index       = IntegerAttributeDescriptor('index')
+    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
+
+
+class Stage(Entity):
+    """Holds Protocol/Workflow"""
+    protocol = EntityDescriptor('protocol', Protocol)
+
+
+class Workflow(Entity):
+    """ Workflow, introduced in 3.5"""
+    _URI="configuration/workflows"
+    _TAG="workflow"
+    
+    name      = StringAttributeDescriptor("name")
+    status    = StringDescriptor('status')
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
+    stages    = EntityListDescriptor('stage', Stage)
+
+
+class ReagentType(Entity):
+    """Reagent Type, usually, indexes for sequencing"""
+    _URI = 'reagenttypes'
+    _TAG = 'reagent-type'
+
+    name            = StringAttributeDescriptor('name')
+    category        = StringDescriptor('reagent-category')
+
+    @property
+    def sequence(self):
+        self.get()
+        for st in self.root.findall('special-type'):
+            if st.attrib['name'] == 'Index':
+                for elem in st.findall('attribute'):
+                    if elem.attrib['name'] == 'Sequence':
+                        return elem.attrib['value']
+
+        return None
+
+
 #### Classes related to the steps resource hierarchy ####
 
 class NextAction(object):
@@ -1387,12 +1472,12 @@ class NextAction(object):
             self.artifact = None
         next_step_uri = xml_node.attrib.get('step-uri')
         if next_step_uri:
-            self.next_step = StepConfiguration(lims, uri=next_step_uri)
+            self.next_step = ProtocolStep(lims, uri=next_step_uri)
         else:
             self.next_step = None
         rework_step_uri = xml_node.attrib.get('rework-step-uri')
         if rework_step_uri:
-            self.rework_step = StepConfiguration(lims, uri=rework_step_uri)
+            self.rework_step = ProtocolStep(lims, uri=rework_step_uri)
         else:
             self.rework_step = None
 
@@ -1413,19 +1498,6 @@ class NextAction(object):
         if self.rework_step: s += ",rework_step='" + self.rework_step.id + "'"
         s += ")"
         return s
-
-
-class Transition(object):
-    def __init__(self, lims, element):
-        step_uri = element.attrib['next-step-uri']
-        if step_uri:
-            self.step = StepConfiguration(lims, uri = step_uri)
-        else:
-            self.step = None
-
-        self.sequence = element.attrib['sequence']
-        self.name = element.attrib['name']
-    
 
 
 class AvailableProgram(object):
@@ -1492,7 +1564,7 @@ class ProgramStatus(Entity):
     _TAG = 'program-status'
 
     step           = StringDescriptor('step')
-    configuration  = EntityDescriptor('configuration', StepConfiguration)
+    configuration  = EntityDescriptor('configuration', ProtocolStep)
     status         = StringDescriptor('status')
     message        = StringDescriptor('message')
 
@@ -1502,7 +1574,7 @@ class Step(Entity):
 
     _URI = 'steps'
 
-    configuration       = EntityDescriptor('configuration', StepConfiguration)
+    configuration       = EntityDescriptor('configuration', ProtocolStep)
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
@@ -1535,79 +1607,10 @@ class Queue(Entity):
     _URI = 'queues'
 
     artifacts              = EntityListDescriptor('artifact', Artifact, 'artifacts')
-    protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', StepConfiguration)
+    protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', ProtocolStep)
 
 
 
-
-class ProtocolStep(Entity):
-    """Steps key in the Protocol object"""
-
-    _TAG='step'
-    # Step config is not resolveable using a URI and an ID alone, because
-    # it's nested under a protocol.    
-    _URI = None
-
-    name                = StringAttributeDescriptor("name")
-    type                = EntityDescriptor('type', Processtype)
-    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
-    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
-    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
-    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
-    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
-    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
-    # Transitions represent the potential next steps for samples
-    transitions         = GenericListDescriptor('transitions', Transition)
-
-    def queue(self):
-        """Get the queue corresponding to this step."""
-        return Queue(self.lims, id = self.id)
-
-
-class Protocol(Entity):
-    """Protocol, holding ProtocolSteps and protocol-properties"""
-    _URI='configuration/protocols'
-    _TAG='protocol'
-
-    name        = StringAttributeDescriptor('name')
-    index       = IntegerAttributeDescriptor('index')
-    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
-    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
-
-
-class Stage(Entity):
-    """Holds Protocol/Workflow"""
-    protocol = EntityDescriptor('protocol', Protocol)
-
-class Workflow(Entity):
-    """ Workflow, introduced in 3.5"""
-    _URI="configuration/workflows"
-    _TAG="workflow"
-    
-    name      = StringAttributeDescriptor("name")
-    status    = StringDescriptor('status')
-    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
-    stages    = EntityListDescriptor('stage', Stage)
-
-
-class ReagentType(Entity):
-    """Reagent Type, usually, indexes for sequencing"""
-    _URI = 'reagenttypes'
-    _TAG = 'reagent-type'
-
-    name            = StringAttributeDescriptor('name')
-    category        = StringDescriptor('reagent-category')
-
-    @property
-    def index_sequence(self):
-        self.get()
-        for st in self.root.findall('special-type'):
-            if st.attrib['name'] == 'Index':
-                for elem in st.findall('attribute'):
-                    if elem.attrib['name'] == 'Sequence':
-                        return elem.attrib['value']
-
-        return None
 
 
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
