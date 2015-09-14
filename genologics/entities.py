@@ -1346,7 +1346,6 @@ class ReagentType(Entity):
                 for elem in st.findall('attribute'):
                     if elem.attrib['name'] == 'Sequence':
                         return elem.attrib['value']
-
         return None
 
 
