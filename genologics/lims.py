@@ -8,9 +8,11 @@ Copyright (C) 2012 Per Kraulis
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
-           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile']
+           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
+           'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
 import urllib
+import re
 from cStringIO import StringIO
 
 # http://docs.python-requests.org/
@@ -25,6 +27,7 @@ else:
     from xml.parsers import expat
     ETREE_EXCEPTION = expat.ExpatError
 
+TIMEOUT=16
 
 class Lims(object):
     "LIMS interface through which all entity instances are retrieved."
@@ -44,6 +47,7 @@ class Lims(object):
         self.password = password
         self.VERSION = version
         self.cache = dict()
+        self.cache_list = []
         # For optimization purposes, enables requests to persist connections
         self.request_session = requests.Session()
         #The connection pool has a default size of 10
@@ -60,10 +64,30 @@ class Lims(object):
 
     def get(self, uri, params=dict()):
         "GET data from the URI. Return the response XML as an ElementTree."
-        r = self.request_session.get(uri, params=params,
+        try:
+            r = self.request_session.get(uri, params=params,
                          auth=(self.username, self.password),
-                         headers=dict(accept='application/xml'))
-        return self.parse_response(r)
+                         headers=dict(accept='application/xml'),
+                         timeout=TIMEOUT)
+        except requests.exceptions.Timeout as e:
+            raise type(e)("{0}, Error trying to reach {1}".format(e.message, uri))
+
+        else:
+            return self.parse_response(r)
+
+    def get_file_contents(self, id=None, uri=None):
+        """Returns the contents of the file of <ID> or <uri>"""
+        if id:
+            segments = ['api', self.VERSION, 'files', id, 'download']
+        elif uri:
+            segments = [uri, 'download']
+        else:
+            raise ValueError("id or uri required")
+        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        r=self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
+        #TODO add a returncode check here 
+        return r.text
+
 
     def put(self, uri, data, params=dict()):
         """PUT the serialized XML to the given URI.
@@ -83,7 +107,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type': 'application/xml',
                                    'accept': 'application/xml'})
-        return self.parse_response(r, success_status = [200, 201])
+        return self.parse_response(r, success_status = [200, 201, 202])
 
     def check_version(self):
         """Raise ValueError if the version for this interface
@@ -108,7 +132,9 @@ class Lims(object):
                 node = root.find('message')
                 if node is None:
                     response.raise_for_status()
-                message = "%s: %s" % (response.status_code, node.text)
+                    message = "%s" % (response.status_code)
+                else:
+                    message = "%s: %s" % (response.status_code, node.text)
                 node = root.find('suggested-actions')
                 if node is not None:
                     message += ' ' + node.text
@@ -133,6 +159,15 @@ class Lims(object):
                                     attach_to_category=attach_to_category,
                                     start_index=start_index)
         return self._get_instances(Udfconfig, params=params)
+
+    def get_reagent_types(self, name=None, start_index=None):
+        """Get a list of reqgent types, filtered by keyword arguments.
+        name: reagent type  name, or list of names.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                  start_index=start_index)
+        return self._get_instances(ReagentType, params=params)
 
     def get_labs(self, name=None, last_modified=None,
                  udf=dict(), udtname=None, udt=dict(), start_index=None):
@@ -232,9 +267,10 @@ class Lims(object):
 
     def get_artifacts(self, name=None, type=None, process_type=None,
                       artifact_flag_name=None, working_flag=None, qc_flag=None,
-                      sample_name=None, artifactgroup=None, containername=None,
+                      sample_name=None, samplelimsid=None, artifactgroup=None, containername=None,
                       containerlimsid=None, reagent_label=None,
-                      udf=dict(), udtname=None, udt=dict(), start_index=None):
+                      udf=dict(), udtname=None, udt=dict(), start_index=None,
+                      resolve=False):
         """Get a list of artifacts, filtered by keyword arguments.
         name: Artifact name, or list of names.
         type: Artifact type, or list of types.
@@ -243,6 +279,7 @@ class Lims(object):
         working_flag: Having the given working flag; boolean.
         qc_flag: Having the given QC flag: UNKNOWN, PASSED, FAILED.
         sample_name: Related to the given sample name.
+        samplelimsid: Related to the given sample id.
         artifactgroup: Belonging to the artifact group (experiment in client).
         containername: Residing in given container, by name, or list.
         containerlimsid: Residing in given container, by LIMS id, or list.
@@ -260,13 +297,17 @@ class Lims(object):
                                   working_flag=working_flag,
                                   qc_flag=qc_flag,
                                   sample_name=sample_name,
+                                  samplelimsid=samplelimsid,
                                   artifactgroup=artifactgroup,
                                   containername=containername,
                                   containerlimsid=containerlimsid,
                                   reagent_label=reagent_label,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Artifact, params=params)
+        if resolve:
+            return self.get_batch(self._get_instances(Artifact, params=params))
+        else:
+            return self._get_instances(Artifact, params=params)
 
     def get_containers(self, name=None, type=None,
                        state=None, last_modified=None,
@@ -327,6 +368,18 @@ class Lims(object):
         params = self._get_params(name=name)
         return self._get_instances(ReagentType, params=params)
 
+    def get_reagent_kits(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(ReagentKit, params=params)
+
+    def get_reagent_lots(self, name=None, kitname=None, number=None):
+        params = self._get_params(name=name)
+        return self._get_instances(ReagentLot, params=params)
+
+    def get_workflows(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(Workflow, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
@@ -360,24 +413,56 @@ class Lims(object):
             root = self.get(node.attrib['uri'], params=params)
         return result
 
-    def get_batch(self, instances):
+    def get_batch(self, instances, force=False):
         "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
-        klass = instances[0].__class__
+        inst_iter = iter(instances)
+        first = next(inst_iter)
+        klass = first.__class__
         root = ElementTree.Element(nsmap('ri:links'))
-        for instance in instances:
-            ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
+        ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
+        result = []
+        needs_request=force
+        if not force:
+            for instance in inst_iter:
+                try:
+                    result.append(self.cache[instance.uri])
+                except:
+                    needs_request=True
+                    ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                       rel=klass._URI))
-        uri = self.get_uri(klass._URI, 'batch/retrieve')
+
+        if needs_request:
+            uri = self.get_uri(klass._URI, 'batch/retrieve')
+            data = self.tostring(ElementTree.ElementTree(root))
+            root = self.post(uri, data)
+            for node in root.getchildren():
+                instance = klass(self, uri=node.attrib['uri'])
+                instance.root = node
+                result.append(instance)
+        return result
+
+    def put_batch(self, instances):
+        "Update the instances using batch technology."
+
+        if not instances:
+            return
+
+        inst_iter = iter(instances)
+        first = next(inst_iter)
+        klass = first.__class__
+        # Tag is art:details, con:details, etc.
+        example_root = first.root
+        ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
+        root = ElementTree.Element("{%s}details" % (ns_uri))
+        root.append(first.root)
+        for instance in inst_iter:
+            root.append(instance.root)
+
+        uri = self.get_uri(klass._URI, 'batch/update')
         data = self.tostring(ElementTree.ElementTree(root))
         root = self.post(uri, data)
-        result = []
-        for node in root.getchildren():
-            instance = klass(self, uri=node.attrib['uri'])
-            instance.root = node
-            result.append(instance)
-        return result
 
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
@@ -388,7 +473,6 @@ class Lims(object):
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='UTF-8')
-
 
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance, and this also creates a Process.
@@ -418,5 +502,15 @@ class Lims(object):
         response = self.post(glss_uri, xml_data)
         return ProtoFile(self, root=response)
         
+    def route_analytes(self, analytes, workflow):
+        """Adding analytes to workflow (may also support adding to a stage in 
+        the future."""
 
-        
+        root = ElementTree.Element('rt:routing', {'xmlns:rt': 'http://genologics.com/ri/routing'})
+        assign = ElementTree.SubElement(root, "assign", {'workflow-uri': workflow.uri})
+        for i in analytes:
+            ElementTree.SubElement(assign, "artifact", {'uri': i.uri})
+
+        self.post(self.get_uri("route/artifacts"), ElementTree.tostring(root))
+
+
