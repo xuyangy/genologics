@@ -812,7 +812,7 @@ class LocationDescriptor(TagDescriptor):
         return Container(instance.lims, uri=uri), node.find('value').text
 
 
-class ReagentLabelSet(MutableSequ):
+class ReagentLabelSet(MutableSet):
     """Holds infomation about reagent labels. Acts like a set, but
     also updates the underlying XML. It thus supports adding and deleting
     reagent labels."""
@@ -851,6 +851,11 @@ class ReagentLabelSet(MutableSequ):
 
     def __str__(self):
         return str(self.value)
+
+    def __getitem__(self, index):
+        """Emulate list-like indexing to support code written when this was 
+        a list."""
+        return list(self.value)[index]
 
 
 class ReagentLabelSetDescriptor(BaseDescriptor):
