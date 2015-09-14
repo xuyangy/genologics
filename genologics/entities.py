@@ -331,8 +331,8 @@ class StringListDescriptor(TagDescriptor):
 
 class GenericListDescriptor(TagDescriptor):
     """A tag containing a list of tags. This descriptor allows a list of XML elements 
-    to be represented as a list of objects. When the list contains IDs or URIs, one 
-    should obviously use the [Nested]EntityListDescriptor. When the elements
+    to be represented as a list of objects of any class. When the list contains IDs
+    or URIs, one should obviously use the [Nested]EntityListDescriptor. When the elements
     must be represented by a custom class, this descriptor can be used.
 
     This descriptor allows read-only 
@@ -1519,6 +1519,8 @@ class StepActions(Entity):
     the Step entity. Right now, only the escalations and next actions
     are parsed."""
 
+    next_actions = GenericListDescriptor('next-actions', NextAction)
+
     def __init__(self, lims, uri):
         super(StepActions, self).__init__(lims,uri,None)
         self.escalation={}
@@ -1540,14 +1542,9 @@ class StepActions(Entity):
                 art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
                 self.escalation['artifacts'].extend(art)
 
-        for node in self.root.findall('next-actions'):
-            for action_node in node:
-                na = NextAction(lims, action_node)
-                self.next_actions.append(na)
-
 
     def put(self):
-        """Updates next actions and escalations""" 
+        """Updates next actions""" 
         for na in self.next_actions:
             na.update()
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
@@ -1615,6 +1612,5 @@ Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
 Stage.workflow            = EntityDescriptor('workflow', Workflow)
 Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
-Step.configuration      = EntityDescriptor('configuration', ProtocolStep)
 
 
