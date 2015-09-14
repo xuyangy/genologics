@@ -358,6 +358,11 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def get_process_types(self, displayname=None):
+        """Get a list of process types with the specified name."""
+        params = self._get_params(displayname=displayname)
+        return self._get_instances(Processtype, params=params)
+
     def get_protocols(self, name=None):
         """Get a list of protocol configuration entities.
         Optionally filter by protocol name."""
