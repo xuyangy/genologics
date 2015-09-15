@@ -740,12 +740,12 @@ class NestedEntityListDescriptor(EntityListDescriptor):
 
 class IndirectEntityListDescriptor(EntityListDescriptor):
     """Access to supplementary information about an entity as if it was part of the 
-    main XML of the entity. Sometimes various additional information is not part of
-    the XML payload, but available through a separate HTTP resource. The 
+    main XML of the entity. Sometimes various additional entity references are not
+    part of the XML payload, but available through a separate HTTP resource. The 
     EntityListDescriptor (base class of this) handles the case when there is one 
     tag in the main entity for each associated entity. This tag handles when the
-    list of these associated entities is only available through a separate HTTP 
-    resource.
+    list of associated entities is only available through a separate HTTP resource,
+    given as a single link in the main XML payload.
 
     Primarily used for the steps resource tree. For a step at steps/LIMSID, the reagent
     lots are available under steps/LIMSID/reagentlots. This class encapsulates the access
@@ -753,6 +753,7 @@ class IndirectEntityListDescriptor(EntityListDescriptor):
     entities, then acts as an EntityListDescriptor on those. Provides read-only access.
 
     Copies the tags from the subentity into the main entity, to allow for caching.
+
 
     Parameters:
     list_tag:       Tag name of the list of entities. The tag is first looked up in
