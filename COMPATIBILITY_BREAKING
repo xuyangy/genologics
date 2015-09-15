@@ -1,11 +1,11 @@
-ReagentType.index_sequence -> ReagentType.sequence
+p | ReagentType.index_sequence -> ReagentType.sequence
 
-StepConfiguration -> ProtocolStep
-StepConfiguration.process_type -> ProtocolStep.type
+p | StepConfiguration -> ProtocolStep
+p | StepConfiguration.process_type -> ProtocolStep.type
 
-ProtocolConfiguration -> Protocol
+p | ProtocolConfiguration -> Protocol
 
-force flag on get_batch (add to monitor)
+p | force flag on get_batch (add to monitor)
 
 TODO: refactor IndirectEntityListDescriptor, use entity for entity list (?)
 move things around so we can drop the assignments at the bottom of the file
