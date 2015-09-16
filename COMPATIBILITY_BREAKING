@@ -1,14 +1,4 @@
-p | ReagentType.index_sequence -> ReagentType.sequence
-
-p | StepConfiguration -> ProtocolStep
-p | StepConfiguration.process_type -> ProtocolStep.type
-
-p | ProtocolConfiguration -> Protocol
-
-p | force flag on get_batch (add to monitor)
-
-TODO: refactor IndirectEntityListDescriptor, use entity for entity list (?)
-move things around so we can drop the assignments at the bottom of the file
-give NextAction class some love
-get_batch is now not equivalent to force, add force flag
+consider whether GenericListDescriptor can be converted into NestedAttributeListDescriptor in two cases
+give NextAction class some love (or convert it , per the above)
+the indirectentitylistdescriptor is still 
 implement tests
