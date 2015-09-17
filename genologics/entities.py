@@ -683,6 +683,26 @@ class EntityListDescriptor(EntityDescriptor):
 
         return result
 
+class SubEntityDescriptor(EntityDescriptor):
+    """Link to a sub-entity. A sub-entity contains additional information
+    about the LIMS object of the parent entity. Cf. the steps resource 
+    tree, in which each step has a selection of URIs below its main URI,
+    such as <step-uri>/reagenttypes.
+    """
+
+TODO (will crash here)
+#    def __init__(self, tag, klass):
+#        super(EntityDescriptor, self).__init__(tag)
+#        self.klass = klass
+#
+#    def __get__(self, instance, cls):
+#        instance.get()
+#        node = instance.root.find(self.tag)
+#        if node is None:
+#            return None
+#        else:
+#            return self.klass(instance.lims, uri=node.attrib['uri'])
+
 class NestedAttributeListDescriptor(StringAttributeDescriptor):
     """An instance yielding a list of dictionnaries of attributes
        for a nested xml list of XML elements"""
