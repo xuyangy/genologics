@@ -420,7 +420,7 @@ class Lims(object):
         return result
 
     def get_batch(self, instances, force=False):
-        "Get the content of a set of instances using the efficient batch call."
+        """Get the content of a set of instances using the efficient batch call."""
         if not instances:
             return []
         inst_iter = iter(instances)
@@ -450,7 +450,7 @@ class Lims(object):
         return result
 
     def put_batch(self, instances):
-        "Update the instances using batch technology."
+        """Update the instances using a single batch request."""
 
         if not instances:
             return

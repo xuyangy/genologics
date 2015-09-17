@@ -333,18 +333,21 @@ class GenericListDescriptor(TagDescriptor):
     """A tag containing a list of tags. This descriptor allows a list of XML elements 
     to be represented as a list of objects of any class. When the list contains IDs
     or URIs, one should obviously use the [Nested]EntityListDescriptor. When the elements
-    must be represented by a custom class, this descriptor can be used.
+    must be processed by custom logic, this descriptor can be used.
 
-    This descriptor allows read-only 
-    access to a generic list of sub-tags. The parent tag name should be given
-    to this descriptor.  In the following example, it would be available-programs:
+    This descriptor allows read-only access to a generic list of sub-tags. The parent
+    tag name should be given to this descriptor.  In the following example, it would
+    be available-programs. The klass argument would be called twice for the
+    available-program tags:
     <available-programs>
+      <available-program />
       <available-program />
     </available-programs>
 
     This descriptor passes all sub-tags (e.g. available-program) one by one to
-    the constructor of cls with a named argument "element". It also passes the lims
-    object.
+    klass with named arguments "lims" and "element". klass would usually be a constructor, but
+    could be any function. The arguments refer to the lims object and the XML element 
+    respectively.
     """
 
     def __init__(self, tag, klass):
@@ -683,25 +686,36 @@ class EntityListDescriptor(EntityDescriptor):
 
         return result
 
-class SubEntityDescriptor(EntityDescriptor):
+
+class SubEntityDescriptor(BaseDescriptor):
     """Link to a sub-entity. A sub-entity contains additional information
-    about the LIMS object of the parent entity. Cf. the steps resource 
+    about the LIMS object of the parent entity. The argument 'uri' to the 
+    constructor is a Python format() pattern which gives the URI of the 
+    subentity relative to the URI of the parent entity. The first and only
+    format placeholder is replaced with the parent entity's URI. Use e.g.
+      uri="{0}/actions"
+    to give something like
+      http://localhost:8080/api/v2/steps/24-100/actions
+    
+    SubEntityDescriptor is primarily used in the steps resource 
     tree, in which each step has a selection of URIs below its main URI,
     such as <step-uri>/reagenttypes.
+
+    The constructor of klass is called once for each instance with the
+    lims object and the formatted uri.
+
+    (Does not trigger a get() of the parent entity, which may be good for
+    performance)
     """
 
-TODO (will crash here)
-#    def __init__(self, tag, klass):
-#        super(EntityDescriptor, self).__init__(tag)
-#        self.klass = klass
-#
-#    def __get__(self, instance, cls):
-#        instance.get()
-#        node = instance.root.find(self.tag)
-#        if node is None:
-#            return None
-#        else:
-#            return self.klass(instance.lims, uri=node.attrib['uri'])
+    def __init__(self, uri, klass):
+        self.klass = klass
+        self.uri = uri
+
+    def __get__(self, instance, cls):
+        subentity_uri = self.uri.format(instance.uri)
+        return self.klass(instance.lims, uri=subentity_uri)
+
 
 class NestedAttributeListDescriptor(StringAttributeDescriptor):
     """An instance yielding a list of dictionnaries of attributes
@@ -757,55 +771,6 @@ class NestedEntityListDescriptor(EntityListDescriptor):
         for node in rootnode.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
         return result
-
-class IndirectEntityListDescriptor(EntityListDescriptor):
-    """Access to supplementary information about an entity as if it was part of the 
-    main XML of the entity. Sometimes various additional entity references are not
-    part of the XML payload, but available through a separate HTTP resource. The 
-    EntityListDescriptor (base class of this) handles the case when there is one 
-    tag in the main entity for each associated entity. This tag handles when the
-    list of associated entities is only available through a separate HTTP resource,
-    given as a single link in the main XML payload.
-
-    Primarily used for the steps resource tree. For a step at steps/LIMSID, the reagent
-    lots are available under steps/LIMSID/reagentlots. This class encapsulates the access
-    to the sub-resource. It transparently fetches the sub-resource to get the list of 
-    entities, then acts as an EntityListDescriptor on those. Provides read-only access.
-
-    Copies the tags from the subentity into the main entity, to allow for caching.
-
-
-    Parameters:
-    list_tag:       Tag name of the list of entities. The tag is first looked up in
-                    the root entity, and the uri for the subentity is extracted. This
-                    tag name is also used for the parent tag in the subentity, containing
-                    all the entity references.
-    entity_tag:     Tag of individual entities.
-    cls:            Entity class to get.
-    """
-
-    def __init__(self, list_tag, entity_tag, cls):
-        super(IndirectEntityListDescriptor, self).__init__(entity_tag, cls, list_tag)
-        self.list_tag = list_tag
-        self.entity_tag = entity_tag
-
-    def __get__(self, instance, cls):
-        instance.get()
-        for main_node in instance.root.findall(self.list_tag):
-            try:
-                subentity_uri = main_node.attrib['uri']
-            except KeyError:
-                # Either invalid data, or we've fetched this one before
-                subentity_uri = None
-
-            if subentity_uri:
-                subent = instance.lims.get(subentity_uri)
-                main_node.clear()
-                for parent_node in subent.findall(self.list_tag):
-                    for entity_node in parent_node.findall(self.entity_tag):
-                        main_node.append(entity_node)
-        
-        return super(IndirectEntityListDescriptor, self).__get__(instance, cls)
 
 
 class DimensionDescriptor(TagDescriptor):
@@ -1519,8 +1484,8 @@ class NextAction(object):
         return s
 
 
-class AvailableProgram(object):
-    """Script registered on the process type, which can be referenced directly from
+class AvailableProgram(Entity):
+    """Program registered on the process type, which can be referenced directly from
     the step instance."""
 
     def __init__(self, lims, element):
@@ -1585,8 +1550,19 @@ class ProgramStatus(Entity):
     message        = StringDescriptor('message')
 
 
+class ReagentLots(Entity):
+    """A step's reagent lots subentity.
+    
+    To access the list of reagent lots for a step you need to do:
+    step.reagentlots.reagent_lots
+    because they are available through the reagentlots subentity (this).
+    """
+
+    reagent_lots = EntityListDescriptor('reagent-lot', ReagentLot)
+
+
 class Step(Entity):
-    "Step, as defined by the genologics API. Step ID is the same as the process ID."
+    """Step, as defined by the genologics API. Step ID is the same as the process ID."""
 
     _URI = 'steps'
 
@@ -1594,26 +1570,16 @@ class Step(Entity):
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
-    reagent_lots        = IndirectEntityListDescriptor('reagent-lots', 'reagent-lot', ReagentLot)
-
-    def __init__(self, lims, uri=None, id=None):
-        super(Step, self).__init__(lims,uri,id)
-        assert self.uri is not None
-        actionsuri="{0}/actions".format(self.uri)
-        self.actions= StepActions(lims,uri=actionsuri)
+    reagentlots         = SubEntityDescriptor('reagentlots', ReagentLots)
+    actions             = SubEntityDescriptor('actions', StepActions)
 
 
     def advance(self):
-        "Advances to next stage (placement, record details, finish, etc)"
+        """Advances to next stage (placement, record details, finish, etc)"""
         self.get()
         advance_uri = "{0}/advance".format(self.uri)
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.root = self.lims.post(advance_uri, data)
-
-    def process(self):
-        """Get the Process object corresponding to this protocol step."""
-        return Process(self.lims, id = self.id)
-
 
 
 class Queue(Entity):
