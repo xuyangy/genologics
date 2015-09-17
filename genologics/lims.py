@@ -427,7 +427,6 @@ class Lims(object):
         first = next(inst_iter)
         klass = first.__class__
         root = ElementTree.Element(nsmap('ri:links'))
-        ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
         result = []
         needs_request=force
         for instance in itertools.chain((first,), inst_iter):
