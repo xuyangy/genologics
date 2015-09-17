@@ -11,6 +11,7 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
            'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
+import itertools
 import urllib
 import re
 from cStringIO import StringIO
@@ -429,14 +430,12 @@ class Lims(object):
         ElementTree.SubElement(root, 'link', dict(uri=first.uri, rel=klass._URI))
         result = []
         needs_request=force
-        if not force:
-            for instance in inst_iter:
-                try:
-                    result.append(self.cache[instance.uri])
-                except:
-                    needs_request=True
-                    ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                      rel=klass._URI))
+        for instance in itertools.chain((first,), inst_iter):
+            if force or instance.root is None:
+                ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
+                                                  rel=klass._URI))
+                needs_request=True
+                
 
         if needs_request:
             uri = self.get_uri(klass._URI, 'batch/retrieve')
