@@ -435,6 +435,8 @@ class Lims(object):
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                   rel=klass._URI))
                 needs_request=True
+            else:
+                result.append(instance)
                 
 
         if needs_request:
