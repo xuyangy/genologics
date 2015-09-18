@@ -94,7 +94,7 @@ def main(args, lims):
                 fid=output.files[0].id
             except:
                 raise(RuntimeError("Cannot access the tecan output file to read the concentrations."))
-        elif output.name=='EPP Log File':
+        elif output.name=='EPP log file':
             out_id=output.id
 
     file_contents=lims.get_file_contents(id=fid)
@@ -107,8 +107,8 @@ def main(args, lims):
         if iom[1]['uri'].output_type == "ResultFile" and len(iom[1]['uri'].samples) ==1:
             poskey=iom[0]['uri'].location[1].replace(":", "")
             iom[1]['uri'].udf['Conc. Units']='ng/ul'
-            iom[1]['uri'].udf['Concentration']=di[poskey]['conc']
-            iom[1]['uri'].udf['%CV']=di[poskey]['cv']
+            iom[1]['uri'].udf['Concentration']=float(di[poskey]['conc'])
+            iom[1]['uri'].udf['%CV']=float(di[poskey]['cv'])
             iom[1]['uri'].put()
 
                 
