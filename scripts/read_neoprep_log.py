@@ -80,8 +80,6 @@ def read_log(lims, pid, logfile):
                 inp.qc="FAILED"
             inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
             inp.udf['Concentration']=float(data[inp.name]['conc'])
-            inp.udf['Conc. Units']='nM')
-            inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
             inp.udf['Size (bp)']=data[inp.name]['ist_size']
             inp.put()
