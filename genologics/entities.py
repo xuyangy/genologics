@@ -687,31 +687,6 @@ class EntityListDescriptor(EntityDescriptor):
         return result
 
 
-class SubEntityDescriptor(BaseDescriptor):
-    """Link to a sub-entity. A sub-entity contains additional information
-    about the LIMS object of the parent entity. The argument 'path' to the 
-    constructor is added to the URI of the parent entity.
-    
-    SubEntityDescriptor is primarily used in the steps resource 
-    tree, in which each step has a selection of URIs below its main URI,
-    such as <step-uri>/reagenttypes.
-
-    The constructor of klass is called once for each instance with the
-    lims object and the formatted uri.
-
-    (Does not trigger a get() of the parent entity, which may be good for
-    performance)
-    """
-
-    def __init__(self, path, klass):
-        self.klass = klass
-        self.path = path
-
-    def __get__(self, instance, cls):
-        subentity_uri = instance.uri.strip("/") + "/" + self.path
-        return self.klass(instance.lims, uri=subentity_uri)
-
-
 class NestedAttributeListDescriptor(StringAttributeDescriptor):
     """An instance yielding a list of dictionnaries of attributes
        for a nested xml list of XML elements"""
