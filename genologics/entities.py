@@ -689,13 +689,8 @@ class EntityListDescriptor(EntityDescriptor):
 
 class SubEntityDescriptor(BaseDescriptor):
     """Link to a sub-entity. A sub-entity contains additional information
-    about the LIMS object of the parent entity. The argument 'uri' to the 
-    constructor is a Python format() pattern which gives the URI of the 
-    subentity relative to the URI of the parent entity. The first and only
-    format placeholder is replaced with the parent entity's URI. Use e.g.
-      uri="{0}/actions"
-    to give something like
-      http://localhost:8080/api/v2/steps/24-100/actions
+    about the LIMS object of the parent entity. The argument 'path' to the 
+    constructor is added to the URI of the parent entity.
     
     SubEntityDescriptor is primarily used in the steps resource 
     tree, in which each step has a selection of URIs below its main URI,
@@ -708,12 +703,12 @@ class SubEntityDescriptor(BaseDescriptor):
     performance)
     """
 
-    def __init__(self, uri, klass):
+    def __init__(self, path, klass):
         self.klass = klass
-        self.uri = uri
+        self.path = path
 
     def __get__(self, instance, cls):
-        subentity_uri = self.uri.format(instance.uri)
+        subentity_uri = instance.uri.strip("/") + "/" + self.path
         return self.klass(instance.lims, uri=subentity_uri)
 
 
@@ -1558,7 +1553,7 @@ class ReagentLots(Entity):
     because they are available through the reagentlots subentity (this).
     """
 
-    reagent_lots = EntityListDescriptor('reagent-lot', ReagentLot)
+    reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
 
 
 class Step(Entity):
@@ -1570,8 +1565,8 @@ class Step(Entity):
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
-    reagentlots         = SubEntityDescriptor('reagentlots', ReagentLots)
-    actions             = SubEntityDescriptor('actions', StepActions)
+    reagentlots         = EntityDescriptor('reagent-lots', ReagentLots)
+    actions             = EntityDescriptor('actions', StepActions)
 
 
     def advance(self):
