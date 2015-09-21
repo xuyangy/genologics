@@ -1,4 +1,3 @@
 consider whether GenericListDescriptor can be converted into NestedAttributeListDescriptor in two cases
 give NextAction class some love (or convert it , per the above)
-the indirectentitylistdescriptor is still 
 implement tests
