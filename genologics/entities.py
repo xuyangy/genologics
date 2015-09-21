@@ -1531,6 +1531,16 @@ class ReagentLots(Entity):
     reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
 
 
+class StepDetails(Entity):
+    """Details resource contains an alternative representation of the
+    information in processes (input/output maps, UDFs). In the details
+    XML payload, these are nested under a parent XML element; 
+    input-output-maps, fields. In time, the relevant descriptors may be
+    generalised to work here too."""
+
+    preset            = StringDescriptor('preset')
+
+
 class Step(Entity):
     """Step, as defined by the genologics API. Step ID is the same as the process ID."""
 
@@ -1542,6 +1552,7 @@ class Step(Entity):
     available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
     reagentlots         = EntityDescriptor('reagent-lots', ReagentLots)
     actions             = EntityDescriptor('actions', StepActions)
+    details             = EntityDescriptor('details', StepDetails)
 
 
     def advance(self):
