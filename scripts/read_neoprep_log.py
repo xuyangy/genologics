@@ -79,7 +79,6 @@ def read_log(lims, pid, logfile):
             elif data[inp.name]['stat'] == 'Fail':
                 inp.qc="FAILED"
             inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
-            inp.udf['Concentration']=float(data[inp.name]['conc'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
             inp.udf['Size (bp)']=float(data[inp.name]['ist_size'])
             inp.put()
