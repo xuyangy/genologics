@@ -81,7 +81,7 @@ def read_log(lims, pid, logfile):
             inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
             inp.udf['Concentration']=float(data[inp.name]['conc'])
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
-            inp.udf['Size (bp)']=data[inp.name]['ist_size']
+            inp.udf['Size (bp)']=float(data[inp.name]['ist_size'])
             inp.put()
             logger.info("updated sample {0}".format(inp.name))
 
