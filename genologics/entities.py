@@ -1495,7 +1495,7 @@ class Queue(Entity):
 
     _URI = 'queues'
 
-    artifacts              = EntityListDescriptor('artifact', Artifact, 'artifacts')
+    artifacts              = NestedEntityListDescriptor('artifact', Artifact, 'artifacts')
     protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', ProtocolStep)
 
 
