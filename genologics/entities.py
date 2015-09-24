@@ -1183,18 +1183,19 @@ class ReagentType(Entity):
     _URI="reagenttypes"
     _TAG="reagent-type"
 
+    name    =StringAttributeDescriptor('name')
     category=StringDescriptor('reagent-category')
 
-    def __init__(self, lims, uri=None, id=None):
-        super(ReagentType, self).__init__(lims,uri,id)
-        assert self.uri is not None
-        self.root=lims.get(self.uri)
-        self.sequence=None
-        for t in self.root.findall('special-type'):
+    @property
+    def sequence(self):
+        self.get()
+        for t in self.root.findall("special-type"):
             if t.attrib.get("name") == "Index":
                 for child in t.findall("attribute"):
                     if child.attrib.get("name") == "Sequence":
-                        self.sequence=child.attrib.get("value")
+                        return child.attrib.get("value")
+        return None
+
 
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
