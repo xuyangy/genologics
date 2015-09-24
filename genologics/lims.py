@@ -10,6 +10,7 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims']
 
+import itertools
 import urllib
 from cStringIO import StringIO
 
