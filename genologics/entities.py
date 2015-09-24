@@ -1342,18 +1342,6 @@ class ReagentLot(Entity):
 
 #### Configuration of workflows, protocols, etc. ####
 
-class Transition(object):
-    def __init__(self, lims, element):
-        step_uri = element.attrib['next-step-uri']
-        if step_uri:
-            self.step = ProtocolStep(lims, uri = step_uri)
-        else:
-            self.step = None
-
-        self.sequence = element.attrib['sequence']
-        self.name = element.attrib['name']
-    
-
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
 
@@ -1370,8 +1358,8 @@ class ProtocolStep(Entity):
     sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
     step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
     epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
-    # Transitions represent the potential next steps for samples
-    transitions         = GenericListDescriptor('transitions', Transition)
+    # Transitions represent the allowed next steps for samples
+    transitions         = NestedAttributeListDescriptor('transition', 'transitions')
 
     def queue(self):
         """Get the queue corresponding to this step."""
