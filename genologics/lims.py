@@ -516,6 +516,6 @@ class Lims(object):
         for i in analytes:
             ElementTree.SubElement(assign, "artifact", {'uri': i.uri})
 
-        self.post(self.get_uri("route/artifacts"), ElementTree.tostring(root))
+        self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
 
 
