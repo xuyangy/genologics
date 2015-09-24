@@ -291,6 +291,7 @@ class StringDescriptor(TagDescriptor):
             return node.text
 
     def __set__(self, instance, value):
+        instance.get()
         node = self.get_node(instance)
         if node is None:
             node = ElementTree.SubElement(instance.root, self.tag)
