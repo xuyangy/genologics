@@ -12,8 +12,8 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
 import itertools
-import urllib
 import re
+import urllib
 from cStringIO import StringIO
 
 # http://docs.python-requests.org/
@@ -436,7 +436,10 @@ class Lims(object):
                 needs_request=True
             else:
                 result.append(instance)
+<<<<<<< HEAD
                 
+=======
+>>>>>>> batch-calls
 
         if needs_request:
             uri = self.get_uri(klass._URI, 'batch/retrieve')
@@ -449,7 +452,11 @@ class Lims(object):
         return result
 
     def put_batch(self, instances):
+<<<<<<< HEAD
         """Update the instances using a single batch request."""
+=======
+        """Update multiple instances using a single batch request."""
+>>>>>>> batch-calls
 
         if not instances:
             return
