@@ -941,15 +941,15 @@ class Note(Entity):
     content = StringDescriptor(None)    # root element
 
 
-class ProtoFile(object):
+class Glsstorage(object):
     """File object for use while allocating a new file. It is not an
     Entity because it doesn't have a unique identifier."""
 
-    attached_to        = StringDescriptor('attached-to')
+    attached_to_uri    = StringDescriptor('attached-to')
     content_location   = StringDescriptor('content-location')
     original_location  = StringDescriptor('original-location')
 
-    def __init__(self, lims, attached_to = None, original_location = None, root = None): 
+    def __init__(self, lims, root = None): 
         '''Specify an entity to attach the file: set attached_to to an entity object.
 
         The original location is required, but not used for anything.
@@ -959,20 +959,14 @@ class ProtoFile(object):
         self.lims = lims
         if root is not None:
             self.root = root
-            if attached_to or original_location:
-                raise ValueError("Can't specify both data and XML root element")
         else:
             self.root = ElementTree.Element(nsmap('file:file'))
-            ElementTree.SubElement(self.root, 'attached-to').text = attached_to.uri
-            ElementTree.SubElement(self.root, 'original-location').text = original_location
-            ElementTree.SubElement(self.root, 'content-location')
 
     def get(self):
         """Get is a no-op for ProtoFile, but required to use the descriptors
         which are intended for Entities. There is no ultimate correct copy in 
         the LIMS, only the local data"""
         pass
-
 
     def post(self):
         """Posts to the files resource. Returns an actual File entity object"""
@@ -983,9 +977,6 @@ class ProtoFile(object):
         f = File(self.lims, uri)
         f.root = response
         return f
-
-
-
 
 
 class File(Entity):

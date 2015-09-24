@@ -8,7 +8,7 @@ Copyright (C) 2012 Per Kraulis
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
-           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'ProtoFile',
+           'Artifact', 'Lims', 'Step', 'Queue', 'File', 'Glsstorage',
            'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
 import itertools
@@ -494,18 +494,23 @@ class Lims(object):
         step.root = root
         return step
 
-    def glsstorage(self, proto_file):
+    def glsstorage(self, attached_to, original_location):
         """Allocates and returns a file resource in the glsstorage area. This 
         doesn't actually upload the file, it only sets up the metadata.
-        
-        Accepts and returns a ProtoFile object, which contains information about
-        a file or storage location, but does not yet have a LIMS ID. This 
-        function fills in the content-location attribute."""
 
-        glss_uri = self.get_uri("glsstorage")
+        attached_to should be an Entity, and original_location should be a string
+        
+        Returns a Glsstorage object, which contains information about
+        a file or storage location, but does not yet have a LIMS ID. The POST 
+        request done here fills in the content-location attribute."""
+
+        proto_file = Glsstorage(self)
+        proto_file.attached_to_uri = attached_to.uri
+        proto_file.original_location = original_location
         xml_data = self.tostring(ElementTree.ElementTree(proto_file.root))
+        glss_uri = self.get_uri("glsstorage")
         response = self.post(glss_uri, xml_data)
-        return ProtoFile(self, root=response)
+        return Glsstorage(self, root=response)
         
     def route_analytes(self, analytes, workflow):
         """Adding analytes to workflow (may also support adding to a stage in 
