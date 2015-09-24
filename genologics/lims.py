@@ -408,6 +408,27 @@ class Lims(object):
                 result.append(instance)
         return result
 
+    def put_batch(self, instances):
+        """Update multiple instances using a single batch request."""
+
+        if not instances:
+            return
+
+        inst_iter = iter(instances)
+        first = next(inst_iter)
+        klass = first.__class__
+        # Tag is art:details, con:details, etc.
+        example_root = first.root
+        ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
+        root = ElementTree.Element("{%s}details" % (ns_uri))
+        root.append(first.root)
+        for instance in inst_iter:
+            root.append(instance.root)
+
+        uri = self.get_uri(klass._URI, 'batch/update')
+        data = self.tostring(ElementTree.ElementTree(root))
+        root = self.post(uri, data)
+
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
         outfile = StringIO()
