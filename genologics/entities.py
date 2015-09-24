@@ -871,9 +871,6 @@ class Researcher(Entity):
     def name(self):
         return u"%s %s" % (self.first_name, self.last_name)
 
-class Reagent_label(Entity):
-    """Reagent label element"""
-    reagent_label = StringDescriptor('reagent-label')
 
 class Note(Entity):
     "Note attached to a project or a sample."
