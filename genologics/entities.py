@@ -480,11 +480,11 @@ class UdfDictionary(object):
         else:                           # Create new entry; heuristics for type
             if isinstance(value, basestring):
                 type = '\n' in value and 'Text' or 'String'
-            elif isinstance(value, (int, float)):
-                type = 'Numeric'
             elif isinstance(value, bool):
                 type = 'Boolean'
                 value = value and 'True' or 'False'
+            elif isinstance(value, (int, float)):
+                type = 'Numeric'
             elif isinstance(value, datetime.date):
                 type = 'Date'
                 value = str(value)
