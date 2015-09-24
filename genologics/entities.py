@@ -358,20 +358,6 @@ class IntegerDescriptor(StringDescriptor):
             return int(node.text)
 
 
-class IntegerAttributeDescriptor(StringAttributeDescriptor):
-    """An instance attribute containing an integer value
-    represented by an XMl element.
-    """
-
-    def __get__(self, instance, cls):
-        instance.get()
-        str_val = instance.root.attrib.get(self.tag)
-        if str_val is None:
-            return None
-        else:
-            return int(str_val)
-
-
 class BooleanDescriptor(StringDescriptor):
     """An instance attribute containing a boolean value
     represented by an XMl element.
@@ -1344,7 +1330,7 @@ class Protocol(Entity):
     _TAG='protocol'
 
     name        = StringAttributeDescriptor('name')
-    index       = IntegerAttributeDescriptor('index')
+    index       = StringAttributeDescriptor('index')
     steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
     properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
 
