@@ -670,19 +670,14 @@ class EntityListDescriptor(EntityDescriptor):
     represented by multiple XML elements.
     """
 
-    def __init__(self, tag, cls, parent_tag = None, save_body = False):
+    def __init__(self, tag, cls):
         super(EntityListDescriptor, self).__init__(tag, cls)
-        self.save_body = save_body
 
     def __get__(self, instance, cls):
         instance.get()
         result = []
-
         for node in instance.root.findall(self.tag):
-            entity = self.klass(instance.lims, uri=node.attrib['uri'])
-            if self.save_body:
-                entity.root = node
-            result.append(entity)
+            result.append(self.klass(instance.lims, uri=node.attrib['uri']))
 
         return result
 
@@ -742,6 +737,26 @@ class NestedEntityListDescriptor(EntityListDescriptor):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
         return result
 
+class InlineEntityListDescriptor(EntityListDescriptor):
+    """EntityListDescriptor which saves the XML tags in the parent entity as the
+    root elements of the referenced entities. Useful when the full body of the 
+    referenced entity is enclosed in the parent."""
+
+    def __init__(self, tag, klass, *args):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            entity = self.klass(instance.lims, uri=node.attrib['uri'])
+            entity.root = node
+            result.append(entity)
+        return result
 
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
