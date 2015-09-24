@@ -452,11 +452,7 @@ class Lims(object):
         return result
 
     def put_batch(self, instances):
-<<<<<<< HEAD
-        """Update the instances using a single batch request."""
-=======
         """Update multiple instances using a single batch request."""
->>>>>>> batch-calls
 
         if not instances:
             return
