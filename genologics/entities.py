@@ -753,21 +753,22 @@ class ReagentLabelSet(MutableSet):
     def __len__(self): return len(self.value)
 
     def discard(self, name):
-        remove_node = None
+        self.value.remove(name) # Or fail if it's not there
         for node in self.root.findall('reagent-label'):
             try:
                 if node.attrib['name'] == name:
-                   remove_node = node
                    break
             except (AttributeError, KeyError):
                 pass
+        else:
+            raise RuntimeError("Internal state is not consistent")
 
         self.root.remove(node)
-        self.value.remove(name)
 
     def add(self, name):
-        self.value.add(name)
-        ElementTree.SubElement(self.root, 'reagent-label', {'name': name})
+        if not name in self.value:
+            self.value.add(name)
+            ElementTree.SubElement(self.root, 'reagent-label', {'name': name})
 
     def __str__(self):
         return str(self.value)
