@@ -1459,8 +1459,8 @@ class ReagentType(Entity):
     _URI = 'reagenttypes'
     _TAG = 'reagent-type'
 
-    name            = StringAttributeDescriptor('name')
-    category        = StringDescriptor('reagent-category')
+    name    =StringAttributeDescriptor('name')
+    category=StringDescriptor('reagent-category')
 
     @property
     def sequence(self):
