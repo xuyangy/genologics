@@ -10,6 +10,7 @@ import re
 import urlparse
 import datetime
 import time
+from collections import MutableSet
 from xml.etree import ElementTree
 import logging
 
