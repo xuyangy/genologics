@@ -1461,16 +1461,11 @@ class AvailableProgram(Entity):
     """Program registered on the process type, which can be referenced directly from
     the step instance."""
 
-    def __init__(self, lims, element):
-        self.uri = element.attrib['uri']
-        self.name = element.attrib['name']
-        self.lims = lims
+    def get(self):
+        pass
 
     def trigger(self):
         self.lims.post(self.uri, "")
-
-    def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.id)
 
 
 class StepActions(Entity):
@@ -1557,7 +1552,7 @@ class Step(Entity):
     configuration       = EntityDescriptor('configuration', ProtocolStep)
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
-    available_programs  = GenericListDescriptor('available-programs', AvailableProgram)
+    available_programs  = InlineEntityListDescriptor('available-program', AvailableProgram, 'available-programs')
     reagentlots         = EntityDescriptor('reagent-lots', ReagentLots)
     actions             = EntityDescriptor('actions', StepActions)
     details             = EntityDescriptor('details', StepDetails)
