@@ -1377,55 +1377,12 @@ class Workflow(Entity):
 
 #### Classes related to the steps resource hierarchy ####
 
-class NextAction(object):
-    """Holds an action entry. Actions are specified in the next-actions XML element of a
-    step. They control what happens to a sample after a protocol step is completed.
-    """
-
-    def __init__(self, lims, element):
-        """Creates a NextAction from an XML element."""
-
-        self.xml_node = element
-        
-        self.action = element.attrib.get('action')
-        artifact_uri = element.attrib.get('artifact-uri') 
-        if artifact_uri:
-            self.artifact = Artifact(lims, uri=artifact_uri)
-        else:
-            self.artifact = None
-        next_step_uri = element.attrib.get('step-uri')
-        if next_step_uri:
-            self.next_step = ProtocolStep(lims, uri=next_step_uri)
-        else:
-            self.next_step = None
-        rework_step_uri = element.attrib.get('rework-step-uri')
-        if rework_step_uri:
-            self.rework_step = ProtocolStep(lims, uri=rework_step_uri)
-        else:
-            self.rework_step = None
-
-    def update(self):
-        self.xml_node.attrib['action'] = self.action
-        if self.artifact:
-            self.xml_node.attrib['artifact-uri'] = self.artifact.uri
-        if self.next_step:
-            self.xml_node.attrib['step-uri'] = self.next_step.uri
-        if self.rework_step:
-            self.xml_node.attrib['rework-step-uri'] = self.next_step.uri
-
-
-    def __str__(self):
-        s = "NextAction(action='" + (self.action or "") + "'"
-        if self.artifact: s += ",artifact='" + self.artifact.id + "'"
-        if self.next_step: s += ",next_step='" + self.next_step.id + "'"
-        if self.rework_step: s += ",rework_step='" + self.rework_step.id + "'"
-        s += ")"
-        return s
-
-
 class AvailableProgram(Entity):
     """Program registered on the process type, which can be referenced directly from
-    the step instance."""
+    the step instance. Only represented by a tag in the Step entity, not at its own 
+    resource."""
+
+    name        = StringAttributeDescriptor('name')
 
     def get(self):
         pass
