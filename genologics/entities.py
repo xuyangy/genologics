@@ -720,7 +720,6 @@ class ReagentLabelSet(MutableSet):
                 pass
         else:
             raise RuntimeError("Internal state is not consistent")
-
         self.root.remove(node)
 
     def add(self, name):
