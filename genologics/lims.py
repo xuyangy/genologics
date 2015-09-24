@@ -11,6 +11,7 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Artifact', 'Lims']
 
 import itertools
+import re
 import urllib
 from cStringIO import StringIO
 
