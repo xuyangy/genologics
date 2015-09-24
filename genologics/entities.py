@@ -1477,25 +1477,27 @@ class StepActions(Entity):
 
     next_actions = NestedAttributeListDescriptor('next-action', 'next-actions')
 
-    def __init__(self, lims, uri):
-        super(StepActions, self).__init__(lims,uri,None)
-        self.escalation={}
-        self.lims=lims
-        self.root=self.lims.get(self.uri)
+
+    @property
+    def escalation(self):
+        self.get()
+        escalation = {}
         for node in self.root.findall('escalation'):
-            self.escalation['artifacts']=[]
-            self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
-            self.escalation['request']=uri=node.find('request').find('comment').text
+            escalation['artifacts']=[]
+            escalation['author']=Researcher(self.lims,uri=node.find('request').find('author').attrib.get('uri'))
+            escalation['request']=uri=node.find('request').find('comment').text
             if node.find('review') is not None: #recommended by the Etree doc
-                self.escalation['status']='Reviewed'
-                self.escalation['reviewer']= Researcher(lims,uri=node.find('review').find('author').attrib.get('uri'))
-                self.escalation['answer']=uri=node.find('review').find('comment').text
+                escalation['status']='Reviewed'
+                escalation['reviewer']= Researcher(self.lims,uri=node.find('review').find('author').attrib.get('uri'))
+                escalation['answer']=uri=node.find('review').find('comment').text
             else:
-                self.escalation['status']='Pending'
+                escalation['status']='Pending'
 
             for node2 in node.findall('escalated-artifacts'):
-                art= [Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2]
-                self.escalation['artifacts'].extend(art)
+                art= [Artifact(self.lims,uri=ch.attrib.get('uri')) for ch in node2]
+                escalation['artifacts'].extend(art)
+
+        return escalation
 
 
     def put(self):
