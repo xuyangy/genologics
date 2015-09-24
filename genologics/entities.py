@@ -622,9 +622,6 @@ class EntityListDescriptor(EntityDescriptor):
     represented by multiple XML elements.
     """
 
-    def __init__(self, tag, cls):
-        super(EntityListDescriptor, self).__init__(tag, cls)
-
     def __get__(self, instance, cls):
         instance.get()
         result = []
