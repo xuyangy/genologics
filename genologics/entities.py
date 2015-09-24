@@ -329,40 +329,6 @@ class StringListDescriptor(TagDescriptor):
         return result
 
 
-class GenericListDescriptor(TagDescriptor):
-    """A tag containing a list of tags. This descriptor allows a list of XML elements 
-    to be represented as a list of objects of any class. When the list contains IDs
-    or URIs, one should obviously use the [Nested]EntityListDescriptor. When the elements
-    must be processed by custom logic, this descriptor can be used.
-
-    This descriptor allows read-only access to a generic list of sub-tags. The parent
-    tag name should be given to this descriptor.  In the following example, it would
-    be available-programs. The klass argument would be called twice for the
-    available-program tags:
-    <available-programs>
-      <available-program />
-      <available-program />
-    </available-programs>
-
-    This descriptor passes all sub-tags (e.g. available-program) one by one to
-    klass with named arguments "lims" and "element". klass would usually be a constructor, but
-    could be any function. The arguments refer to the lims object and the XML element 
-    respectively.
-    """
-
-    def __init__(self, tag, klass):
-        super(GenericListDescriptor, self).__init__(tag)
-        self.klass = klass
-
-    def __get__(self, instance, cls):
-        instance.get()
-        result = []
-        for node in instance.root.findall(self.tag):
-            for sub_node in node:
-                result.append(self.klass(lims=instance.lims, element=sub_node))
-        return result
-
-
 class StringDictionaryDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary of string key/values
     represented by a hierarchical XML element.
