@@ -1471,12 +1471,10 @@ class AvailableProgram(Entity):
 
 
 class StepActions(Entity):
-    """Small hack to be able to query the actions subentity of
-    the Step entity. Right now, only the escalations and next actions
-    are parsed."""
+    """Represents the Actions subentity of the Step entity. Right now, only the escalations and
+    next actions are parsed. Next actions can be modified, escalations are read-only."""
 
     next_actions = NestedAttributeListDescriptor('next-action', 'next-actions')
-
 
     @property
     def escalation(self):
@@ -1503,7 +1501,7 @@ class StepActions(Entity):
     def put(self):
         """Updates next actions, then put.""" 
         # In the future one may want to centralise the update handling into the descriptor.
-        # For now we handle next actions as a special case, to keep the existing functionality
+        # For now we handle next actions as a special case, to be able to update the next actions,
         # while changing to use the NestedAttributeListDescriptor
         next_actions_elem = self.root.find('next-actions')
         if not next_actions_elem is None:
