@@ -1413,23 +1413,23 @@ class NextAction(object):
     step. They control what happens to a sample after a protocol step is completed.
     """
 
-    def __init__(self, lims, xml_node):
+    def __init__(self, lims, element):
         """Creates a NextAction from an XML element."""
 
-        self.xml_node = xml_node
+        self.xml_node = element
         
-        self.action = xml_node.attrib.get('action')
-        artifact_uri = xml_node.attrib.get('artifact-uri') 
+        self.action = element.attrib.get('action')
+        artifact_uri = element.attrib.get('artifact-uri') 
         if artifact_uri:
             self.artifact = Artifact(lims, uri=artifact_uri)
         else:
             self.artifact = None
-        next_step_uri = xml_node.attrib.get('step-uri')
+        next_step_uri = element.attrib.get('step-uri')
         if next_step_uri:
             self.next_step = ProtocolStep(lims, uri=next_step_uri)
         else:
             self.next_step = None
-        rework_step_uri = xml_node.attrib.get('rework-step-uri')
+        rework_step_uri = element.attrib.get('rework-step-uri')
         if rework_step_uri:
             self.rework_step = ProtocolStep(lims, uri=rework_step_uri)
         else:
@@ -1475,14 +1475,13 @@ class StepActions(Entity):
     the Step entity. Right now, only the escalations and next actions
     are parsed."""
 
-    next_actions = GenericListDescriptor('next-actions', NextAction)
+    next_actions = NestedAttributeListDescriptor('next-action', 'next-actions')
 
     def __init__(self, lims, uri):
         super(StepActions, self).__init__(lims,uri,None)
         self.escalation={}
         self.lims=lims
         self.root=self.lims.get(self.uri)
-        self.next_actions=[]
         for node in self.root.findall('escalation'):
             self.escalation['artifacts']=[]
             self.escalation['author']=Researcher(lims,uri=node.find('request').find('author').attrib.get('uri'))
@@ -1500,12 +1499,18 @@ class StepActions(Entity):
 
 
     def put(self):
-        """Updates next actions""" 
-        for na in self.next_actions:
-            na.update()
-        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+        """Updates next actions, then put.""" 
+        # In the future one may want to centralise the update handling into the descriptor.
+        # For now we handle next actions as a special case, to keep the existing functionality
+        # while changing to use the NestedAttributeListDescriptor
+        next_actions_elem = self.root.find('next-actions')
+        if not next_actions_elem is None:
+            next_actions = list(self.next_actions)
+            next_actions_elem.clear()
+            for na in next_actions:
+                ElementTree.SubElement(next_actions_elem, 'next-action', attrib=na)
 
-        self.lims.put(self.uri, data)
+        super(StepActions, self).put()
 
 
 class ProgramStatus(Entity):
