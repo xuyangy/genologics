@@ -1232,10 +1232,10 @@ class ReagentType(Entity):
     def sequence(self):
         self.get()
         for st in self.root.findall('special-type'):
-            if st.attrib['name'] == 'Index':
+            if st.attrib.get('name') == 'Index':
                 for elem in st.findall('attribute'):
-                    if elem.attrib['name'] == 'Sequence':
-                        return elem.attrib['value']
+                    if elem.attrib.get('name') == 'Sequence':
+                        return elem.attrib.get('value')
         return None
 
 
