@@ -148,7 +148,6 @@ def prepooling(currentStep, lims):
                 if s['vol_to_take']<MIN_WARNING_VOLUME:
                     log.append("Volume for sample {} is below {}, redo the calculations manually".format(MIN_WARNING_VOLUME, s['name']))
                 csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well'])) 
-    sys.exit(0)
     if log:
         with open("bravo.log", "w") as logContext:
             logContext.write("\n".join(log))
