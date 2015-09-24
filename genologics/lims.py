@@ -436,10 +436,6 @@ class Lims(object):
                 needs_request=True
             else:
                 result.append(instance)
-<<<<<<< HEAD
-                
-=======
->>>>>>> batch-calls
 
         if needs_request:
             uri = self.get_uri(klass._URI, 'batch/retrieve')
