@@ -707,6 +707,26 @@ class InlineEntityListDescriptor(EntityListDescriptor):
             result.append(entity)
         return result
 
+class ObjectListDescriptor(EntityListDescriptor):
+    """Represents a list of objects, which in general is not a list of
+    Entities."""
+
+    def __init__(self, tag, klass, *args):
+        super(BaseDescriptor, self).__init__()
+        self.tag = tag
+        self.klass = klass
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode=instance.root
+        for rootkey in self.rootkeys:
+            rootnode=rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(self.klass(instance.lims, node))
+        return result
+
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
@@ -1423,6 +1443,32 @@ class StepDetails(Entity):
     preset            = StringDescriptor('preset')
 
 
+class Pool(object):
+    """Pool object, represents a group of pooled samples."""
+
+    def __init__(self, lims, root):
+        self.lims = lims
+        self.root = root
+
+    name              = StringAttributeDescriptor('name')
+    inputs            = EntityListDescriptor('input', Artifact)
+
+    def get(self):
+        """Don't have a uri to get, all data are in memory, but the 
+        descriptors use get()."""
+        pass
+
+
+class StepPools(Entity):
+    """Pooling (read-only representation).
+    
+    This is a temporary measure, it should probably be replaced with a fully
+    read/write representation, including creation of pools. """
+
+    pooled_inputs      = ObjectListDescriptor('pool', Pool, 'pooled-inputs')
+    available_inputs   = NestedEntityListDescriptor('input', Artifact, 'available-inputs')
+
+
 class Step(Entity):
     """Step, as defined by the genologics API. Step ID is the same as the process ID."""
 
@@ -1435,6 +1481,7 @@ class Step(Entity):
     reagentlots         = EntityDescriptor('reagent-lots', ReagentLots)
     actions             = EntityDescriptor('actions', StepActions)
     details             = EntityDescriptor('details', StepDetails)
+    pools               = EntityDescriptor('pools', StepPools)
 
 
     def advance(self):
