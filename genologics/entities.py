@@ -1452,7 +1452,7 @@ class Pool(object):
 
     name              = StringAttributeDescriptor('name')
     inputs            = EntityListDescriptor('input', Artifact)
-    output            = EntityAttributeDescriptor('output-uri')
+    output            = EntityAttributeDescriptor('output-uri', Artifact)
 
     def get(self):
         """Don't have a uri to get, all data are in memory, but the 
