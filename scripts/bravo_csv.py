@@ -201,7 +201,7 @@ def setup_workset(currentStep):
 def main(lims, args):
     #Array, so can be modified inside a child method
     currentStep=Process(lims,id=args.pid)
-    if "Setup" in currentStep.type.name:
+    if "Setup" in currentStep.type.name or "Genotyping" in currentStep.type.name:
         setup_workset(currentStep)
     elif "Pooling" in currentStep.type.name:
         prepooling(currentStep, lims)
