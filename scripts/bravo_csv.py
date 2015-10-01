@@ -88,7 +88,7 @@ def make_datastructure(currentStep, lims, log):
             obj['id']=inp['uri'].id
             obj['conc']=inp['uri'].udf['Normalized conc. (nM)']
             obj['pool_id']=out['uri'].id
-            obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
+            #obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
             obj['vol']=samples_volumes[obj['name']]
             obj['src_fc']=inp['uri'].location[0].id
             obj['src_well']=inp['uri'].location[1]
