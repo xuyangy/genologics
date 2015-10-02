@@ -147,17 +147,19 @@ def compute_transfer_volume(currentStep, lims, log):
             # Set the output conc of the pool and also get the "desired" pool
             # volume, which is which? 
             final_vol = pool.udf["Maximal Volume (uL)"] # Change to "Final Volume (uL)"
+            conc = valid_inputs[0]["conc"]
             # If all inputs are of the same conc use the trivial algorithm,
             # else try to optimize:
-            if len(set(s["conc"] for s in valid_inputs)) < 2:
+            if all(s["conc"] == conc for s in valid_inputs):
                 vols = lazy_volumes(valid_inputs, final_vol)
-                pool.udf['Normalized conc. (nM)'] = final_vol
+                pool.udf['Normalized conc. (nM)'] = conc
             else:
                 vols = optimize_volumes(valid_inputs, final_vol, MIN_WARNING_VOLUME)
                 # Calculate and add the theoretical pool conc:
                 z = zip([s["conc"] for s in valid_inputs], vols)
                 v = (sum(x[0]*x[1] for x in z) / sum(vols))
                 pool.udf['Normalized conc. (nM)'] = v
+            pool.put()
             for s, vol in zip(valid_inputs, vols):
                 s['vol_to_take'] = vol
                 returndata.append(s)
