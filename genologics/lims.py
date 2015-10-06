@@ -392,8 +392,8 @@ class Lims(object):
                 klass = instance.__class__
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                    rel=klass._URI))
-                needs_request = True
+                                                      rel=klass._URI))
+                needs_request=True
             else:
                 result.append(instance)
 
