@@ -72,13 +72,13 @@ def main(lims, args):
                 proj.put()
         elif pro.type.name in FLOWCELL_LEVEL: 
             cont=pro.all_inputs()[0].location[0]
-            if 'Running Notes' in cont.udf:
-                existing_notes=json.loads(proj.udf['Running Notes'])
+            if 'Notes' in cont.udf:
+                existing_notes=json.loads(proj.udf['Notes'])
                 for key in noteobj:
                     existing_notes[key]=noteobj[key]
-                cont.udf['Running Notes']=json.dumps(existing_notes)
+                cont.udf['Notes']=json.dumps(existing_notes)
             else:
-                cont.udf['Running Notes']=json.dumps(noteobj) 
+                cont.udf['Notes']=json.dumps(noteobj) 
             cont.put()
 
             
