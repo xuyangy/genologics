@@ -42,7 +42,7 @@ def main(lims, args):
     if step.actions.escalation:
         key=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         noteobj[key]={}
-        note="Escalation request from process {0} ({1}) {2} \nEscalation answer : {3}".format(pro.type.name, '[LIMS](http://genologics.scilifelab.se:8080/clarity/work-details/{0})'.format(pro.id.split('-')[1]), step.actions.escalation['request'],step.actions.escalation['answer'] )
+        note="Escalation request from process {0} ({1}) {2} \nEscalation answer : {3}".format(pro.type.name, '[LIMS](http://genologics.scilifelab.se:8080/clarity/work-details/{0})'.format(pro.id.split('-')[1]), step.actions.escalation['request'],step.actions.escalation.get('answer', '') )
         noteobj[key]['note']=note
         noteobj[key]['user']="{0} {1}".format(pro.technician.first_name,pro.technician.last_name)
         noteobj[key]['email']=pro.technician.email
