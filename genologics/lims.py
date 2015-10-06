@@ -379,22 +379,21 @@ class Lims(object):
             root = self.get(node.attrib['uri'], params=params)
         return result
 
-    def get_batch(self, instances):
+    def get_batch(self, instances, force=False):
         "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
-        klass = instances[0].__class__
         root = ElementTree.Element(nsmap('ri:links'))
+        klass = None
         result = []
         needs_request=False
         for instance in instances:
-            try:
-                result.append(self.cache[instance.uri])
-            except:
-                needs_request=True
+            if not klass:
+                klass = instance.__class__
+            if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                      rel=klass._URI))
-                needs_request=True
+                                                    rel=klass._URI))
+                needs_request = True
             else:
                 result.append(instance)
 
@@ -407,6 +406,29 @@ class Lims(object):
                 instance.root = node
                 result.append(instance)
         return result
+
+
+    def put_batch(self, instances):
+        """Update multiple instances using a single batch request."""
+
+        if not instances:
+            return
+
+        root = None # XML root element for batch request
+
+        for instance in instances:
+            if root is None:
+                klass = instance.__class__
+                # Tag is art:details, con:details, etc.
+                example_root = instance.root
+                ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
+                root = ElementTree.Element("{%s}details" % (ns_uri))
+
+            root.append(instance.root)
+
+        uri = self.get_uri(klass._URI, 'batch/update')
+        data = self.tostring(ElementTree.ElementTree(root))
+        root = self.post(uri, data)
 
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
