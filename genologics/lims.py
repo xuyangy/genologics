@@ -11,7 +11,6 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Artifact', 'Lims', 'Step', 'Queue', 'File', 'Glsstorage',
            'ReagentLot', 'ReagentKit', 'Workflow', 'ReagentType']
 
-import re
 import urllib
 from cStringIO import StringIO
 
@@ -107,7 +106,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type': 'application/xml',
                                    'accept': 'application/xml'})
-        return self.parse_response(r, success_status = [200, 201, 202])
+        return self.parse_response(r)
 
     def check_version(self):
         """Raise ValueError if the version for this interface
@@ -122,11 +121,11 @@ class Lims(object):
             if node.attrib['major'] == self.VERSION: return
         raise ValueError('version mismatch')
 
-    def parse_response(self, response, success_status = [200]):
+    def parse_response(self, response):
         """Parse the XML returned in the response.
         Raise an HTTP error if the response status is not 200.
         """
-        if not response.status_code in success_status:
+        if response.status_code != 200:
             try:
                 root = ElementTree.fromstring(response.content)
                 node = root.find('message')
@@ -419,21 +418,20 @@ class Lims(object):
         return result
 
     def get_batch(self, instances, force=False):
-        """Get the content of a set of instances using the efficient batch call."""
+        "Get the content of a set of instances using the efficient batch call."
         if not instances:
             return []
-
         root = ElementTree.Element(nsmap('ri:links'))
         klass = None
         result = []
-        needs_request=[]
+        needs_request=False
         for instance in instances:
             if not klass:
                 klass = instance.__class__
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                  rel=klass._URI))
-                needs_request.append(instance.uri)
+                                                      rel=klass._URI))
+                needs_request=True
             else:
                 result.append(instance)
 
@@ -441,11 +439,12 @@ class Lims(object):
             uri = self.get_uri(klass._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
-            for node, uri in zip(root.getchildren(), needs_request):
-                instance = klass(self, uri=uri)
+            for node in root.getchildren():
+                instance = klass(self, uri=node.attrib['uri'])
                 instance.root = node
                 result.append(instance)
         return result
+
 
     def put_batch(self, instances):
         """Update multiple instances using a single batch request."""
