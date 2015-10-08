@@ -385,28 +385,26 @@ class Lims(object):
             return []
         root = ElementTree.Element(nsmap('ri:links'))
         klass = None
-        result = []
         needs_request=False
+        instance_map = {}
         for instance in instances:
             if not klass:
                 klass = instance.__class__
+            instance_map[instance.id] = instance
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                       rel=klass._URI))
                 needs_request=True
-            else:
-                result.append(instance)
 
         if needs_request:
             uri = self.get_uri(klass._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in root.getchildren():
-                instance = klass(self, uri=node.attrib['uri'])
+                instance = instance_map[node.attrib['limsid']]
                 instance.root = node
-                result.append(instance)
-        return result
 
+        return instances
 
     def put_batch(self, instances):
         """Update multiple instances using a single batch request."""
