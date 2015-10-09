@@ -443,7 +443,7 @@ class Lims(object):
                 instance = instance_map[node.attrib['limsid']]
                 instance.root = node
 
-        return instances
+        return instance_map.values()
 
     def put_batch(self, instances):
         """Update multiple instances using a single batch request."""
