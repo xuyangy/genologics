@@ -97,7 +97,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type': 'application/xml',
                                    'accept': 'application/xml'})
-        return self.parse_response(r)
+        return self.parse_response(r, accept_status_codes = [200, 201, 202])
 
     def check_version(self):
         """Raise ValueError if the version for this interface
@@ -112,11 +112,12 @@ class Lims(object):
             if node.attrib['major'] == self.VERSION: return
         raise ValueError('version mismatch')
 
-    def parse_response(self, response):
+    def parse_response(self, response, accept_status_codes = [200]):
         """Parse the XML returned in the response.
-        Raise an HTTP error if the response status is not 200.
+        Raise an HTTP error if the response status is not one of the 
+        specified accepted status codes.
         """
-        if response.status_code != 200:
+        if response.status_code not in accept_status_codes:
             try:
                 root = ElementTree.fromstring(response.content)
                 node = root.find('message')
