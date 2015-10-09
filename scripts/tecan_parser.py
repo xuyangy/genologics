@@ -10,7 +10,7 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.epp import attach_file, EppLogger
 from genologics.entities import *
 
-DESC="""EPP used to read csv files for the from a robot"""
+DESC="""EPP used to parse csv files from the Tecan plate reader"""
 
 def parse(iterable):
     # Pattern for matching "Layout" ID:
@@ -50,15 +50,15 @@ def convert(file_in, file_out):
     data.sort(key=lambda x: (x[1], int(x[2])))
     # Create the header:
     header = [
-		"Well",
-		"Type",
-		"Index",
-		"Raw mean",
-		"Raw CV%",
-		"Conc mean (ng/uL)",
-		"Conc CV%",
-		"Mark"
-	]
+        "Well",
+        "Type",
+        "Index",
+        "Raw mean",
+        "Raw CV%",
+        "Conc mean (ng/uL)",
+        "Conc CV%",
+        "Mark"
+    ]
     # Write data:
     writer = csv.writer(file_out)
     writer.writerow(header)
@@ -68,10 +68,10 @@ def convert(file_in, file_out):
 
 # Convert an index to a plate coordinate, e.g. 8 => H1
 def index_to_well(index):
-	i = int(index)
-	row = chr(64 + ((i-1) % 8 + 1))
-	col = int(((i-1) - (i-1) % 8) / 8 + 1)
-	return "{0}{1}".format(row, col)
+    i = int(index)
+    row = chr(64 + ((i-1) % 8 + 1))
+    col = int(((i-1) - (i-1) % 8) / 8 + 1)
+    return "{0}{1}".format(row, col)
 
 def dictionnarize(datalist):
     data_to_upload={}
@@ -79,7 +79,6 @@ def dictionnarize(datalist):
         data_to_upload[row[0]]={}
         data_to_upload[row[0]]['conc']=row[5]
         data_to_upload[row[0]]['cv']=row[6]
-
 
     return data_to_upload
 
@@ -105,16 +104,11 @@ def main(args, lims):
 
     for iom in pro.input_output_maps:
         if iom[1]['uri'].output_type == "ResultFile" and len(iom[1]['uri'].samples) ==1:
-            poskey=iom[0]['uri'].location[1].replace(":", "")
+            poskey=iom[1]['uri'].location[1].replace(":", "")
             iom[1]['uri'].udf['Conc. Units']='ng/ul'
             iom[1]['uri'].udf['Concentration']=float(di[poskey]['conc'])
             iom[1]['uri'].udf['%CV']=float(di[poskey]['cv'])
             iom[1]['uri'].put()
-
-                
-
-
-
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
