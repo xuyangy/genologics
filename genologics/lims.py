@@ -394,8 +394,8 @@ class Lims(object):
         
         The batch request API call collapses all requested Artifacts with different
         state into a single result with state equal to the max of the provided
-        state parameters. It is an error to request multiple different states of 
-        a single artifact with a single batch call.
+        state parameters. Using this function, it is an error to request multiple
+        different states of any single artifact.
         """
         if not instances:
             return []
