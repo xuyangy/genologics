@@ -381,14 +381,35 @@ class Lims(object):
         return result
 
     def get_batch(self, instances, force=False):
-        "Get the content of a set of instances using the efficient batch call."
+        """Get the content of a set of instances using the efficient batch call.
+        
+        Returns the list of requested instances in arbitrary order, with duplicates removed
+        (duplicates=entities occurring more than once in the instances argument).
+
+        For Artifacts it is possible to have multiple instances with the same LIMSID but 
+        different URI, differing by a query parameter ?state=XX. If state is not 
+        given for an input URI, a state is added in the data returned by the batch
+        API. In this case, the URI of the Entity object is not updated by this function
+        (this is similar to how Entity.get() works). This may help with caching.
+        
+        The batch request API call collapses all requested Artifacts with different
+        state into a single result with state equal to the max of the provided
+        state parameters. It is an error to request multiple different states of 
+        a single artifact with a single batch call.
+        """
         if not instances:
             return []
         root = ElementTree.Element(nsmap('ri:links'))
         needs_request=False
         instance_map = {}
         for instance in instances:
-            instance_map[instance.uri] = instance
+            try:
+                if instance_map[instance.id] != instance:
+                    raise ValueError("Requesting entities with the same LIMS ID but"
+                            " different URIs is not supported")
+            except KeyError:
+                pass # Haven't seen this LIMS ID before
+            instance_map[instance.id] = instance
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                       rel=instance.__class__._URI))
@@ -399,18 +420,8 @@ class Lims(object):
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in root.getchildren():
-                try:
-                    instance = instance_map[node.attrib['uri']]
-                except KeyError:
-                    # If server returns a different URI than we requested: happens
-                    # when requesting artifact without ?state
-                    instance = next(
-                            instance
-                            for instance in instance_map.values()
-                            if instance.id == node.attrib['limsid']
-                            )
+                instance = instance_map[node.attrib['limsid']]
                 instance.root = node
-
         return instance_map.values()
 
     def put_batch(self, instances):
