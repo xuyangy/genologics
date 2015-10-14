@@ -423,24 +423,30 @@ class Lims(object):
         if not instances:
             return []
         root = ElementTree.Element(nsmap('ri:links'))
-        klass = None
         needs_request=False
         instance_map = {}
         for instance in instances:
-            if not klass:
-                klass = instance.__class__
-            instance_map[instance.id] = instance
+            instance_map[instance.uri] = instance
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
-                                                      rel=klass._URI))
+                                                      rel=instance.__class__._URI))
                 needs_request=True
 
         if needs_request:
-            uri = self.get_uri(klass._URI, 'batch/retrieve')
+            uri = self.get_uri(instance.__class__._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in root.getchildren():
-                instance = instance_map[node.attrib['limsid']]
+                try:
+                    instance = instance_map[node.attrib['uri']]
+                except KeyError:
+                    # If server returns a different URI than we requested: happens
+                    # when requesting artifact without ?state
+                    instance = next(
+                            instance
+                            for instance in instance_map.values()
+                            if instance.id == node.attrib['limsid']
+                            )
                 instance.root = node
 
         return instance_map.values()
