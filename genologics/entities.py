@@ -542,9 +542,9 @@ class UdfDictionaryDescriptor(BaseDescriptor):
     _UDT = False
 
     def __get__(self, instance, cls):
-    	instance.get()
-   	self.value = UdfDictionary(instance, udt=self._UDT)
-   	return self.value
+        instance.get()
+        self.value = UdfDictionary(instance, udt=self._UDT)
+        return self.value
 
 class UdtDictionaryDescriptor(UdfDictionaryDescriptor):
     """An instance attribute containing a dictionary of UDF values
@@ -560,12 +560,12 @@ class PlacementDictionaryDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
-    	instance.get()
-      	self.value = dict()
-      	for node in instance.root.findall(self.tag):
+        instance.get()
+        self.value = dict()
+        for node in instance.root.findall(self.tag):
             key = node.find('value').text
             self.value[key] = Artifact(instance.lims,uri=node.attrib['uri'])
-       	return self.value
+        return self.value
 
 
 class ExternalidListDescriptor(BaseDescriptor):
@@ -691,14 +691,14 @@ class LocationDescriptor(TagDescriptor):
 class ReagentLabelList(BaseDescriptor):
     """An instance attribute yielding a list of reagent labels"""
     def __get__(self, instance, cls):
-	instance.get()
-	self.value = []
-	for node in instance.root.findall('reagent-label'):
-	    try:
-	    	self.value.append(node.attrib['name']) 
-	    except:
-		pass
-	return self.value
+        instance.get()
+        self.value = []
+        for node in instance.root.findall('reagent-label'):
+            try:
+                self.value.append(node.attrib['name'])
+            except:
+                pass
+        return self.value
 
 class InputOutputMapList(BaseDescriptor):
     """An instance attribute yielding a list of tuples (input, output)

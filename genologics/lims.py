@@ -10,7 +10,8 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims']
 
-import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error
+from urllib.parse import urljoin
 from io import StringIO
 
 # http://docs.python-requests.org/
@@ -47,7 +48,7 @@ class Lims(object):
     def get_uri(self, *segments, **query):
         "Return the full URI given the path segments and optional query."
         segments = ['api', self.VERSION] + list(segments)
-        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        url = urljoin(self.baseuri, '/'.join(segments))
         if query:
             url += '?' + urllib.parse.urlencode(query)
         return url
@@ -73,7 +74,7 @@ class Lims(object):
             segments = [uri, 'download']
         else:
             raise ValueError("id or uri required")
-        url = urlparse.urljoin(self.baseuri, '/'.join(segments))
+        url = urljoin(self.baseuri, '/'.join(segments))
         r=self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
         #TODO add a returncode check here 
         return r.text
@@ -103,7 +104,7 @@ class Lims(object):
         """Raise ValueError if the version for this interface
         does not match any of the versions given for the API.
         """
-        uri = urlparse.urljoin(self.baseuri, 'api')
+        uri = urljoin(self.baseuri, 'api')
         r = requests.get(uri, auth=(self.username, self.password))
         root = self.parse_response(r)
         tag = nsmap('ver:versions')
