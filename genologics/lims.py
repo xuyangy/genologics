@@ -538,4 +538,21 @@ class Lims(object):
 
         self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
 
+    def set_default_next_step(self, step, analytes):
+        """Assign analytes to default next step.
+
+        Utilitiy function which implements a common use case."""
+
+        if step.configuration.transitions:
+            next_step_uri = step.configuration.transitions[0].get("next-step-uri")
+            action = "nextstep"
+        else:
+            action = "complete"
+
+        for next_action in step.actions.next_actions:
+            if action == "nextstep":
+                next_action['step-uri'] = next_step_uri
+            next_action['action'] = action
+
+        step.actions.put()
 
