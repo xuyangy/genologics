@@ -31,7 +31,7 @@ from genologics.epp import ReadResultFiles
 
 class QuantitDriverFile():
     def __init__(self, process, drivf):
-        self.udfs = dict(process.udf.items())
+        self.udfs = dict(list(process.udf.items()))
         self.drivf = drivf
 
     def make_location_dict(self, io_filtered):
@@ -49,20 +49,20 @@ class QuantitDriverFile():
     def make_file(self, location_dict):
         """Writes the formated well location info into a driver 
         file sorted by row and col."""
-        keylist = location_dict.keys()
+        keylist = list(location_dict.keys())
         keylist.sort()
         f = open(self.drivf, 'a')
-        print >> f , 'Row,Column,*Target Name,*Sample Name'
+        print('Row,Column,*Target Name,*Sample Name', file=f)
         for key in keylist:
-            print >> f ,location_dict[key]
+            print(location_dict[key], file=f)
         f.close()
 
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
     QiT = QuantitDriverFile(process, drivf)
     io = process.input_output_maps
-    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
-    io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
+    io_filtered = [x_y for x_y in io if x_y[1]['output-generation-type']=='PerInput']
+    io_filtered = [x_y1 for x_y1 in io_filtered if x_y1[1]['output-type']=='ResultFile']
     location_dict = QiT.make_location_dict(io_filtered)
     QiT.make_file(location_dict)
 

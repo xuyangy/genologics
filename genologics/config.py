@@ -2,9 +2,9 @@ import os
 import sys
 import warnings
 
-import ConfigParser
+import configparser
 
-config = ConfigParser.SafeConfigParser()
+config = configparser.SafeConfigParser()
 try:
 	conf_file = config.read([os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
 				'genologics.conf', 'genologics.cfg', '/etc/genologics.conf'])

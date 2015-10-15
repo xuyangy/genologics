@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+
 
 DESC = """EPP script to copy 'concentration' and 'concentration unit' for each 
 sample sample in the 'Qubit Result File' to the 'Concentration' and 'Conc. Units' 
@@ -169,7 +169,7 @@ def main(lims, pid, epp_logger):
 
 def old_main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    sample_names = map(lambda a: a.name, process.analytes()[0])
+    sample_names = [a.name for a in process.analytes()[0]]
     target_files = process.result_files()
     file_handler = ReadResultFiles(process)
     files = file_handler.shared_files['Qubit Result File']
@@ -181,17 +181,17 @@ def old_main(lims, pid, epp_logger):
     low_conc = 0
     bad_formated = 0
     abstract = []
-    udfs = dict(process.udf.items())
-    if udfs.has_key("Minimum required concentration (ng/ul)"):
+    udfs = dict(list(process.udf.items()))
+    if "Minimum required concentration (ng/ul)" in udfs:
         min_conc = udfs["Minimum required concentration (ng/ul)"]
     else:
         min_conc = None
         abstract.append("Set 'Minimum required concentration (ng/ul)' to get qc-flaggs based on this treshold!")
     for target_file in target_files:
         sample = target_file.samples[0].name
-        if qubit_result_file.has_key(sample):
+        if sample in qubit_result_file:
             sample_mesurements = qubit_result_file[sample]
-            if "Sample Concentration" in sample_mesurements.keys():
+            if "Sample Concentration" in list(sample_mesurements.keys()):
                 conc, unit = sample_mesurements["Sample Concentration"]
                 if conc == 'Out Of Range':
                     target_file.qc_flag = "FAILED"

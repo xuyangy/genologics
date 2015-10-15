@@ -21,8 +21,8 @@ import json
 
 def main(lims, args):
     
-    PROJECT_LEVEL = pc.AGRLIBVAL.values() + pc.AGRINITQC.values()
-    FLOWCELL_LEVEL = pc.SEQUENCING.values()
+    PROJECT_LEVEL = list(pc.AGRLIBVAL.values()) + list(pc.AGRINITQC.values())
+    FLOWCELL_LEVEL = list(pc.SEQUENCING.values())
 
     comment=False
 

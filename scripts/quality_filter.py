@@ -79,14 +79,14 @@ class QualityFilter():
         for line in self.source_file[1:]:
             lane = line[l_ind]
             samp = line[s_ind]
-            if not lane in self.QF_from_file.keys():
+            if not lane in list(self.QF_from_file.keys()):
                 self.QF_from_file[lane] = {}
             self.QF_from_file[lane][samp] = {'% Bases >=Q30' : line[q_ind],
                                                    '# Reads' : line[y_ind]}
   
     def _set_udfs(self, samp_name, target_file, lane):
-        if lane in self.QF_from_file.keys():
-            if samp_name in self.QF_from_file[lane].keys():
+        if lane in list(self.QF_from_file.keys()):
+            if samp_name in list(self.QF_from_file[lane].keys()):
                 s_inf = self.QF_from_file[lane][samp_name]
                 target_file.udf['# Reads'] = int(s_inf['# Reads'])
                 target_file.udf['% Bases >=Q30'] = float(s_inf['% Bases >=Q30'])
@@ -99,7 +99,7 @@ class QualityFilter():
         if self.abstract_ext:
             self.abstract.append("Yield and Q30 uploaded to")
             self.abstract.extend(self.abstract_ext)
-            print >> sys.stderr, ' '.join(self.abstract)
+            print(' '.join(self.abstract), file=sys.stderr)
         else:
             sys.exit("Yield and Q30 not found in QF file for any of the avalible lanes.")
 

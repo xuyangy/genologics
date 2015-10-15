@@ -33,8 +33,8 @@ def main(lims, args, epp_logger):
     
     # Find all per input result files
     io = p.input_output_maps
-    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
-    io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
+    io_filtered = [x_y for x_y in io if x_y[1]['output-generation-type']=='PerInput']
+    io_filtered = [x_y1 for x_y1 in io_filtered if x_y1[1]['output-type']=='ResultFile']
     
     artifact_missing_file = []
     artifact_multiple_file = []
@@ -62,7 +62,7 @@ def main(lims, args, epp_logger):
                                    .format(**info)
 
         im_file_r = re.compile(re_str)
-        fns = filter(im_file_r.match, file_list)
+        fns = list(filter(im_file_r.match, file_list))
         logging.info(("Looking for file for artifact id: {input_artifact_id} "
                       "from container with id: {container_id}.").format(**info))
 
@@ -94,7 +94,7 @@ def main(lims, args, epp_logger):
        warning = "Warning: " + warning
 
     abstract = "Uploaded {0} file(s). {1}".format(len(found_files), warning)
-    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
+    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

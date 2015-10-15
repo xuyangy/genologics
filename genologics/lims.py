@@ -10,8 +10,8 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims']
 
-import urllib
-from cStringIO import StringIO
+import urllib.request, urllib.parse, urllib.error
+from io import StringIO
 
 # http://docs.python-requests.org/
 import requests
@@ -49,7 +49,7 @@ class Lims(object):
         segments = ['api', self.VERSION] + list(segments)
         url = urlparse.urljoin(self.baseuri, '/'.join(segments))
         if query:
-            url += '?' + urllib.urlencode(query)
+            url += '?' + urllib.parse.urlencode(query)
         return url
 
     def get(self, uri, params=dict()):
@@ -349,7 +349,7 @@ class Lims(object):
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if value is None: continue
             result[key.replace('_', '-')] = value
         return result
@@ -357,11 +357,11 @@ class Lims(object):
     def _get_params_udf(self, udf=dict(), udtname=None, udt=dict()):
         "Convert UDF-ish arguments to a params dictionary."
         result = dict()
-        for key, value in udf.iteritems():
+        for key, value in udf.items():
             result["udf.%s" % key] = value
         if udtname is not None:
             result['udt.name'] = udtname
-        for key, value in udt.iteritems():
+        for key, value in udt.items():
             result["udt.%s" % key] = value
         return result
 

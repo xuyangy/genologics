@@ -64,7 +64,7 @@ from genologics.epp import ReadResultFiles
 class QuantitConc():
     def __init__(self, process, file_handler):
         self.file_handler = file_handler
-        self.udfs = dict(process.udf.items())
+        self.udfs = dict(list(process.udf.items()))
         self.abstract = []
         self.missing_udfs = []
         self.missing_samps =[]
@@ -79,8 +79,8 @@ class QuantitConc():
         result_files_dict = {}
         file_names = {'Quant-iT Result File 1':'Fluorescence intensity 1',
                     'Quant-iT Result File 2':'Fluorescence intensity 2'}
-        for f_name, udf_name in file_names.items():
-            if self.file_handler.shared_files.has_key(f_name):
+        for f_name, udf_name in list(file_names.items()):
+            if f_name in self.file_handler.shared_files:
                 result_file = self.file_handler.shared_files[f_name]
                 result_files_dict[udf_name] = self.file_handler.format_file(
                     result_file, name = f_name, root_key_col = 1, header_row = 19)
@@ -93,7 +93,7 @@ class QuantitConc():
         standards_file_formated = self.file_handler.format_file(standards_file, 
                 name = 'Standards File (.txt)', root_key_col = 1, header_row = 19)
         standards_dict = {}
-        for k,v in standards_file_formated.items():
+        for k,v in list(standards_file_formated.items()):
             cond1 = set(['Sample','End RFU']).issubset(v) 
             cond2 = v['Sample'].split()[0]=='Standard'
             if cond1 and cond2:
@@ -111,7 +111,7 @@ class QuantitConc():
                           'DNA BR':[0,5,10,20,40,60,80,100],
                           'RNA':[0,0.5,1,2,4,6,8,10],
                           'DNA HS':[0,0.5,1,2,4,6,8,10]}    
-        if requiered_udfs.issubset(self.udfs.keys()):
+        if requiered_udfs.issubset(list(self.udfs.keys())):
             nuclear_acid_amount = np.ones(8)
             for standard in range(8):
                 supp_conc_standard = supp_conc_stds[self.udfs['Assay type']][standard]
@@ -144,7 +144,7 @@ class QuantitConc():
         amount_in_standards = self._nuclear_acid_amount_in_standards()
         if amount_in_standards is not None:
             relative_standards = np.ones(8)
-            for k,v in self.standards.items(): 
+            for k,v in list(self.standards.items()): 
                 relative_standards[k-1] = v - self.standards[1]
             R2, slope = self._linear_regression(relative_standards, 
                             amount_in_standards)
@@ -168,8 +168,8 @@ class QuantitConc():
         #if dict(target_udfs.items()).has_key('Fluorescence intensity 2'): 
         #    del target_udfs['Fluorescence intensity 2']
         target_file.udf = target_udfs
-        for udf_name ,formated_file in self.result_files.items():
-            if sample in formated_file.keys():
+        for udf_name ,formated_file in list(self.result_files.items()):
+            if sample in list(formated_file.keys()):
                 fluor_int.append(float(formated_file[sample]['End RFU']))
                 target_file.udf[udf_name] = float(formated_file[sample]['End RFU']) 
             else:
@@ -183,7 +183,7 @@ class QuantitConc():
         parametersand copied to the "Concentration"-udf of the target_file. The 
         "Conc. Units"-udf is set to "ng/ul"""
         requiered_udfs = set(['Sample volume','Standard dilution','WS volume'])
-        if requiered_udfs.issubset(self.udfs.keys()) and self.model:
+        if requiered_udfs.issubset(list(self.udfs.keys())) and self.model:
             conc = np.true_divide((self.model[1] * rel_fluor_int * (
                 self.udfs['WS volume'] + self.udfs['Sample volume'])),
                 self.udfs['Sample volume']*(self.udfs['WS volume'] + 
@@ -203,12 +203,12 @@ def main(lims, pid, epp_logger):
     QiT = QuantitConc(process, file_handler)
     QiT.fit_model()
     QiT.prepare_result_files_dict()
-    if QiT.model and 'Linearity of standards' in QiT.udfs.keys():
+    if QiT.model and 'Linearity of standards' in list(QiT.udfs.keys()):
         R2 = QiT.model[0]
         if R2 >= QiT.udfs['Linearity of standards']:
             QiT.abstract.insert(0,"R2 = {0}. Standards OK.".format(R2))
             if QiT.result_files:
-                for sample, target_file in target_files.items():
+                for sample, target_file in list(target_files.items()):
                     rel_fluor_int = QiT.get_and_set_fluor_int(target_file)
                     QiT.calc_and_set_conc(target_file, rel_fluor_int)
                 QiT.abstract.append("Concentrations uploaded for {0} "
@@ -226,7 +226,7 @@ def main(lims, pid, epp_logger):
     if QiT.missing_udfs:
         QiT.abstract.append("Are all of the following udfs set? : {0}".format(
                                                    ', '.join(QiT.missing_udfs)))
-    print >> sys.stderr, ' '.join(QiT.abstract)
+    print(' '.join(QiT.abstract), file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

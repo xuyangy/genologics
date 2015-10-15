@@ -26,7 +26,7 @@ def obtain_previous_volumes(currentStep, lims):
                     try:
                         fid=output.files[0].id
                     except:
-                        raise(RuntimeError("Cannot access the normalisation CSV file to read the volumes."))
+                        raise RuntimeError
                     else:
                         file_contents=lims.get_file_contents(id=fid)
                         sname_idx=0
@@ -143,7 +143,7 @@ def compute_transfer_volume(currentStep, lims, log):
     returndata=[]
     for pool in currentStep.all_outputs():
         if pool.type == 'Analyte':
-            valid_inputs=filter(lambda x: x['pool_id']==pool.id, data)
+            valid_inputs=[x for x in data if x['pool_id']==pool.id]
             # Set the output conc of the pool and also get the "desired" pool
             # volume, which is which? 
             final_vol = pool.udf["Maximal Volume (uL)"] # Change to "Final Volume (uL)"
@@ -156,7 +156,7 @@ def compute_transfer_volume(currentStep, lims, log):
             else:
                 vols = optimize_volumes(valid_inputs, final_vol, MIN_WARNING_VOLUME)
                 # Calculate and add the theoretical pool conc:
-                z = zip([s["conc"] for s in valid_inputs], vols)
+                z = list(zip([s["conc"] for s in valid_inputs], vols))
                 v = (sum(x[0]*x[1] for x in z) / sum(vols))
                 pool.udf['Normalized conc. (nM)'] = v
             pool.put()

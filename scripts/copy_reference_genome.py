@@ -131,7 +131,7 @@ def main(lims,args,epp_logger):
 
     abstract = ("Updated {cs} sample(s), {warning} with incorrect udf info.").format(**d)
 
-    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
+    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

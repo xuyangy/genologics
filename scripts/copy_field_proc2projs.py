@@ -73,7 +73,7 @@ def main(lims, args, epp_logger):
          'pr': project_names}
 
     abstract = ("Updated {up} udf(s). Handeled project(s): {pr} {w}").format(**d)
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

@@ -74,7 +74,7 @@ def main(lims, args, epp_logger):
         artifacts = p.all_inputs(unique=True)
     else:
         all_artifacts = p.all_outputs(unique=True)
-        artifacts = filter(lambda a: a.output_type == "ResultFile", all_artifacts)
+        artifacts = [a for a in all_artifacts if a.output_type == "ResultFile"]
 
     correct_artifacts, no_concentration = check_udf_is_defined(artifacts, concentration_udf)
     correct_artifacts, no_size = check_udf_is_defined(correct_artifacts, size_udf)
@@ -88,7 +88,7 @@ def main(lims, args, epp_logger):
     abstract = ("Updated {ca} artifact(s), skipped {ia} artifact(s) with "
                 "wrong and/or blank values for some udfs.").format(**d)
 
-    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
+    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

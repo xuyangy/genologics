@@ -44,7 +44,7 @@ class TestLog(object):
         tmp_stderr = os.path.join(tmp_dir_path,'tmp_stderr')
         with open(tmp_stderr,'w') as sys.stderr:
             with EppLogger(tmp_file, prepend=False) as epp_logger:
-                print >> sys.stderr, 'stderr nosetest'
+                print('stderr nosetest', file=sys.stderr)
         sys.stderr = saved_stderr
         with open(tmp_stderr,'r') as stderr:
             stream_lines = stderr.readlines()
@@ -61,7 +61,7 @@ class TestLog(object):
         tmp_stdout = os.path.join(tmp_dir_path,'tmp_stdout')
         with open(tmp_stdout,'w') as sys.stdout:
             with EppLogger(tmp_file, prepend=False) as epp_logger:
-                print >> sys.stdout, 'stdout nosetest'
+                print('stdout nosetest', file=sys.stdout)
         sys.stdout = saved_stdout
         with open(tmp_stdout,'r') as stdout:
             stream_lines = stdout.readlines()

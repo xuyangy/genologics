@@ -11,7 +11,7 @@ Short usage descriptions for the scripts in the Genologics Package.
 """
 
 def indent(s):
-    return "\n".join(map(lambda w: '\t'+w, s.splitlines()))
+    return "\n".join(['\t'+w for w in s.splitlines()])
 
 
 def help_doc_rst(script,file_path):
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # Fetch all python scripts in the scripts folder
     file_list = os.listdir(file_path)
-    scripts = filter(lambda fn: fn[-3:]=='.py' and fn != this_file, file_list)
+    scripts = [fn for fn in file_list if fn[-3:]=='.py' and fn != this_file]
     scripts = sorted(scripts)
 
     for script in scripts:

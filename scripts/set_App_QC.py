@@ -44,8 +44,8 @@ class AppQC():
 
     def set_result_file_udfs(self):
         """populates the target file App QC udf"""
-        for samp_name, target_file in self.target_files.items():
-            if samp_name in self.app_QC.keys():
+        for samp_name, target_file in list(self.target_files.items()):
+            if samp_name in list(self.app_QC.keys()):
                 qc_passed = str(self.app_QC[samp_name]['automated_qc']['qc_passed'])
                 sample = target_file.samples[0]
                 sample.udf['App QC'] = qc_passed
@@ -58,7 +58,7 @@ class AppQC():
         """Formates a easy to read App QC file."""
         keys= ['sample', 'qc_passed', 'qc_reason']
         list2csv = []
-        for samp, info in self.app_QC.items():
+        for samp, info in list(self.app_QC.items()):
             d = info['automated_qc']
             d['sample'] = samp
             list2csv.append(d)
@@ -78,7 +78,7 @@ class AppQC():
             self.abstract.append("The following samples are missing in "
                                                     "App_QC_file: {0}.".format(
                                                 ', '.join(self.missing_samps)))
-        print >> sys.stderr, ' '.join(self.abstract)
+        print(' '.join(self.abstract), file=sys.stderr)
 
 def main(lims, pid, epp_logger, App_QC_file):
     process = Process(lims, id = pid)
