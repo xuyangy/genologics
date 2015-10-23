@@ -13,8 +13,11 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
 #python 2.7 compatibility
 try:
     from urllib.parse import urljoin
+    from urllib.parse import urlencode
 except:
     from urlparse import urljoin
+    from urllib import urlencode
+
 from io import StringIO
 
 # http://docs.python-requests.org/
@@ -53,7 +56,7 @@ class Lims(object):
         segments = ['api', self.VERSION] + list(segments)
         url = urljoin(self.baseuri, '/'.join(segments))
         if query:
-            url += '?' + urllib.parse.urlencode(query)
+            url += '?' + urlencode(query)
         return url
 
     def get(self, uri, params=dict()):
