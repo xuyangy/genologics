@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC = """EPP script to copy user defined fields from analyte level to 
 submitted sample level in Clarity LIMS. Can be executed in the background 
 or triggered by a user pressing a "blue button".

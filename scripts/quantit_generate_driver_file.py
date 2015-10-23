@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC = """EPP script for Quant-iT measurements to generate a driver file (.csv) 
+from __future__ import print_function
+DESC = """EPP script for Quant-iT measurements to generate a driver file (.csv)
 which include the Sample names and their positions in the working plate.
 
 Reads from:

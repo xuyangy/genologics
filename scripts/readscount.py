@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC="""EPP script to aggregate the number of reads from different demultiplexing runs,
 based on the flag 'include reads' located at the same level as '# reads' 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC = """EPP script for Quant-iT mesurements to set QC flaggs and 
+from __future__ import print_function
+DESC = """EPP script for Quant-iT mesurements to set QC flaggs and
 intensity check based on concentrations, Fluorescence intensity. 
 
 Performance:

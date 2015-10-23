@@ -10,8 +10,11 @@ __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims']
 
-import urllib.request, urllib.error
-from urllib.parse import urljoin
+#python 2.7 compatibility
+try:
+    from urllib.parse import urljoin
+except:
+    from urlparse import urljoin
 from io import StringIO
 
 # http://docs.python-requests.org/

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC = """EPP script to calculate molar concentration given the 
+from __future__ import print_function
+DESC = """EPP script to calculate molar concentration given the
 weight concentration, in Clarity LIMS. Before updating the artifacts, 
 the script verifies that 'Concentration' and 'Size (bp)' udf:s are not blank,
  and that the 'Conc. units' field is 'ng/ul' for each artifact. Artifacts 

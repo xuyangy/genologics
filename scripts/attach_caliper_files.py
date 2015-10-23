@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC="""EPP script to fetch and upload Caliper image files for Clarity LIMS.
 Searches the directory given by the path argument for filenames matching
 a specific pattern ending with:

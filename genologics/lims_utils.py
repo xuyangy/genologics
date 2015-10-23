@@ -8,6 +8,7 @@ import os
 
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
+
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 
 def get_run_info(fc):

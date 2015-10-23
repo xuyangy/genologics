@@ -1,8 +1,10 @@
 import os
 import sys
 import warnings
-
-import configparser
+try:
+	import configparser
+except ImportError:
+	import ConfigParser as configparser
 
 config = configparser.SafeConfigParser()
 try:

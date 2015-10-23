@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC="""EPP script to calculate amount in ng from concentration and volume 
+from __future__ import print_function
+DESC="""EPP script to calculate amount in ng from concentration and volume
 udf:s in Clarity LIMS. The script checks that the 'Volume (ul)' and 
 'Concentration' udf:s are defined and that the udf. 'Conc. Units' 
  have the correct value: 'ng/ul', otherwise that artifact is skipped, 

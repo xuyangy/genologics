@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC = """EPP script for Quant-iT measurements to calculate concentrations and 
+from __future__ import print_function
+DESC = """EPP script for Quant-iT measurements to calculate concentrations and
 load input artifact-udfs and output file-udfs of the process with concentration 
 values and fluorescence intensity.
 

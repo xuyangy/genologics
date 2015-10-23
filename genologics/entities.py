@@ -7,7 +7,11 @@ Copyright (C) 2012 Per Kraulis
 """
 
 import re
-import urllib.parse
+try:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+except ImportError:
+    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
+
 import datetime
 import time
 from xml.etree import ElementTree
@@ -778,7 +782,7 @@ class Entity(object):
     @property
     def id(self):
         "Return the LIMS id; obtained from the URI."
-        parts = urllib.parse.urlsplit(self.uri)
+        parts = urlsplit(self.uri)
         return parts.path.split('/')[-1]
 
     def get(self, force=False):
@@ -1072,8 +1076,8 @@ class Artifact(Entity):
 
     def get_state(self):
         "Parse out the state value from the URI."
-        parts = urllib.parse.urlparse(self.uri)
-        params = urllib.parse.parse_qs(parts.query)
+        parts = urlparse(self.uri)
+        params = parse_qs(parts.query)
         try:
             return params['state'][0]
         except (KeyError, IndexError):
@@ -1089,9 +1093,9 @@ class Artifact(Entity):
 
     def stateless(self):
         "returns the artefact independently of it's state"
-        parts = urllib.parse.urlparse(self.uri)
+        parts = urlparse(self.uri)
         if 'state' in parts[4]:
-            stateless_uri=urllib.parse.urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
+            stateless_uri=urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
             return Artifact(self.lims, uri=stateless_uri)
         else:
             return self

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC="""EPP used to create csv files for the bravo robot"""
 
 from argparse import ArgumentParser

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-DESC = """EPP script to copy user defined field 'Reference Genome' from project 
+from __future__ import print_function
+DESC = """EPP script to copy user defined field 'Reference Genome' from project
 level to submitted sample level for the input artifacts of given process, 
 in Clarity LIMS. Can be executed in the background or triggered by a user
  pressing a "blue button".

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC = """This EPP script reads demultiplex end undemultiplexed yields from file
 system and then does the following
 

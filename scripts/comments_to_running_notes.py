@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 DESC="""EPP script to copy the "Comments" field to the projects running notes on process termination
 
 Denis Moreno, Science for Life Laboratory, Stockholm, Sweden
