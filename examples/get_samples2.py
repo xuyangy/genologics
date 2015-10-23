@@ -1,3 +1,4 @@
+from __future__ import print_function
 """Python interface to GenoLogics LIMS via its REST API.
 
 Usage examples: Get some samples, and sample info.

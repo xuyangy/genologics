@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """EPP example script for Clarity LIMS, written in Python
 
 Usage example: Trigger from Clarity with command

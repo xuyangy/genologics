@@ -1,3 +1,4 @@
+from __future__ import print_function
 """Python interface to GenoLogics LIMS via its REST API.
 
 Example usage: Set the UDF 'Queued' of a project.
