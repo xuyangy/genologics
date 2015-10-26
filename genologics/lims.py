@@ -432,9 +432,8 @@ class Lims(object):
         (this is similar to how Entity.get() works). This may help with caching.
         
         The batch request API call collapses all requested Artifacts with different
-        state into a single result with state equal to the max of the provided
-        state parameters. Using this function, it is an error to request multiple
-        different states of any single artifact.
+        state into a single result with state equal to the state of the Artifact
+        occurring at the last position in the list.
         """
         if not instances:
             return []
@@ -442,12 +441,6 @@ class Lims(object):
         needs_request=False
         instance_map = {}
         for instance in instances:
-            try:
-                if instance_map[instance.id] != instance:
-                    raise ValueError("Requesting entities with the same LIMS ID but"
-                            " different URIs is not supported")
-            except KeyError:
-                pass # Haven't seen this LIMS ID before
             instance_map[instance.id] = instance
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
