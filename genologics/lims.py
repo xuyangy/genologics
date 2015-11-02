@@ -503,6 +503,27 @@ class Lims(object):
         step.root = root
         return step
 
+    def create_lot(self, reagent_kit, name, lot_number=None, expiry_date=None,
+            storage_location=None, notes=None, status=None):
+        root = ElementTree.Element("lot:reagent-lot", {"xmlns:lot": "http://genologics.com/ri/reagentlot"})
+        ElementTree.SubElement(root, 'reagent-kit', {'uri': reagent_kit.uri})
+        ElementTree.SubElement(root, 'name').text = name
+        if lot_number:
+            ElementTree.SubElement(root, 'lot-number').text = lot_number
+        if expiry_date:
+            ElementTree.SubElement(root, 'expiry-date').text = expiry_date
+        if storage_location:
+            ElementTree.SubElement(root, 'storage_location').text = storage_location
+        if notes:
+            ElementTree.SubElement(root, 'notes').text = notes
+        if status:
+            ElementTree.SubElement(root, 'status').text = status
+        xml_data = self.tostring(ElementTree.ElementTree(root))
+        response = self.post(self.get_uri("reagentlots"), xml_data)
+        lot = ReagentLot(self, uri=response.attrib['uri'])
+        lot.root = response
+        return lot
+
     def glsstorage(self, attached_to, original_location):
         """Allocates and returns a file resource in the glsstorage area. This 
         doesn't actually upload the file, it only sets up the metadata.
