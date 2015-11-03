@@ -379,7 +379,7 @@ class Lims(object):
         return self._get_instances(ReagentKit, params=params)
 
     def get_reagent_lots(self, name=None, kitname=None, number=None):
-        params = self._get_params(name=name)
+        params = self._get_params(name=name, kitname=kitname, number=number)
         return self._get_instances(ReagentLot, params=params)
 
     def get_workflows(self, name=None):
