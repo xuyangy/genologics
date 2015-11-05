@@ -88,7 +88,7 @@ def make_datastructure(currentStep, lims, log):
             obj['id']=inp['uri'].id
             obj['conc']=inp['uri'].udf['Normalized conc. (nM)']
             obj['pool_id']=out['uri'].id
-            obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
+            #obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
             obj['vol']=samples_volumes[obj['name']]
             obj['src_fc']=inp['uri'].location[0].id
             obj['src_well']=inp['uri'].location[1]
@@ -97,43 +97,72 @@ def make_datastructure(currentStep, lims, log):
             data.append(obj)
 
     return data
-        
 
-def minimize_volume(factor, sample, target_conc, max_vol, valid_inputs, old_vol=99):
-    limit_vol=MIN_WARNING_VOLUME
-    try_vol = factor * sample['vol']
-# The lowest volume to take would then be (sample(s) w highest conc):
-    low_vol = min((try_vol * sample['conc'] / s['conc'] for s in valid_inputs))
-# Total pool volume if we were to take this amount of all samples:
-    tot_vol = sum((try_vol * sample['conc'] / s["conc"] for s in valid_inputs))
-# We don't want to pipette less than lim_vol
-# while keeping total volume above pool_vol:
-    if low_vol >= limit_vol and tot_vol >= max_vol:
-        return  minimize_volume(factor-0.01, sample, target_conc, max_vol, valid_inputs, try_vol)
-    else:
-# We can't improve anymore within the given limits... 
-        return old_vol
+######### LAZY WAY ###############################
+# Just divide the total with the number of samples, it is implied that the final
+# conc and the conc of every input is the same:
+def lazy_volumes(samples, final_vol):
+    return [final_vol / len(samples) for s in samples]
 
+######### OTHER WAY ##############################
+# Iteratively reduce the smallest input volume until we are close to the desired
+# total volume. This works when the inputs have different concentrations, the
+# final pool concentration will then end up somewhere between the conc of the
+# highest and the lowest input concentration:
+def optimize_volumes(samples, final_vol, limit_vol=2):
+    # Create a list we can sort to get the min/max values:
+    l = [(s["conc"]*s["vol"],s["conc"],s["vol"]) for s in samples]
+    # Find the min/max values by sorting on the different values:
+    min_conc = sorted(l, key=lambda x: x[1])[0][1]
+    max_conc = sorted(l, key=lambda x: x[1])[-1][1]
+    min_vol = sorted(l, key=lambda x: x[2])[0][2]
+    # The volume of the input with lowest amount:
+    min_amount = sorted(l)[0][2]
+
+    def _minimize_vol(vol, final_vol=final_vol, limit_vol=limit_vol, reduce=0.9):
+        try_vol = reduce * vol
+        # The lowest volume to take would then be (sample(s) w highest conc):
+        low_vol = min(try_vol * max_conc / s["conc"] for s in samples)
+        # Total pool volume if we were to take this amount of all samples:
+        tot_vol = sum(try_vol * max_conc / s["conc"] for s in samples)
+        # We don't want to pipette less than limit_vol
+        # while keeping total volume above final_vol:
+        if low_vol >= limit_vol and tot_vol >= final_vol and try_vol >= limit_vol:
+            return _minimize_vol(try_vol)
+        else:
+            # We can't improve anymore within the given limits... 
+            return vol
+
+    # Start from whichever is the smallest volume:
+    use_vol = _minimize_vol(min(min_amount, min_vol))
+    # Calculate the volume to take of each input:
+    return [(use_vol * max_conc / s["conc"]) for s in samples]
 
 def compute_transfer_volume(currentStep, lims, log):
     data=make_datastructure(currentStep, lims, log)
     returndata=[]
-    min_vol=2 #minimal volume that the robot can do is 2uL
     for pool in currentStep.all_outputs():
         if pool.type == 'Analyte':
-            inputs=[]
-            target_concentration=pool.udf['Normalized conc. (nM)']
-            max_vol=pool.udf["Maximal Volume (uL)"]
             valid_inputs=filter(lambda x: x['pool_id']==pool.id, data)
-            lowest_conc = min([x['conc'] for x in valid_inputs])
-            lowest_conc_inputs=filter(lambda x: x['conc']==lowest_conc, valid_inputs)
-            starting_input=min(lowest_conc_inputs, key=lambda x:x['vol'] )
-
-            optimal_vol=minimize_volume(0.9, starting_input, lowest_conc, max_vol, valid_inputs)
-            for s in valid_inputs:
-                s['vol_to_take']= optimal_vol * starting_input['conc'] / s['conc']
+            # Set the output conc of the pool and also get the "desired" pool
+            # volume, which is which? 
+            final_vol = pool.udf["Maximal Volume (uL)"] # Change to "Final Volume (uL)"
+            conc = valid_inputs[0]["conc"]
+            # If all inputs are of the same conc use the trivial algorithm,
+            # else try to optimize:
+            if all(s["conc"] == conc for s in valid_inputs):
+                vols = lazy_volumes(valid_inputs, final_vol)
+                pool.udf['Normalized conc. (nM)'] = conc
+            else:
+                vols = optimize_volumes(valid_inputs, final_vol, MIN_WARNING_VOLUME)
+                # Calculate and add the theoretical pool conc:
+                z = zip([s["conc"] for s in valid_inputs], vols)
+                v = (sum(x[0]*x[1] for x in z) / sum(vols))
+                pool.udf['Normalized conc. (nM)'] = v
+            pool.put()
+            for s, vol in zip(valid_inputs, vols):
+                s['vol_to_take'] = vol
                 returndata.append(s)
-
 
     return returndata
 
@@ -148,7 +177,6 @@ def prepooling(currentStep, lims):
                 if s['vol_to_take']<MIN_WARNING_VOLUME:
                     log.append("Volume for sample {} is below {}, redo the calculations manually".format(MIN_WARNING_VOLUME, s['name']))
                 csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well'])) 
-    sys.exit(0)
     if log:
         with open("bravo.log", "w") as logContext:
             logContext.write("\n".join(log))
@@ -202,7 +230,7 @@ def setup_workset(currentStep):
 def main(lims, args):
     #Array, so can be modified inside a child method
     currentStep=Process(lims,id=args.pid)
-    if "Setup" in currentStep.type.name:
+    if "Setup" in currentStep.type.name or "Genotyping" in currentStep.type.name:
         setup_workset(currentStep)
     elif "Pooling" in currentStep.type.name:
         prepooling(currentStep, lims)
@@ -216,7 +244,7 @@ def calc_vol(art_tuple, logContext,checkTheLog):
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
         conc=art_tuple[0]['uri'].udf['Concentration']
         volume=float(amount_ng)/float(conc)
-        if volume<2:
+        if volume<MIN_WARNING_VOLUME:
             #arbitrarily determined by Sverker Lundin
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
                 art_tuple[0]['uri'].location[0].name,art_tuple[0]['uri'].location[1], volume))
@@ -251,4 +279,3 @@ if __name__=="__main__":
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
     main(lims, args)
-
