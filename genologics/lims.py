@@ -571,3 +571,32 @@ class Lims(object):
 
         step.actions.put()
 
+    def get_qc_results(self, analytes, qc_process_name):
+        """Get QC results for a list of analytes, from a process which produces 
+        ResultFiles, which had the specified analytes directly as inputs.
+
+        qc_process_name: The name of the QC process to get results from.
+
+        Returns the QC results (ResultFile artifacts) in the same order as
+        the input list of analytes.
+
+        Raises a KeyError if any sample does not have a QC result file.
+        """
+
+        limsids = [a.id for a in analytes]
+        qc_processes = self.get_processes(
+                inputartifactlimsid=[a.id for a in analytes],
+                type=qc_process_name
+                )
+
+        qc_results = {}
+        # Uses most recent QC result for each sample
+        for qc_process in sorted(qc_processes, key=lambda x: x.date_run):
+            for i, o in qc_process.input_output_maps:
+                if o and o['output-type'] == "ResultFile" and o['output-generation-type'] == 'PerInput':
+                    print "adding", o['uri']
+                    qc_results[i['uri'].id] = o['uri']
+
+        return [qc_results[a.id] for a in analytes]
+
+
