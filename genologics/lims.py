@@ -594,7 +594,6 @@ class Lims(object):
         for qc_process in sorted(qc_processes, key=lambda x: x.date_run):
             for i, o in qc_process.input_output_maps:
                 if o and o['output-type'] == "ResultFile" and o['output-generation-type'] == 'PerInput':
-                    print "adding", o['uri']
                     qc_results[i['uri'].id] = o['uri']
 
         return [qc_results[a.id] for a in analytes]
