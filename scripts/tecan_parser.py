@@ -82,9 +82,6 @@ def dictionnarize(datalist):
 
     return data_to_upload
 
-
-
-
 def main(args, lims):
     pro=Process(lims, id=args.pid)
     for output in pro.all_outputs():
@@ -99,7 +96,7 @@ def main(args, lims):
     file_contents=lims.get_file_contents(id=fid)
     with open('{0}_tecan.out'.format(out_id), 'w') as outf:
         data=convert(file_contents, outf)
-                
+
     di=dictionnarize(data)
 
     for iom in pro.input_output_maps:
