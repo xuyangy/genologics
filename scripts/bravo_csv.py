@@ -80,6 +80,8 @@ def make_datastructure(currentStep, lims, log):
         samples_volumes=obtain_previous_volumes(currentStep, lims)
     except:
         log.append("Unable to find previous volumes")
+        sys.stderr.write("Samples volumes cannot be found. Check the file from the previous step")
+        sys.exit(2)
 
     for inp, out in currentStep.input_output_maps:
         if out['output-type'] == 'Analyte':
