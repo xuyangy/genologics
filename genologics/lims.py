@@ -583,7 +583,6 @@ class Lims(object):
         Raises a KeyError if any sample does not have a QC result file.
         """
 
-        limsids = [a.id for a in analytes]
         qc_processes = self.get_processes(
                 inputartifactlimsid=[a.id for a in analytes],
                 type=qc_process_name
