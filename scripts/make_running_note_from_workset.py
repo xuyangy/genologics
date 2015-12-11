@@ -7,8 +7,9 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.epp import attach_file, EppLogger
 from genologics.entities import Process, Project
 from datetime import datetime
-from pprint import pprint
+
 import json
+import sys
 
 
 def main(lims, args):
@@ -19,7 +20,7 @@ def main(lims, args):
     wsname=None
     for art in p.all_inputs():
         if len(art.samples)!=1:
-            log.append("artifact {} has more than one sample".format(art.id))
+            log.append("Warning : artifact {0} has more than one sample".format(art.id))
         for sample in art.samples:
            #take care of lamda DNA
            if sample.project:
@@ -46,6 +47,16 @@ def main(lims, args):
 
         pj.udf['Running Notes']=json.dumps(running_notes)
         pj.put()
+        log.append("Updated project {0} : {1}, {2} samples in this workset".format(pid,pj.name, datamap[pid]))
+
+
+ 
+    with open("EPP_Notes.log", "w") as flog:
+        flog.write("\n".join(log))
+    for out in p.all_outputs():
+        #attach the log file
+        if out.name=="RNotes Log":
+            attach_file(os.path.join(os.getcwd(), "EPP_Notes.log"), out)
 
 if __name__=="__main__":
     parser = ArgumentParser(description=DESC)
