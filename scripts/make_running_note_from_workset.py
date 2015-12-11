@@ -10,6 +10,7 @@ from datetime import datetime
 
 import json
 import sys
+import os
 
 
 def main(lims, args):
@@ -57,6 +58,8 @@ def main(lims, args):
         #attach the log file
         if out.name=="RNotes Log":
             attach_file(os.path.join(os.getcwd(), "EPP_Notes.log"), out)
+
+    sys.stderr.write("Updated {0} projects successfully".format(len(datamap.keys())))
 
 if __name__=="__main__":
     parser = ArgumentParser(description=DESC)
