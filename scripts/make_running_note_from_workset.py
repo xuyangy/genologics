@@ -19,6 +19,8 @@ def main(lims, args):
     log=[]
     datamap={}
     wsname=None
+    username="{0} {1}".format(p.technician.first_name, p.technician.last_name)
+    user_email=p.technician.email
     for art in p.all_inputs():
         if len(art.samples)!=1:
             log.append("Warning : artifact {0} has more than one sample".format(art.id))
@@ -42,13 +44,15 @@ def main(lims, args):
         pj=Project(lims, id=pid)
         running_notes=json.loads(pj.udf['Running Notes'])
         if len(datamap[pid]) > 1:
-            running_notes[now]="{0} samples planned for {1}".format(len(datamap[pid]), wsname)
+            rnt="{0} samples planned for {1}".format(len(datamap[pid]), wsname)
         else:
-            running_notes[now]="{0} sample planned for {1}".format(len(datamap[pid]), wsname)
+            rnt="{0} sample planned for {1}".format(len(datamap[pid]), wsname)
+
+        running_notes[now]={"note": rnt, "user" : username, "email":user_email}
 
         pj.udf['Running Notes']=json.dumps(running_notes)
         pj.put()
-        log.append("Updated project {0} : {1}, {2} samples in this workset".format(pid,pj.name, datamap[pid]))
+        log.append("Updated project {0} : {1}, {2} samples in this workset".format(pid,pj.name, len(datamap[pid])))
 
 
  
