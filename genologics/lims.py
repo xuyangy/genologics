@@ -542,12 +542,16 @@ class Lims(object):
         response = self.post(glss_uri, xml_data)
         return Glsstorage(self, root=response)
         
-    def route_analytes(self, analytes, workflow):
-        """Adding analytes to workflow (may also support adding to a stage in 
-        the future."""
+    def route_analytes(self, analytes, target):
+        """Adding analytes to workflow or stage (target)."""
 
         root = ElementTree.Element('rt:routing', {'xmlns:rt': 'http://genologics.com/ri/routing'})
-        assign = ElementTree.SubElement(root, "assign", {'workflow-uri': workflow.uri})
+        if isinstance(target, Workflow):
+            assign = ElementTree.SubElement(root, "assign", {'workflow-uri': target.uri})
+        elif isinstance(target, Stage):
+            assign = ElementTree.SubElement(root, "assign", {'stage-uri': target.uri})
+        else:
+            raise ValueError("target parameter must be a Workflow or Stage")
         for i in analytes:
             ElementTree.SubElement(assign, "artifact", {'uri': i.uri})
 

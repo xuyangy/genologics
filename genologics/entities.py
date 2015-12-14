@@ -1336,6 +1336,7 @@ class Protocol(Entity):
 class Stage(Entity):
     """Holds Protocol/Workflow"""
     protocol = EntityDescriptor('protocol', Protocol)
+    step =     EntityDescriptor('step', ProtocolStep)
 
 
 class Workflow(Entity):
@@ -1346,7 +1347,7 @@ class Workflow(Entity):
     name      = StringAttributeDescriptor("name")
     status    = StringDescriptor('status')
     protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
-    stages    = EntityListDescriptor('stage', Stage)
+    stages    = NestedEntityListDescriptor('stage', Stage, 'stages')
 
 
 
