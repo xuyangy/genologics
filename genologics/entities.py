@@ -1470,6 +1470,22 @@ class StepPools(Entity):
     available_inputs   = NestedEntityListDescriptor('input', Artifact, 'available-inputs')
 
 
+class StepPlacements(Entity):
+    """Placements subentity
+    
+    Gives access to the placements map in a Step."""
+
+    selected_containers = NestedEntityListDescriptor('container', Container, 'selected-containers')
+    #output_placements   = ObjectListDescriptor()
+
+    # No-op get
+    get = lambda x: None
+
+    def post(self):
+        """Serialize the current state of output_placements."""
+        pass
+
+
 class Step(Entity):
     """Step, as defined by the genologics API. Step ID is the same as the process ID."""
 
@@ -1483,7 +1499,7 @@ class Step(Entity):
     actions             = EntityDescriptor('actions', StepActions)
     details             = EntityDescriptor('details', StepDetails)
     pools               = EntityDescriptor('pools', StepPools)
-
+    placements          = EntityDescriptor('placements', StepPlacements)
 
     def advance(self):
         """Advances to next stage (placement, record details, finish, etc)"""
