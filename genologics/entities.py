@@ -1470,19 +1470,38 @@ class StepPools(Entity):
     available_inputs   = NestedEntityListDescriptor('input', Artifact, 'available-inputs')
 
 
+class OutputPlacement(object):
+
+    def __init__(self, lims, root):
+        self.lims = lims
+        self.root = root
+
+    artifact            = EntityAttributeDescriptor('uri', Artifact)
+    location            = LocationDescriptor('location')
+
+    get = lambda x: None
+
+    def __repr__(self):
+        return "OutputPlacement(%s->{%s,%s})" % (
+                repr(self.artifact), repr(self.location[0]), repr(self.location[1])
+                )
+
+    def __str__(self):
+        return "OutputPlacement(%s->{%s,%s})" % (
+                self.artifact, self.location[0], self.location[1]
+                )
+
+
 class StepPlacements(Entity):
     """Placements subentity
     
     Gives access to the placements map in a Step."""
 
     selected_containers = NestedEntityListDescriptor('container', Container, 'selected-containers')
-    #output_placements   = ObjectListDescriptor()
-
-    # No-op get
-    get = lambda x: None
+    output_placements   = ObjectListDescriptor('output-placement', OutputPlacement, 'output-placements')
 
     def post(self):
-        """Serialize the current state of output_placements."""
+        """Serialize the current state of output_placements [Not supported]."""
         pass
 
 
