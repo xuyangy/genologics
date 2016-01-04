@@ -11,8 +11,8 @@ import sys
 from genologics.entities import *
 
 
-MAX_WARNING_VOLUME=150
-MIN_WARNING_VOLUME=2
+MAX_WARNING_VOLUME=150.0
+MIN_WARNING_VOLUME=2.0
 
 def obtain_previous_volumes(currentStep, lims):
     samples_volumes={}
@@ -157,7 +157,7 @@ def compute_transfer_volume(currentStep, lims, log):
             valid_inputs=filter(lambda x: x['pool_id']==pool.id, data)
             # Set the output conc of the pool and also get the "desired" pool
             # volume, which is which? 
-            final_vol = pool.udf["Final Volume (uL)"]
+            final_vol = float(pool.udf["Final Volume (uL)"])
             conc = valid_inputs[0]["conc"]
             # If all inputs are of the same conc use the trivial algorithm,
             # else try to optimize:
