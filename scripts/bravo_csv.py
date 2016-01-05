@@ -255,20 +255,27 @@ def normalization(current_step):
                 dest_plate = dest.location[0].id
                 dest_well = dest.location[1]
                 dest_conc = dest.udf["Normalized conc. (nM)"]
-
-                if src_conc > 0 and src.udf["Conc. Units"] == "nM":
-                    final_volume = src_conc * src_volume / dest_conc
-                    csv.write("{0},{1},{2},{3},{4},{5}\n".format(src_plate, src_well, src_volume, dest_plate, dest_well, final_volume))
+                if src.udf["Conc. Units"] != "nM":
+                    log.append("ERROR: No valid concentration found for sample {0}".format(src.samples[0].name))
+                elif src_conc < dest_conc:
+                    log.append("ERROR: Too low concentration for sample {0}".format(src.samples[0].name))
                 else:
-                    log.append("No valid concentration found for sample {0}".format(src.samples[0].name))
+                    # Warn if volume to take > volume available or max volume is
+                    # exceeded but still do the calculation:
+                    if src_volume > src_tot_volume:
+                        log.append("WARNING: Not enough available volume of sample {0}".format(src.samples[0].name))
+                    final_volume = src_conc * src_volume / dest_conc
+                    if final_volume > MAX_WARNING_VOLUME:
+                        log.append("WARNING: Maximum volume exceeded for sample {0}".format(src.samples[0].name))
+                    csv.write("{0},{1},{2},{3},{4},{5}\n".format(src_plate, src_well, src_volume, dest_plate, dest_well, final_volume))
     if log:
         with open("normalization.log", "w") as log_context:
             log_context.write("\n".join(log))
     for out in current_step.all_outputs():
         #attach the csv file and the log file
-        if out.name=="Normalization buffer volumes CSV":
+        if out.name == "Normalization buffer volumes CSV":
             attach_file(os.path.join(os.getcwd(), "normalization.csv"), out)
-        if log and out.name=="Normalization Log":
+        elif out.name == "Normalization Log" and log:
             attach_file(os.path.join(os.getcwd(), "normalization.log"), out)
     if log:
         #to get an eror display in the lims, you need a non-zero exit code AND a message in STDERR
