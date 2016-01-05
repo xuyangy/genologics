@@ -141,7 +141,7 @@ def optimize_volumes(samples, final_vol, limit_vol=2):
         if low_vol >= limit_vol and tot_vol >= final_vol and try_vol >= limit_vol:
             return _minimize_vol(try_vol)
         else:
-            # We can't improve anymore within the given limits... 
+            # We can't improve anymore within the given limits...
             return vol
 
     # Start from whichever is the smallest volume:
@@ -156,7 +156,7 @@ def compute_transfer_volume(currentStep, lims, log):
         if pool.type == 'Analyte':
             valid_inputs=filter(lambda x: x['pool_id']==pool.id, data)
             # Set the output conc of the pool and also get the "desired" pool
-            # volume, which is which? 
+            # volume, which is which?
             final_vol = float(pool.udf["Final Volume (uL)"])
             conc = valid_inputs[0]["conc"]
             # If all inputs are of the same conc use the trivial algorithm,
@@ -187,7 +187,7 @@ def prepooling(currentStep, lims):
                     log.append("Volume for sample {} is above {}, redo the calculations manually".format(MAX_WARNING_VOLUME, s['name']))
                 if s['vol_to_take']<MIN_WARNING_VOLUME:
                     log.append("Volume for sample {} is below {}, redo the calculations manually".format(MIN_WARNING_VOLUME, s['name']))
-                csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well'])) 
+                csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well']))
     if log:
         with open("bravo.log", "w") as logContext:
             logContext.write("\n".join(log))
@@ -211,7 +211,7 @@ def setup_workset(currentStep):
             #working directly with the map allows easier input/output handling
             for art_tuple in currentStep.input_output_maps:
                 #filter out result files
-                if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte': 
+                if art_tuple[0]['uri'].type=='Analyte' and art_tuple[1]['uri'].type=='Analyte':
                     source_fc=art_tuple[0]['uri'].location[0].name
                     source_well=art_tuple[0]['uri'].location[1]
                     dest_fc=art_tuple[1]['uri'].location[0].id
@@ -224,7 +224,7 @@ def setup_workset(currentStep):
                         checkTheLog[0]=True
                     else:
                         volume=calc_vol(art_tuple, logContext, checkTheLog)
-                        csvContext.write("{0},{1},{2},{3},{4},{5}\n".format(source_fc, source_well, volume, dest_fc, dest_well, final_volume)) 
+                        csvContext.write("{0},{1},{2},{3},{4},{5}\n".format(source_fc, source_well, volume, dest_fc, dest_well, final_volume))
     for out in currentStep.all_outputs():
         #attach the csv file and the log file
         if out.name=="Bravo CSV File":
@@ -238,6 +238,45 @@ def setup_workset(currentStep):
     else:
         logging.info("Work done")
 
+def normalization(current_step):
+    log = []
+    with open("normalization.csv", "w") as csv:
+        for art in current_step.input_output_maps:
+            src = art[0]["uri"]
+            dest = art[1]["uri"]
+            if src.type == dest.type == "Analyte":
+                # Source sample:
+                src_plate = src.location[0].id
+                src_well = src.location[1]
+                src_tot_volume = float(src.udf["Volume (ul)"])
+                src_volume = float(dest.udf["Volume to take (uL)"])
+                src_conc = src.udf["Concentration"]
+                # Diluted sample:
+                dest_plate = dest.location[0].id
+                dest_well = dest.location[1]
+                dest_conc = dest.udf["Normalized conc. (nM)"]
+
+                if src_conc > 0 and src.udf["Conc. Units"] == "nM":
+                    final_volume = src_conc * src_volume / dest_conc
+                    csv.write("{0},{1},{2},{3},{4},{5}\n".format(src_plate, src_well, src_volume, dest_plate, dest_well, final_volume))
+                else:
+                    log.append("No valid concentration found for sample {0}".format(src.samples[0].name))
+    if log:
+        with open("normalization.log", "w") as log_context:
+            log_context.write("\n".join(log))
+    for out in current_step.all_outputs():
+        #attach the csv file and the log file
+        if out.name=="Normalization buffer volumes CSV":
+            attach_file(os.path.join(os.getcwd(), "normalization.csv"), out)
+        if log and out.name=="Normalization Log":
+            attach_file(os.path.join(os.getcwd(), "normalization.log"), out)
+    if log:
+        #to get an eror display in the lims, you need a non-zero exit code AND a message in STDERR
+        sys.stderr.write("Errors were met, please check the log file\n")
+        sys.exit(2)
+    else:
+        logging.info("Work done")
+
 def main(lims, args):
     #Array, so can be modified inside a child method
     currentStep=Process(lims,id=args.pid)
@@ -245,8 +284,8 @@ def main(lims, args):
         setup_workset(currentStep)
     elif "Pooling" in currentStep.type.name:
         prepooling(currentStep, lims)
-
-
+    elif "Normalization" in currentStep.type.name:
+        normalization(currentStep)
 
 def calc_vol(art_tuple, logContext,checkTheLog):
     try:
@@ -262,18 +301,18 @@ def calc_vol(art_tuple, logContext,checkTheLog):
             checkTheLog[0]=True
         elif volume>art_tuple[0]['uri'].udf["Volume (ul)"]:
             #check against the "max volume"
-            logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
+            logContext.write("WARN : Sample {0} located {1} {2}  has a HIGH volume : {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name,
                 art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[0]['uri'].udf["Volume (ul)"] ))
             checkTheLog[0]=True
         elif volume>art_tuple[1]['uri'].udf['Total Volume (uL)']:
-            logContext.write("WARN : Sample {0} located {1} {2}  has a HIGHER volume than the total: {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name, 
+            logContext.write("WARN : Sample {0} located {1} {2}  has a HIGHER volume than the total: {3}, over {4}\n".format(art_tuple[1]['uri'].samples[0].name,
                 art_tuple[0]['uri'].location[0].name, art_tuple[0]['uri'].location[1], volume,art_tuple[1]['uri'].udf["Total Volume (uL)"] ))
             checkTheLog[0]=True
         else:
             logContext.write("INFO : Sample {0} looks okay.\n".format(art_tuple[1]['uri'].samples[0].name))
-        return "{0:.2f}".format(volume) 
+        return "{0:.2f}".format(volume)
     except KeyError as e:
-        logContext.write("ERROR : The input artifact is lacking a field : {0}\n".format(e)) 
+        logContext.write("ERROR : The input artifact is lacking a field : {0}\n".format(e))
         checkTheLog[0]=True
     except AssertionError:
         logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.\n")
