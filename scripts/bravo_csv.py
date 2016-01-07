@@ -56,6 +56,8 @@ def obtain_previous_volumes(currentStep, lims):
                                     well_idx=idx
                                 elif el == "Destination Plate":
                                     plate_idx=idx
+                                elif el == "Sample Name":
+                                    name_idx=idx
                         else:
                             elements=line.split(',')
                             well = elements[well_idx]
@@ -70,14 +72,13 @@ def obtain_previous_volumes(currentStep, lims):
                             srcvol=float(srcvol)
                             bufvol=float(bufvol)
                             totvol = bufvol
+                            # For Genologics format compability:
                             if genologics_format:
                                 totvol += srcvol
-
-                            if not plate in samples_volumes:
-                                samples_volumes[plate] = {}
-
-                            samples_volumes[plate][well] = totvol
-
+                                name = elements[name_idx].replace('"','')
+                                samples_volumes[name] = totvol
+                            else:
+                                samples_volumes.setdefault(plate,{})[well] = totvol
     return samples_volumes
 
 
@@ -101,10 +102,18 @@ def make_datastructure(currentStep, lims, log):
             obj['pool_id']=out['uri'].id
             #obj['pool_conc']=out['uri'].udf['Normalized conc. (nM)']
             obj['src_fc']=inp['uri'].location[0].name
+            obj['src_fc_id']=inp['uri'].location[0].id
             obj['src_well']=inp['uri'].location[1]
             obj['dst_fc']=out['uri'].location[0].id
             obj['dst_well']=out['uri'].location[1]
-            obj['vol'] = samples_volumes[obj['src_fc']][obj['src_well']]
+            # For Genologics format compability:
+            if obj['name'] in samples_volumes:
+                obj['vol'] = samples_volumes[obj['name']]
+            # Try to match container ID first then name:
+            elif obj['src_fc_id'] in samples_volumes:
+                obj['vol'] = samples_volumes[obj['src_fc_id']][obj['src_well']]
+            else:
+                obj['vol'] = samples_volumes[obj['src_fc']][obj['src_well']]
             data.append(obj)
 
     return data
@@ -187,7 +196,7 @@ def prepooling(currentStep, lims):
                     log.append("Volume for sample {} is above {}, redo the calculations manually".format(MAX_WARNING_VOLUME, s['name']))
                 if s['vol_to_take']<MIN_WARNING_VOLUME:
                     log.append("Volume for sample {} is below {}, redo the calculations manually".format(MIN_WARNING_VOLUME, s['name']))
-                csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well']))
+                csvContext.write("{0},{1},{2},{3},{4}\n".format(s['src_fc_id'], s['src_well'], s['vol_to_take'], s['dst_fc'], s['dst_well']))
     if log:
         with open("bravo.log", "w") as logContext:
             logContext.write("\n".join(log))
