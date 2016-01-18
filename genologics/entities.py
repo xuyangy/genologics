@@ -787,7 +787,7 @@ class Entity(object):
 
     def get(self, force=False):
         "Get the XML data for this instance."
-        if not force and self.root is not None: return
+                if not force and self.root is not None: return
         self.root = self.lims.get(self.uri)
 
     def put(self):
