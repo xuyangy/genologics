@@ -502,8 +502,12 @@ def main(lims, pid, epp_logger, demuxfile, qc_log_file):
     process = Process(lims,id = pid)
     RQC = RunQC(process)
     RQC.make_qc_log_file(qc_log_file)
+    #Doesn't support HiseqXten (yet):
+    #Gets platform specific info
     RQC.get_run_info()
+    #Runs LaneQC
     RQC.run_QC()
+    #Writes new demuxfile based on keywords in original
     RQC.make_demultiplexed_counts_file(demuxfile)
     RQC.logging()
 
@@ -522,6 +526,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
-
-    with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
-        main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
+    
+    #bclConversion ran through main()?
+    pdb.set_trace()
+    #Omitting logger unit test. Seems to be broken?
+    #with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
+    #    main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
+    
