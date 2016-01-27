@@ -1,6 +1,6 @@
 ## Python interface to the GenoLogics LIMS server via its REST API.
 
-[![PyPI version](https://badge.fury.io/py/taca.svg)](http://badge.fury.io/py/taca)
+[![PyPI version](https://badge.fury.io/py/genologics.svg)](http://badge.fury.io/py/genologics)
 
 A basic module for interacting with the GenoLogics LIMS server via
 its REST API. The goal is to provide simple access to the most common
