@@ -1,19 +1,17 @@
 #!/usr/bin/env python
-from nose.tools import assert_almost_equal, assert_equal, assert_true
-from os.path import isdir,isfile
-from os import listdir
+from os.path import isdir
 import os
 import sys
+from unittest.case import TestCase
 
 from genologics.epp import EppLogger
-import logging
 
 file_path = os.path.realpath(__file__)
 test_dir_path = os.path.dirname(file_path)
 tmp_dir_path = test_dir_path + '/nose_tmp_output'
 CWD = os.getcwd()
 
-class TestLog(object):
+class TestLog(TestCase):
     def setUp(self):
         """Create temporary dir if necessary,
         otherwise clear contents of it"""
@@ -48,11 +46,11 @@ class TestLog(object):
         sys.stderr = saved_stderr
         with open(tmp_stderr,'r') as stderr:
             stream_lines = stderr.readlines()
-        assert_true('stderr nosetest' in stream_lines[-1])
+        assert 'stderr nosetest' in stream_lines[-1]
 
         with open(tmp_file,'r') as log_file:
             log_lines = log_file.readlines()
-        assert_true('stderr nosetest' in log_lines[-1])
+        assert 'stderr nosetest' in log_lines[-1]
 
     def test_stdout(self):
         """ Stdout should be logged but not printed"""
@@ -65,11 +63,11 @@ class TestLog(object):
         sys.stdout = saved_stdout
         with open(tmp_stdout,'r') as stdout:
             stream_lines = stdout.readlines()
-        assert_true(not stream_lines)
+        assert not stream_lines
 
         with open(tmp_file,'r') as log_file:
             log_lines = log_file.readlines()
-        assert_true('stdout nosetest' in log_lines[-1])
+        assert 'stdout nosetest' in log_lines[-1]
         
     def test_exception(self):
         """ Exceptions should be printed and logged"""

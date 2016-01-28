@@ -5,20 +5,24 @@ LIMS interface.
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
+import os
+from io import BytesIO
 
 __all__ = ['Lab', 'Researcher', 'Project', 'Sample',
            'Containertype', 'Container', 'Processtype', 'Process',
            'Artifact', 'Lims']
 
-#python 2.7 compatibility
-try:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
-except:
+#python 2.7, 3+ compatibility
+from sys import version_info
+if version_info.major == 2:
     from urlparse import urljoin
     from urllib import urlencode
+else:
+    from urllib.parse import urljoin
+    from urllib.parse import urlencode
 
-from io import StringIO
+
+
 
 # http://docs.python-requests.org/
 import requests
@@ -82,8 +86,40 @@ class Lims(object):
             raise ValueError("id or uri required")
         url = urljoin(self.baseuri, '/'.join(segments))
         r=self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
-        #TODO add a returncode check here 
+        self.validate_response(r)
         return r.text
+
+    def upload_new_file(self, entity, file_to_upload):
+        """Upload a file to the specified id and parse the xml response"""
+        file_to_upload = os.path.abspath(file_to_upload)
+        if not os.path.isfile(file_to_upload):
+            raise FileNotFoundError("{} not found".format(file_to_upload))
+
+        #Request the storage space on glsstorage
+        # Create the xml to descibe the file
+        root = ElementTree.Element(nsmap('file:file'))
+        s = ElementTree.SubElement(root, 'attached-to')
+        s.text = entity.uri
+        s = ElementTree.SubElement(root, 'original-location')
+        s.text = file_to_upload
+        root = self.post(uri=self.get_uri('glsstorage'),
+                         data=self.tostring(ElementTree.ElementTree(root)))
+
+        #Create the file object
+        root = self.post(uri=self.get_uri('files'),
+                          data=self.tostring(ElementTree.ElementTree(root)))
+        file = File(self, uri=root.attrib['uri'])
+
+        #Actually upload the file
+        uri = self.get_uri('files', file.id, 'upload')
+        xml_str = self.tostring(ElementTree.ElementTree(file.root))
+        r = requests.post(uri, data=xml_str,
+                          payload= {'file':file_to_upload},
+                          auth=(self.username, self.password),
+                          headers={'content-type':'multipart/form-data',
+                                   'accept': 'application/xml'})
+        root = self.parse_response(r)
+        return file
 
 
     def put(self, uri, data, params=dict()):
@@ -119,11 +155,11 @@ class Lims(object):
             if node.attrib['major'] == self.VERSION: return
         raise ValueError('version mismatch')
 
-    def parse_response(self, response):
+    def validate_response(self, response):
         """Parse the XML returned in the response.
         Raise an HTTP error if the response status is not 200.
         """
-        if response.status_code != 200:
+        if response.status_code not in [200, 201]:
             try:
                 root = ElementTree.fromstring(response.content)
                 node = root.find('message')
@@ -134,10 +170,16 @@ class Lims(object):
                 if node is not None:
                     message += ' ' + node.text
             except ElementTree.ParseError: # some error messages might not follow the xml standard
-                message=response.content 
+                message=response.content
             raise requests.exceptions.HTTPError(message)
-        else:
-            root = ElementTree.fromstring(response.content)
+        return True
+
+    def parse_response(self, response):
+        """Parse the XML returned in the response.
+        Raise an HTTP error if the response status is not 200.
+        """
+        self.validate_response(response)
+        root = ElementTree.fromstring(response.content)
         return root
 
     def get_udfs(self, name = None, attach_to_name = None, attach_to_category = None, start_index = None):
@@ -414,7 +456,7 @@ class Lims(object):
 
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
-        outfile = StringIO()
+        outfile = BytesIO()
         self.write(outfile, etree)
         return outfile.getvalue()
 
