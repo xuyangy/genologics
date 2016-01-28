@@ -5,7 +5,7 @@ python:
   - "3.3"
   - "3.4"
 install: "pip install -r requirements.txt"
-script: py.test
+script: PYTHONPATH=. py.test
 notifications:
   email:
     on_success: change # default: change

@@ -93,7 +93,7 @@ class Lims(object):
         """Upload a file to the specified id and parse the xml response"""
         file_to_upload = os.path.abspath(file_to_upload)
         if not os.path.isfile(file_to_upload):
-            raise FileNotFoundError("{} not found".format(file_to_upload))
+            raise IOError("{} not found".format(file_to_upload))
 
         #Request the storage space on glsstorage
         # Create the xml to descibe the file
@@ -104,7 +104,6 @@ class Lims(object):
         s.text = file_to_upload
         root = self.post(uri=self.get_uri('glsstorage'),
                          data=self.tostring(ElementTree.ElementTree(root)))
-
         #Create the file object
         root = self.post(uri=self.get_uri('files'),
                           data=self.tostring(ElementTree.ElementTree(root)))
@@ -112,7 +111,7 @@ class Lims(object):
 
         #Actually upload the file
         uri = self.get_uri('files', file.id, 'upload')
-        xml_str = self.tostring(ElementTree.ElementTree(file.root))
+        xml_str = self.tostring(ElementTree.ElementTree(root))
         r = requests.post(uri, data=xml_str,
                           payload= {'file':file_to_upload},
                           auth=(self.username, self.password),
@@ -462,4 +461,4 @@ class Lims(object):
 
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
-        etree.write(outfile, encoding='UTF-8')
+        etree.write(outfile, encoding='utf-8', xml_declaration=True)
