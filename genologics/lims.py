@@ -90,7 +90,7 @@ class Lims(object):
         return r.text
 
     def upload_new_file(self, entity, file_to_upload):
-        """Upload a file to the specified id and parse the xml response"""
+        """Upload a file and attach it to the provided entity."""
         file_to_upload = os.path.abspath(file_to_upload)
         if not os.path.isfile(file_to_upload):
             raise IOError("{} not found".format(file_to_upload))
@@ -104,10 +104,12 @@ class Lims(object):
         s.text = file_to_upload
         root = self.post(uri=self.get_uri('glsstorage'),
                          data=self.tostring(ElementTree.ElementTree(root)))
+
         #Create the file object
         root = self.post(uri=self.get_uri('files'),
                           data=self.tostring(ElementTree.ElementTree(root)))
         file = File(self, uri=root.attrib['uri'])
+
 
         #Actually upload the file
         uri = self.get_uri('files', file.id, 'upload')
@@ -117,7 +119,7 @@ class Lims(object):
                           auth=(self.username, self.password),
                           headers={'content-type':'multipart/form-data',
                                    'accept': 'application/xml'})
-        root = self.parse_response(r)
+        self.validate_response(r)
         return file
 
 

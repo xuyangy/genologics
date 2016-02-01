@@ -1,6 +1,7 @@
 import xml
 from unittest import TestCase
 
+from requests.exceptions import HTTPError
 
 from genologics.lims import Lims
 
@@ -20,6 +21,10 @@ class TestLims(TestCase):
     <sample uri="{url}/api/v2/samples/test_sample" limsid="test_id"/>
 </smp:samples>
 """.format(url=url)
+    error_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<exc:exception xmlns:exc="http://genologics.com/ri/exception">
+    <message>Generic error message</message>
+</exc:exception>"""
 
 
     def test_get_uri(self):
@@ -32,9 +37,9 @@ class TestLims(TestCase):
         r = Mock(content = self.sample_xml, status_code=200)
         pr = lims.parse_response(r)
         assert isinstance(pr, xml.etree.ElementTree.Element)
-        #TODO: uncomment when HTTPError can be reach when message in not set in xml or Mock the expected xml message
-        #r = Mock(content = content, status_code=400)
-        #self.assertRaises(lims.parse_response(r), requests.exceptions.HTTPError)
+
+        r = Mock(content = self.error_xml, status_code=400)
+        self.assertRaises(HTTPError, lims.parse_response, r)
 
 
     @patch('requests.Session.get',return_value=Mock(content = sample_xml, status_code=200))
@@ -74,10 +79,18 @@ class TestLims(TestCase):
         file_post_xml = '\n'.join([xml_intro, file_start2, attached, upload, content_loc, file_end]).format(url=self.url)
         with patch('requests.post', side_effect=[Mock(content=glsstorage_xml, status_code=200),
                                                  Mock(content=file_post_xml, status_code=200),
-                                                 Mock(content=file_post_xml, status_code=200)]):
+                                                 Mock(content="", status_code=200)]):
 
-            lims.upload_new_file(Mock(uri=self.url+"/api/v2/samples/test_sample"),
-                                 'filename_to_upload')
+            file = lims.upload_new_file(Mock(uri=self.url+"/api/v2/samples/test_sample"),
+                                        'filename_to_upload')
+            assert file.id == "40-3501"
+
+        with patch('requests.post', side_effect=[Mock(content=self.error_xml, status_code=400)]):
+
+          self.assertRaises(HTTPError,
+                            lims.upload_new_file,
+                            Mock(uri=self.url+"/api/v2/samples/test_sample"),
+                            'filename_to_upload')
 
 
 
