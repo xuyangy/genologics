@@ -9,8 +9,10 @@ from genologics.lims import Lims
 from sys import version_info
 if version_info.major == 2:
     from mock import patch, Mock
+    import __builtin__ as builtins
 else:
     from unittest.mock import patch, Mock
+    import builtins
 
 class TestLims(TestCase):
     url = 'http://testgenologics.com:4040'
@@ -66,7 +68,8 @@ class TestLims(TestCase):
 
 
     @patch('os.path.isfile', return_value=True)
-    def test_upload_new_file(self, mocked_instance):
+    @patch.object(builtins, 'open')
+    def test_upload_new_file(self, mocked_open, mocked_isfile):
         lims = Lims(self.url, username=self.username, password=self.password)
         xml_intro = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
         file_start = """<file:file xmlns:file="http://genologics.com/ri/file">"""
