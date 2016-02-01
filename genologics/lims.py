@@ -90,34 +90,35 @@ class Lims(object):
         return r.text
 
     def upload_new_file(self, entity, file_to_upload):
-        """Upload a file to the specified id and parse the xml response"""
+        """Upload a file and attach it to the provided entity."""
         file_to_upload = os.path.abspath(file_to_upload)
         if not os.path.isfile(file_to_upload):
             raise IOError("{} not found".format(file_to_upload))
 
         #Request the storage space on glsstorage
-        # Create the xml to descibe the file
+        # Create the xml to describe the file
         root = ElementTree.Element(nsmap('file:file'))
         s = ElementTree.SubElement(root, 'attached-to')
         s.text = entity.uri
         s = ElementTree.SubElement(root, 'original-location')
         s.text = file_to_upload
-        root = self.post(uri=self.get_uri('glsstorage'),
-                         data=self.tostring(ElementTree.ElementTree(root)))
+        root = self.post(
+                uri=self.get_uri('glsstorage'),
+                data=self.tostring(ElementTree.ElementTree(root))
+        )
+
         #Create the file object
-        root = self.post(uri=self.get_uri('files'),
-                          data=self.tostring(ElementTree.ElementTree(root)))
+        root = self.post(
+                uri=self.get_uri('files'),
+                data=self.tostring(ElementTree.ElementTree(root))
+        )
         file = File(self, uri=root.attrib['uri'])
 
         #Actually upload the file
         uri = self.get_uri('files', file.id, 'upload')
-        xml_str = self.tostring(ElementTree.ElementTree(root))
-        r = requests.post(uri, data=xml_str,
-                          payload= {'file':file_to_upload},
-                          auth=(self.username, self.password),
-                          headers={'content-type':'multipart/form-data',
-                                   'accept': 'application/xml'})
-        root = self.parse_response(r)
+        r = requests.post(uri, files= {'file':(file_to_upload, open(file_to_upload, 'rb'))},
+                          auth=(self.username, self.password))
+        self.validate_response(r)
         return file
 
 
