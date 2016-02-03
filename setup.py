@@ -8,7 +8,7 @@ import glob
 version_py = os.path.join(os.path.dirname(__file__), 'version.py')
 
 try:
-    version = subprocess.Popen(["git", "describe"],stdout=subprocess.PIPE).communicate()[0].rstrip()
+    version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE).communicate()[0].rstrip()
 except:
     execfile(version_py)
     version = __version__
