@@ -12,19 +12,19 @@ def get_config_info(config_file):
     
     
     BASEURI = config.get('genologics', 'BASEURI').rstrip()
-	USERNAME = config.get('genologics', 'USERNAME').rstrip()
-	PASSWORD = config.get('genologics', 'PASSWORD').rstrip()
+    USERNAME = config.get('genologics', 'USERNAME').rstrip()
+    PASSWORD = config.get('genologics', 'PASSWORD').rstrip()
 	
-	if config.has_section('genologics') and config.has_option('genologics','VERSION'):
-		VERSION = config.get('genologics', 'VERSION').rstrip()
-	else:
-		VERSION = 'v2'
+    if config.has_section('genologics') and config.has_option('genologics','VERSION'):
+        VERSION = config.get('genologics', 'VERSION').rstrip()
+    else:
+	VERSION = 'v2'
 		
-	if config.has_section('logging') and config.has_option('logging','MAIN_LOG'):
-		MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
-	else:
-		MAIN_LOG = None
-	return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG
+    if config.has_section('logging') and config.has_option('logging','MAIN_LOG'):
+	MAIN_LOG = config.get('logging', 'MAIN_LOG').rstrip()
+    else:
+	MAIN_LOG = None
+    return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG
 		
 
 if specified_config:
