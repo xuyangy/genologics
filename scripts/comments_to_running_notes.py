@@ -8,7 +8,6 @@ from genologics.entities import *
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.epp import attach_file, EppLogger
-from LIMS2DB.objectsDB import process_categories as pc
 
 import datetime
 import logging
@@ -67,6 +66,8 @@ def categorization(process_name):
     "Amplify Adapter-Ligated Library (SS XT) 4.0" : "",
     "Aliquot Libraries for Hybridization (SS XT)" : "",
     "Denature, Dilute and Load Sample (MiSeq) 4.0" : "Flowcell",
+    "Cluster Generation (HiSeq X) 1.0" : "Flowcell",
+    "Cluster Generation (Illumina SBS) 4.0" : "Flowcell",
     "Library Pooling (Illumina SBS) 4.0" : "",
     "Bioanalyzer QC (RNA) 4.0" : "Workset",
     "Pre-Pooling (Illumina SBS) 4.0" : "",
