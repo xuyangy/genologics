@@ -525,4 +525,3 @@ if __name__ == "__main__":
 
     with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
         main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
-    
