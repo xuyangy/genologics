@@ -1,4 +1,17 @@
-"""Written by Isak Sylvin; isak.sylvin@scilifelab.se"""
+"""
+This file together with bcl_thresholds.py performs the bclconversion step of LIMS workflow.
+In common tongue, it:
+ 
+Fetches some info from the workflow process
+Assigns a few thresholds to the process (workflow step)
+Reformats laneBarcode.html for usage of other applications
+Assigns some info from laneBarcode.html to individual samples in the process
+Flags samples as QC PASS/FAIL based on thresholds
+
+##As of implementation preproc2 has hiseq examples & Preproc 1 has hiseqX
+##lanebc file is stored in Demultiplexing_0 on nosync on /srv/illumina
+
+Written by Isak Sylvin; isak.sylvin@scilifelab.se"""
 
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
@@ -18,7 +31,8 @@ import logging
 
 timestamp = datetime.fromtimestamp(time()).strftime('%Y-%m-%d_%H:%M')
 
-def manipulate_process(demux_process):
+"""Fetches overarching workflow info"""
+def manipulate_workflow(demux_process):
     try:
         demux_container = demux_process.all_inputs()[0].location[0].name    
     except:
@@ -31,46 +45,65 @@ def manipulate_process(demux_process):
         workflow = lims.get_processes(udf = {v : demux_container}, type = k)
         #If workflow key exists
         if(workflow):
-            seq_run = workflow[0]
+            #Copies LIMS workflow content
+            proc_stats = dict(workflow[0].udf.items())
             if 'MiSeq Run (MiSeq) 4.0' in k:
-                run_type ='MiSeq'
+                proc_stats['Run type'] ='MiSeq'
+                proc_stats['Data type'] = 'miseq'
             elif 'Illumina Sequencing (Illumina SBS) 4.0' in k:
-                run_type = seq_run.udf['Flow Cell Version']
+                proc_stats['Run type'] = workflow[0].udf['Flow Cell Version']
+                proc_stats['Data type'] = 'hiseq'
             elif 'Illumina Sequencing (HiSeq X) 1.0' in k:
-                run_type ='HiSeqX10'
+                proc_stats['Run type'] ='HiSeqX10'
+                proc_stats['Data type'] = 'HiSeqX'
             else:
                 sys.exit("Unhandled prior workflow step (run type)")
-            logging.info("Run type set to " + run_type)
+            logging.info("Run type set to " + proc_stats['Run type'])
             break
         
-    #Set run thresholds
-    thresholds = Thresholds('HiSeq', run_type, 'Single')
+    proc_stats['paired'] = False
+    if 'Read 2 Cycles ' in proc_stats:
+        proc_stats['paired'] = True
+    logging.info("Paired libraries: " + str(proc_stats['paired']))  
+    
+    return proc_stats
+
+"""Sets run thresholds"""
+#Chemistry for miseq and x10 needs to be expanded
+def manipulate_process(demux_process, proc_stats):      
+    thresholds = Thresholds('HiSeq', proc_stats['Run type'], proc_stats['paired'])
     Q30_thres = thresholds.Q30
     exp_lane_clust = thresholds.exp_lane_clust
+    
+    if not 'Threshold for % bases >= Q30' in demux_process.udf:
+        try:
+            demux_process.udf['Threshold for % bases >= Q30'] = Q30_thres
+        except:
+            sys.exit("Udf improperly formatted. Unable to set Q30 threshold")
+    #Would prefer 'Expected reads per lane' put this is easier
+    if not 'Threshold for # Reads' in demux_process.udf:
+        try:
+            demux_process.udf['Threshold for # Reads'] = exp_lane_clust
+        except:
+            sys.exit("Udf improperly formatted. Unable to set # Reads threshold")
 
-    try:
-        proc_stats = dict(seq_run.udf.items())
-        if not proc_stats.has_key('Threshold for % bases >= Q30'):
-            proc_stats['Threshold for % bases >= Q30'] = Q30_thres
-        if not proc_stats.has_key('Expected reads per lane'):
-            proc_stats['Expected reads per lane'] = exp_lane_clust
-    except:
-        sys.exit("Udf improperly formatted. Unable to set thresholds")
-        
+      
     logging.info("Q30 threshold set to " + str(Q30_thres))
     logging.info("Minimum clusters per lane set to " + str(exp_lane_clust))
     
-    #demux_process.put()
-    return demux_process, proc_stats, run_type
+    try:
+        demux_process.put()
+    except:
+        sys.exit("Failed to apply process thresholds to LIMS")
     
 """Sets artifact = samples values """
-def set_sample_values(demux_process, parser_struct, proc_stats, run_type):
+def set_sample_values(demux_process, parser_struct, proc_stats):
     for pool in demux_process.all_inputs():
         try:
             outarts_per_lane = demux_process.outputs_per_input(pool.id, ResultFile = True)
         except:
             sys.exit('Unable to fetch artifacts of process')
-        if run_type == 'Miseq':
+        if proc_stats['Run type'] == 'Miseq':
             lane_no = '1'
         else:
             try:
@@ -78,7 +111,7 @@ def set_sample_values(demux_process, parser_struct, proc_stats, run_type):
             except:
                 sys.exit('Unable to determine lane number. Incorrect location variable in process.')
         logging.info("Lane number set to " + lane_no)
-        exp_smp_per_lne = round(proc_stats['Expected reads per lane']/float(len(outarts_per_lane)), 0)
+        exp_smp_per_lne = round(demux_process.udf['Threshold for # Reads']/float(len(outarts_per_lane)), 0)
         logging.info('Expected sample clusters for this lane: ' + str(exp_smp_per_lne))
         for target_file in outarts_per_lane:
             try:
@@ -88,58 +121,72 @@ def set_sample_values(demux_process, parser_struct, proc_stats, run_type):
             for entry in parser_struct:
                 if lane_no == entry['Lane']:
                     sample = entry['Sample']
-                    import pdb
-                    pdb.set_trace()
-                    #Goofball stuff going on here; since we request lims ID
-                    #current anme = lims; sample is from local data
                     if sample == current_name:
                         try:
-                            target_file.udf = {'%PF' : float(entry['% PFClusters']),
-                            '% One Mismatch Reads (Index)' : float(entry['% One mismatchbarcode']),
-                            '% of Raw Clusters Per Lane' : float(entry['% of thelane']),
-                            'Ave Q Score' : float(entry['Mean QualityScore']),
-                            '% Perfect Index Read' : float(entry['% Perfect Index Reads']),
-                            'Yield (Mbases)' : float(entry['Yield (Mbases)'].replace(',',''))/1000,
-                            '% Bases >=Q30' : entry['% >= Q30bases'],
-                            '# Reads' : entry['PF Clusters']}
+                            target_file.udf['%PF'] = float(entry['% PFClusters'])
+                            target_file.udf['% One Mismatch Reads (Index)'] = float(entry['% One mismatchbarcode'])
+                            target_file.udf['% of Raw Clusters Per Lane'] = float(entry['% of thelane'])
+                            target_file.udf['Ave Q Score'] = float(entry['Mean QualityScore'])
+                            target_file.udf['% Perfect Index Read'] = float(entry['% Perfectbarcode'])
+                            target_file.udf['Yield PF (Gb)'] = float(entry['Yield (Mbases)'].replace(',',''))/1000
+                            target_file.udf['% Bases >=Q30'] = float(entry['% >= Q30bases'])
+                            target_file.udf['# Reads'] = int(entry['PF Clusters'].replace(',',''))
+                            if proc_stats['paired']:
+                                target_file.udf['# Read Pairs'] = float(entry['PF Clusters'].replace(',',''))/2
+                            else:
+                                target_file.udf['# Read Pairs'] = int(entry['PF Clusters'].replace(',',''))
                         except:
                             sys.exit("Unable to set artifact values.")
                         logging.info('Added the following set of values to artifact:')
-                        logging.info(target_file.udf['%PF'] + ' %PF')
-                        logging.info(target_file.udf['% One Mismatch Reads (Index)'] + ' % One Mismatch Reads (Index)')
-                        logging.info(target_file.udf['% of Raw Clusters Per Lane'] + ' % of Raw Clusters Per Lane')
-                        logging.info(target_file.udf['Ave Q Score'] + ' Ave Q Score')
-                        logging.info(target_file.udf['% Perfect Index Read'] + ' % Perfect Index Read')
-                        logging.info(target_file.udf['Yield (Mbases)'] + ' Yield (Mbases)')
-                        logging.info(target_file.udf['% Bases >=Q30'] + ' % Bases >=Q30')
-                        logging.info(target_file.udf['# Reads'] + ' # Reads')
+                        logging.info(str(target_file.udf['%PF']) + ' %PF')
+                        logging.info(str(target_file.udf['% One Mismatch Reads (Index)']) + ' % One Mismatch Reads (Index)')
+                        logging.info(str(target_file.udf['% of Raw Clusters Per Lane']) + ' % of Raw Clusters Per Lane')
+                        logging.info(str(target_file.udf['Ave Q Score']) + ' Ave Q Score')
+                        logging.info(str(target_file.udf['% Perfect Index Read']) + ' % Perfect Index Read')
+                        logging.info(str(target_file.udf['Yield PF (Gb)']) + ' Yield (Mbases)')
+                        logging.info(str(target_file.udf['% Bases >=Q30']) + ' % Bases >=Q30')
+                        logging.info(str(target_file.udf['# Reads']) + ' # Reads')
+                        logging.info(str(target_file.udf['# Read Pairs']) + ' # Reads Pairs')
                         
                         try:
-                            if ( proc_stats['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
-                            exp_smp_per_lne > entry['# Reads'] ):
+                            if 'Clusters' in entry:
+                                reads = entry['Clusters']
+                            else: 
+                                reads = entry['PF Clusters']
+                            reads = int(reads.replace(',',''))
+                            if ( demux_process.udf['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
+                            exp_smp_per_lne > reads ):
                                 target_file.udf['Include reads'] = 'YES'
-                                target_file.qc_flag = 'PASSED'
-                                logging.info('Sample passed defined thresholds')
+                                target_file.qc_flag = 'PASSED'           
                             else:
                                 target_file.udf['Include reads'] = 'NO'
                                 target_file.qc_flag = 'FAILED'
-                                logging.info('Sample failed to pass defined thresholds')
+                            logging.info('Sample QC status set to ' + target_file.qc_flag )
                         except:
                             sys.exit("Unable to set QC status for sample")
-                        
-            #target_file.put()
+            try:
+                target_file.put()
+            except:
+                sys.exit("Failed to apply artifact data to LIMS")
     
+
+"""Creates demux_{FCID}_{time}.csv and attaches it to process"""
 #Handles undetermined quite badly, might be worth revising
-"""Creates demux_lims_id.csv and attaches it to process"""
+    #change TEMPORARY LINE once done
+    #current pid is 24-142862
 def write_demuxfile(proc_stats):
-    prefix = '/Users/isaksylvin/SciLifeLab/preprocExampleData/'
+    prefix = '/srv/illumina/'+ proc_stats['Data type'] + '_data/nosync/'
     try:
         appendix = proc_stats['Run ID'] + '/Demultiplexing/Reports/html/' + proc_stats['Flow Cell ID'] + '/all/all/all/laneBarcode.html'
     except:
         sys.exit("Unable to set demux filename. Udf does not contain keys for run id and/or flowcell id.")
     lanebc_path = prefix + appendix
-    #change to lanebc_path once done
-    laneBC = classes.LaneBarcodeParser('/Users/isaksylvin/SciLifeLab/preprocExampleData/160115_ST-E00214_0074_AH7N7HCCXX/Demultiplexing/Reports/html/H7N7HCCXX/all/all/all/laneBarcode.html')
+    #TEMPORARY LINE
+    lanebc_path = '/Users/isaksylvin/SciLifeLab/preprocExampleData/24-142862/laneBarcode.html'
+    try:
+        laneBC = classes.LaneBarcodeParser(lanebc_path)
+    except:
+        sys.exit("Unable to fetch laneBarcode.html from " + lanebc_path)
     fname = 'demuxstats' + '_' + proc_stats['Flow Cell ID'] + '_' + timestamp + '.csv'
     
     with open(fname, 'w') as csvfile:
@@ -157,29 +204,28 @@ def write_demuxfile(proc_stats):
             except:
                 sys.exit("Flowcell parser is unable to fetch all necessary fields for demux file.")
     return laneBC.sample_data
-@click.command()
-@click.option('--project_lims_id', required=True,help='REQUIRED: Lims ID of project. Example:24-92373')
-@click.option('--rt_log', default='stdout_'+ timestamp + '.log', 
-              help='File name to log runtime information (mostly errors). Default:stdout_TIME.log') 
-@click.option('--qc_log', default='qc_metrics_' + timestamp + '.log', help='File name of to log quality control metrics. Default:qc_metrics_TIME.log')    
 
-#preproc 2, hiseq examples
-#Preproc 1, hiseq X examples
-#/srv/illumina/HiSeq_X_data/nosync/160115_ST-E00214_0074_AH7N7HCCXX
-def main(project_lims_id, rt_log, qc_log):
-    #Change when running
-    lanebc_lims_id = '00testingYO'
-    #Starts quality control log
-    logging.basicConfig(filename=qc_log,level=logging.INFO)
+def converter(demux_process, epp_logger):
+    #Fetches workflow info
+    proc_stats = manipulate_workflow(demux_process)
     #Sets up the process values
-    demux_process, proc_stats, run_type = manipulate_process(Process(lims,id = project_lims_id))
+    manipulate_process(demux_process, proc_stats)
     #Create the attached csv file
     parser_struct = write_demuxfile(proc_stats)
     #Alters artifacts
-    set_sample_values(demux_process, parser_struct, proc_stats, run_type)
-               
+    set_sample_values(demux_process, parser_struct, proc_stats)
+
+@click.command()
+@click.option('--project_lims_id', required=True,help='REQUIRED: Lims ID of project. Example:24-92373')
+@click.option('--rt_log', default='runtime_'+ timestamp + '.log', 
+              help='File name to log runtime information. Default:runtime_TIME.log') 
+def main(project_lims_id, rt_log):
+    demux_process = Process(lims,id = project_lims_id)
+    #Sets up proper logging
+    with EppLogger(log_file=rt_log, lims=lims, prepend=True) as epp_logger:
+        converter(demux_process, epp_logger)
+           
 if __name__ == '__main__':
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
-    #Omitting EppLogger. Steals my debug and Denis mentioned it's never checked.
     main()
