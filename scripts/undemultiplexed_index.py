@@ -34,7 +34,6 @@ import logging
 import glob
 import csv
 import numpy as np
-import pdb 
 
 from argparse import ArgumentParser
 from genologics.lims import Lims
@@ -121,7 +120,7 @@ class RunQC():
     def _get_run_id(self):
         if self.run_udfs.has_key('Run ID'):
             self.process.udf['Run ID'] = self.run_udfs['Run ID']
-            #set_field(self.process)
+            set_field(self.process)
 
     def _get_cycles(self):
         """To find out if it was a single end or paired end run."""
@@ -144,12 +143,13 @@ class RunQC():
             data_folder = 'hiseq_data'
             path_id = cont_name
         try:
-            self.file_path = glob.glob(("/srv/mfs/{0}/*{1}/Unaligned/""Basecall_Stats_*/".format(data_folder, path_id)))[0]
+            self.file_path = glob.glob(("/srv/mfs/{0}/*{1}/Unaligned/"
+                           "Basecall_Stats_*/".format(data_folder, path_id)))[0]
         except:
             sys.exit("Failed to get file path")
 
     def _get_demultiplex_files(self):
-        """ Files are read from the file mfs system. Path hard coded."""
+        """ Files are read from the file msf system. Path hard coded."""
         FRMP = FlowcellRunMetricsParser()
         try:
             fp_dem = self.file_path + 'Demultiplex_Stats.htm'
@@ -411,7 +411,7 @@ class LaneQC():
                             IQC.lane_index_QC(self.reads_threshold, self.Q30_treshold)
                             if IQC.html_file_error:
                                 self.html_file_error = IQC.html_file_error
-                            #set_field(IQC.t_file)
+                            set_field(IQC.t_file)
                             self.nr_samps_updat +=1
                         except:
                             self.QC_fail.append(samp)
@@ -499,41 +499,29 @@ class IndexQC():
             self.t_file.qc_flag = 'FAILED'
 
 def main(lims, pid, epp_logger, demuxfile, qc_log_file):
-    #Find the current process
     process = Process(lims,id = pid)
-    #Initializes Run qc; aka declares variables
     RQC = RunQC(process)
-    #Initializes qc log file
     RQC.make_qc_log_file(qc_log_file)
-    #Gets process/platform specific info; sets some thresholds
     RQC.get_run_info()
-    #Runs LaneQC; Sets artifact values
     RQC.run_QC()
-    #Writes new demuxfile.csv based on keywords in original
     RQC.make_demultiplexed_counts_file(demuxfile)
-    #Prints logging info
     RQC.logging()
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
-    parser.add_argument('--pid', dest = 'pid',
-                        help='Lims ID for current Process')
+    parser.add_argument('--pid', default = None , dest = 'pid',
+                        help='Lims id for current Process')
     parser.add_argument('--log', dest = 'log',
                         help=('File name for standard log file, '
                               'for runtime information and problems.'))
     parser.add_argument('--file', dest = 'file', default = 'demux',
-                        help=('Lims ID of demultiplexed metrics file'))
+                        help=('File path to demultiplexed metrics file'))
     parser.add_argument('--qc_log_file', dest = 'qc_log_file', 
                         default = 'qc_log_file',
                         help=('File path to qc logfile file'))
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
-    
-    #Bypass epp_logger when debugging; annoyingly steals all messages
-    #epp_logger = False
-    #main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
+
     with EppLogger(log_file=args.log, lims=lims, prepend=True) as epp_logger:
         main(lims, args.pid, epp_logger, args.file, args.qc_log_file)
-
-    

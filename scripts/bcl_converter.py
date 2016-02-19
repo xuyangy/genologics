@@ -171,9 +171,8 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
     
 
 """Creates demux_{FCID}_{time}.csv and attaches it to process"""
-#Handles undetermined quite badly, might be worth revising
-    #change TEMPORARY LINE once done
-    #current pid is 24-142862
+#Undetermined are written differently. Might be worth discussing
+#change TEMPORARY LINE once done
 def write_demuxfile(proc_stats):
     prefix = '/srv/illumina/'+ proc_stats['Data type'] + '_data/nosync/'
     try:
