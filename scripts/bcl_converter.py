@@ -2,10 +2,10 @@
 This file together with bcl_thresholds.py performs the bclconversion step of LIMS workflow.
 In common tongue, it:
  
-Fetches some info from the workflow process
-Assigns a few thresholds to the process (workflow step)
-Reformats laneBarcode.html for usage of other applications
-Assigns some info from laneBarcode.html to individual samples in the process
+Fetches info from the workflow process (RunID, FCID; derives instrument and data type)
+Assigns (Q30, Clust per Lane) thresholds to the process (workflow step)
+Reformats laneBarcode.html to 'demuxstats_FCID_TIME.csv' for usage of other applications
+Assigns a lot of info from laneBarcode.html to individual samples of the process (%PF etc)
 Flags samples as QC PASS/FAIL based on thresholds
 
 ##As of implementation preproc2 has hiseq examples & Preproc 1 has hiseqX
@@ -25,7 +25,6 @@ from time import time
 import os 
 import click
 import csv
-import pdb
 import sys
 import logging
 
@@ -47,49 +46,51 @@ def manipulate_workflow(demux_process):
         if(workflow):
             #Copies LIMS workflow content
             proc_stats = dict(workflow[0].udf.items())
+            #Instrument is denoted the way it is since it is also used to find
+            #the folder of the laneBarcode.html file
             if 'MiSeq Run (MiSeq) 4.0' in k:
-                proc_stats['Run type'] ='MiSeq'
-                proc_stats['Data type'] = 'miseq'
+                proc_stats['Chemistry'] ='MiSeq'
+                proc_stats['Instrument'] = 'miseq'
             elif 'Illumina Sequencing (Illumina SBS) 4.0' in k:
-                proc_stats['Run type'] = workflow[0].udf['Flow Cell Version']
-                proc_stats['Data type'] = 'hiseq'
+                proc_stats['Chemistry'] = workflow[0].udf['Flow Cell Version']
+                proc_stats['Instrument'] = 'hiseq'
             elif 'Illumina Sequencing (HiSeq X) 1.0' in k:
-                proc_stats['Run type'] ='HiSeqX10'
-                proc_stats['Data type'] = 'HiSeqX'
+                proc_stats['Chemistry'] ='HiSeqX v2.5'
+                proc_stats['Instrument'] = 'HiSeqX'
             else:
                 sys.exit("Unhandled prior workflow step (run type)")
-            logging.info("Run type set to " + proc_stats['Run type'])
+            logging.info("Run type set to " + proc_stats['Chemistry'])
             break
-        
-    proc_stats['paired'] = False
-    if 'Read 2 Cycles ' in proc_stats:
-        proc_stats['paired'] = True
-    logging.info("Paired libraries: " + str(proc_stats['paired']))  
-    
+          
+    proc_stats['Paired'] = False
+    if 'Read 2 Cycles' in proc_stats:
+        proc_stats['Paired'] = True
+    logging.info("Paired libraries: " + str(proc_stats['Paired']))  
+    #Assignment to make usage more explicit
+    try:
+        proc_stats['Read Length'] = proc_stats['Read 1 Cycles']
+    except:
+        sys.exit("Read 1 Cycles not found. Unable to read Read Length")
     return proc_stats
 
 """Sets run thresholds"""
-#Chemistry for miseq and x10 needs to be expanded
 def manipulate_process(demux_process, proc_stats):      
-    thresholds = Thresholds('HiSeq', proc_stats['Run type'], proc_stats['paired'])
-    Q30_thres = thresholds.Q30
-    exp_lane_clust = thresholds.exp_lane_clust
-    
+    thresholds = Thresholds(proc_stats['Instrument'], proc_stats['Chemistry'], proc_stats['Paired'], proc_stats['Read Length'])
+
     if not 'Threshold for % bases >= Q30' in demux_process.udf:
         try:
-            demux_process.udf['Threshold for % bases >= Q30'] = Q30_thres
+            demux_process.udf['Threshold for % bases >= Q30'] = thresholds.Q30
         except:
             sys.exit("Udf improperly formatted. Unable to set Q30 threshold")
-    #Would prefer 'Expected reads per lane' put this is easier
+    #Would prefer 'Expected reads per lane' but 'Threshold for # Reads' means less LIMS alterations
     if not 'Threshold for # Reads' in demux_process.udf:
         try:
-            demux_process.udf['Threshold for # Reads'] = exp_lane_clust
+            demux_process.udf['Threshold for # Reads'] = thresholds.exp_lane_clust
         except:
             sys.exit("Udf improperly formatted. Unable to set # Reads threshold")
 
-      
-    logging.info("Q30 threshold set to " + str(Q30_thres))
-    logging.info("Minimum clusters per lane set to " + str(exp_lane_clust))
+    logging.info("Q30 threshold set to " + str(demux_process.udf['Threshold for % bases >= Q30']))
+    logging.info("Minimum clusters per lane set to " + str(demux_process.udf['Threshold for # Reads']))
     
     try:
         demux_process.put()
@@ -103,7 +104,7 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
             outarts_per_lane = demux_process.outputs_per_input(pool.id, ResultFile = True)
         except:
             sys.exit('Unable to fetch artifacts of process')
-        if proc_stats['Run type'] == 'Miseq':
+        if proc_stats['Instrument'] == 'miseq':
             lane_no = '1'
         else:
             try:
@@ -131,7 +132,7 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
                             target_file.udf['Yield PF (Gb)'] = float(entry['Yield (Mbases)'].replace(',',''))/1000
                             target_file.udf['% Bases >=Q30'] = float(entry['% >= Q30bases'])
                             target_file.udf['# Reads'] = int(entry['PF Clusters'].replace(',',''))
-                            if proc_stats['paired']:
+                            if proc_stats['Paired']:
                                 target_file.udf['# Read Pairs'] = float(entry['PF Clusters'].replace(',',''))/2
                             else:
                                 target_file.udf['# Read Pairs'] = int(entry['PF Clusters'].replace(',',''))
@@ -154,13 +155,15 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
                             else: 
                                 reads = entry['PF Clusters']
                             reads = int(reads.replace(',',''))
-                            if ( demux_process.udf['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
+                            if (demux_process.udf['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
                             exp_smp_per_lne > reads ):
                                 target_file.udf['Include reads'] = 'YES'
                                 target_file.qc_flag = 'PASSED'           
                             else:
                                 target_file.udf['Include reads'] = 'NO'
                                 target_file.qc_flag = 'FAILED'
+                            logging.info('Q30 %: ' + str(float(entry['% >= Q30bases'])) + ' versus ' + str(demux_process.udf['Threshold for % bases >= Q30']))
+                            logging.info('Expected reads: ' + str(reads) + ' versus ' + str(exp_smp_per_lne)) 
                             logging.info('Sample QC status set to ' + target_file.qc_flag )
                         except:
                             sys.exit("Unable to set QC status for sample")
@@ -171,23 +174,22 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
     
 
 """Creates demux_{FCID}_{time}.csv and attaches it to process"""
-#Undetermined are written differently. Might be worth discussing
-#change TEMPORARY LINE once done
 def write_demuxfile(proc_stats):
-    prefix = '/srv/illumina/'+ proc_stats['Data type'] + '_data/nosync/'
     try:
-        appendix = proc_stats['Run ID'] + '/Demultiplexing/Reports/html/' + proc_stats['Flow Cell ID'] + '/all/all/all/laneBarcode.html'
+        prefix = os.path.join(os.sep,'srv','illumina')
+        appendix = os.path.join(proc_stats['Instrument'],'_data','nosync',proc_stats['Run ID'],'Demultiplexing',
+                                'Reports','html',proc_stats['Flow Cell ID'] ,'all','all','all','laneBarcode.html')
+        #Windows drive letter support
+        lanebc_path = os.path.abspath(os.path.join(prefix , appendix))
     except:
         sys.exit("Unable to set demux filename. Udf does not contain keys for run id and/or flowcell id.")
-    lanebc_path = prefix + appendix
-    #TEMPORARY LINE
-    lanebc_path = '/Users/isaksylvin/SciLifeLab/preprocExampleData/24-142862/laneBarcode.html'
     try:
         laneBC = classes.LaneBarcodeParser(lanebc_path)
     except:
         sys.exit("Unable to fetch laneBarcode.html from " + lanebc_path)
     fname = 'demuxstats' + '_' + proc_stats['Flow Cell ID'] + '_' + timestamp + '.csv'
     
+    #Dumps less undetermined info than undemultiplex_index.py. May cause problems downstreams
     with open(fname, 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Project', 'Sample ID', 'Lane', '# Reads', 'Index','Index name', '% of >= Q30 Bases (PF)'])
@@ -222,8 +224,8 @@ def main(project_lims_id, rt_log):
     demux_process = Process(lims,id = project_lims_id)
     #Sets up proper logging
     with EppLogger(log_file=rt_log, lims=lims, prepend=True) as epp_logger:
-        converter(demux_process, epp_logger)
-           
+        converter(demux_process, epp_logger) 
+         
 if __name__ == '__main__':
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
