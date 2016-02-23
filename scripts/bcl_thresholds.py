@@ -23,43 +23,38 @@ class Thresholds():
     def set_Q30(self, instrument, chemistry, paired, read_length):
         if instrument == 'miseq':
             if chemistry == 'MiSeq':
-                if not paired:
-                    if read_length >= 250:
-                        self.Q30 = 60
-                    elif read_length >= 150:
-                        self.Q30 = 70
-                    elif read_length >= 100:
-                        self.Q30 = 75
-                    elif read_length < 100:
-                        self.Q30 = 80
+                if read_length >= 250:
+                    self.Q30 = 60
+                elif read_length >= 150:
+                    self.Q30 = 70
+                elif read_length >= 100:
+                    self.Q30 = 75
+                elif read_length < 100:
+                    self.Q30 = 80
         elif instrument == 'hiseq':
             #Rapid run flowcell
             if chemistry in ['HiSeq Rapid Flow Cell v1','HiSeq Rapid Flow Cell v2', "TruSeq Rapid Flow Cell v2", "TruSeq Rapid Flow Cell v1"] :
-                if paired:    
-                    if read_length >= 150:
-                        self.Q30 = 75
-                    elif read_length >= 100:
-                        self.Q30 = 80
-                    elif read_length >= 50:
-                        self.Q30 = 85
+                if read_length >= 150:
+                    self.Q30 = 75
+                elif read_length >= 100:
+                    self.Q30 = 80
+                elif read_length >= 50:
+                    self.Q30 = 85
             #v3
             elif chemistry == 'HiSeq Flow Cell v3':
-                if paired:
-                    if read_length >= 100:
-                        self.Q30 = 80
-                    elif read_length >= 50:
-                        self.Q30 = 85
+                if read_length >= 100:
+                    self.Q30 = 80
+                elif read_length >= 50:
+                    self.Q30 = 85
             #v4
             elif chemistry == 'HiSeq Flow Cell v4':
-                if paired:
-                    if read_length >= 125:
-                        elf.Q30 = 80
+                if read_length >= 125:
+                    elf.Q30 = 80
                         
         elif instrument == 'HiSeqX':
             if chemistry == 'HiSeqX v2.5':
-                if paired:
-                    if read_length >= 150:
-                        self.Q30 = 75
+                if read_length >= 150:
+                    self.Q30 = 75
         if not self.Q30:
             sys.exit("Can't set Q30. Detected setup is classed as valid but has no thresholds set in bcl_thresholds.py")
     

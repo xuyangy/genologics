@@ -156,14 +156,14 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
                                 reads = entry['PF Clusters']
                             reads = int(reads.replace(',',''))
                             if (demux_process.udf['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
-                            exp_smp_per_lne > reads ):
+                            int(exp_smp_per_lne) > target_file.udf['# Read Pairs'] ):
                                 target_file.udf['Include reads'] = 'YES'
                                 target_file.qc_flag = 'PASSED'           
                             else:
                                 target_file.udf['Include reads'] = 'NO'
                                 target_file.qc_flag = 'FAILED'
                             logging.info('Q30 %: ' + str(float(entry['% >= Q30bases'])) + ' versus ' + str(demux_process.udf['Threshold for % bases >= Q30']))
-                            logging.info('Expected reads: ' + str(reads) + ' versus ' + str(exp_smp_per_lne)) 
+                            logging.info('Expected reads: ' + str(target_file.udf['# Read Pairs']) + ' versus ' + str(int(exp_smp_per_lne))) 
                             logging.info('Sample QC status set to ' + target_file.qc_flag )
                         except:
                             sys.exit("Unable to set QC status for sample")
@@ -183,6 +183,8 @@ def write_demuxfile(proc_stats):
         lanebc_path = os.path.abspath(os.path.join(prefix , appendix))
     except:
         sys.exit("Unable to set demux filename. Udf does not contain keys for run id and/or flowcell id.")
+    #DEBUG, REMOVE WHEN DONE
+    lanebc_path = '/Users/isaksylvin/SciLifeLab/preprocExampleData/24-142862/laneBarcode.html'
     try:
         laneBC = classes.LaneBarcodeParser(lanebc_path)
     except:
@@ -224,7 +226,9 @@ def main(project_lims_id, rt_log):
     demux_process = Process(lims,id = project_lims_id)
     #Sets up proper logging
     with EppLogger(log_file=rt_log, lims=lims, prepend=True) as epp_logger:
-        converter(demux_process, epp_logger) 
+        converter(demux_process, epp_logger)
+    #DEBUG, REMOVE WHEN DONE
+    #converter(demux_process)  
          
 if __name__ == '__main__':
     lims = Lims(BASEURI, USERNAME, PASSWORD)
