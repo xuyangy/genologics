@@ -49,7 +49,7 @@ class Thresholds():
             #v4
             elif chemistry == 'HiSeq Flow Cell v4':
                 if read_length >= 125:
-                    elf.Q30 = 80
+                    self.Q30 = 80
                         
         elif instrument == 'HiSeqX':
             if chemistry == 'HiSeqX v2.5':

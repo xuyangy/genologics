@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This file together with bcl_thresholds.py performs the bclconversion step of LIMS workflow.
 In common tongue, it:
@@ -226,9 +227,7 @@ def main(project_lims_id, rt_log):
     demux_process = Process(lims,id = project_lims_id)
     #Sets up proper logging
     with EppLogger(log_file=rt_log, lims=lims, prepend=True) as epp_logger:
-        converter(demux_process, epp_logger)
-    #DEBUG, REMOVE WHEN DONE
-    #converter(demux_process)  
+        converter(demux_process, epp_logger)  
          
 if __name__ == '__main__':
     lims = Lims(BASEURI, USERNAME, PASSWORD)
