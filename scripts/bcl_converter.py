@@ -17,7 +17,7 @@ Written by Isak Sylvin; isak.sylvin@scilifelab.se"""
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process
-from genologics.epp import EppLogger
+from genologics.epp import EppLogger, attach_file
 import flowcell_parser.classes as classes
 from bcl_thresholds import Thresholds
 from datetime import datetime
@@ -62,8 +62,11 @@ def manipulate_workflow(demux_process):
                 sys.exit("Unhandled prior workflow step (run type)")
             logging.info("Run type set to " + proc_stats['Chemistry'])
             break
-          
-    proc_stats['Paired'] = False
+    
+    try:
+        proc_stats['Paired'] = False
+    except:
+        sys.exit('Unable to fetch workflow information.')
     if 'Read 2 Cycles' in proc_stats:
         proc_stats['Paired'] = True
     logging.info("Paired libraries: " + str(proc_stats['Paired']))  
@@ -93,6 +96,12 @@ def manipulate_process(demux_process, proc_stats):
     logging.info("Q30 threshold set to " + str(demux_process.udf['Threshold for % bases >= Q30']))
     logging.info("Minimum clusters per lane set to " + str(demux_process.udf['Threshold for # Reads']))
     
+    #Sets run id if not already exists:
+    if not 'Run ID' in demux_process.udf:
+        try:
+            demux_process.udf['Run ID'] = proc_stats['Run ID']
+        except:
+            logging.info("Unable to automatically regenerate Run ID")
     try:
         demux_process.put()
     except:
@@ -185,7 +194,7 @@ def write_demuxfile(proc_stats):
     except:
         sys.exit("Unable to set demux filename. Udf does not contain keys for run id and/or flowcell id.")
     #DEBUG, REMOVE WHEN DONE
-    lanebc_path = '/Users/isaksylvin/SciLifeLab/preprocExampleData/24-142862/laneBarcode.html'
+    lanebc_path = '/srv/mfs/isaktest/laneBarcode.html'
     try:
         laneBC = classes.LaneBarcodeParser(lanebc_path)
     except:
@@ -214,10 +223,17 @@ def converter(demux_process, epp_logger):
     proc_stats = manipulate_workflow(demux_process)
     #Sets up the process values
     manipulate_process(demux_process, proc_stats)
-    #Create the attached csv file
+    #Create the demux output file
     parser_struct = write_demuxfile(proc_stats)
     #Alters artifacts
     set_sample_values(demux_process, parser_struct, proc_stats)
+    
+    #Attaches output files to lims process; crazyness
+    for out in demux_process.all_outputs():
+        if out.name == "Demultiplex Stats":
+            attach_file(os.path.join(os.getcwd(), 'demuxstats' + '_' + proc_stats['Flow Cell ID'] + '_' + timestamp + '.csv'), out)
+        elif out.name == "QC Log File":
+            attach_file(os.path.join(os.getcwd(), 'runtime_'+ timestamp + '.log'), out)
 
 @click.command()
 @click.option('--project_lims_id', required=True,help='REQUIRED: Lims ID of project. Example:24-92373')
@@ -227,8 +243,7 @@ def main(project_lims_id, rt_log):
     demux_process = Process(lims,id = project_lims_id)
     #Sets up proper logging
     with EppLogger(log_file=rt_log, lims=lims, prepend=True) as epp_logger:
-        converter(demux_process, epp_logger)  
-         
+        converter(demux_process, epp_logger)      
 if __name__ == '__main__':
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
