@@ -42,8 +42,9 @@ setup(name='genologics',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          "requests"
+          "requests","click"
       ],
+      dependency_links=["https://github.com/SciLifeLab/flowcell_parser.git"],
       entry_points="""
       # -*- Entry points: -*-
       """,

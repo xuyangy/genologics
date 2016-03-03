@@ -141,14 +141,17 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
                             target_file.udf['% Perfect Index Read'] = float(entry['% Perfectbarcode'])
                             target_file.udf['Yield PF (Gb)'] = float(entry['Yield (Mbases)'].replace(',',''))/1000
                             target_file.udf['% Bases >=Q30'] = float(entry['% >= Q30bases'])
-                            target_file.udf['# Reads'] = int(entry['PF Clusters'].replace(',',''))
+                            #Paired runs are divided by two within flowcell parser
                             if proc_stats['Paired']:
-                                target_file.udf['# Read Pairs'] = float(entry['PF Clusters'].replace(',',''))/2
+                                target_file.udf['# Reads'] = int(entry['PF Clusters'].replace(',',''))*2
+                                target_file.udf['# Read Pairs'] = int(entry['PF Clusters'].replace(',',''))
+                            #Since a single ended run has no pairs, pairs is set to equal reads
                             else:
+                                target_file.udf['# Reads'] = int(entry['PF Clusters'].replace(',',''))
                                 target_file.udf['# Read Pairs'] = int(entry['PF Clusters'].replace(',',''))
                         except:
                             sys.exit("Unable to set artifact values.")
-                        logging.info('Added the following set of values to artifact:')
+                        logging.info('Added the following set of values to '+ sample + ' of lane ' + lane_no + ':')
                         logging.info(str(target_file.udf['%PF']) + ' %PF')
                         logging.info(str(target_file.udf['% One Mismatch Reads (Index)']) + ' % One Mismatch Reads (Index)')
                         logging.info(str(target_file.udf['% of Raw Clusters Per Lane']) + ' % of Raw Clusters Per Lane')
@@ -160,11 +163,6 @@ def set_sample_values(demux_process, parser_struct, proc_stats):
                         logging.info(str(target_file.udf['# Read Pairs']) + ' # Reads Pairs')
                         
                         try:
-                            if 'Clusters' in entry:
-                                reads = entry['Clusters']
-                            else: 
-                                reads = entry['PF Clusters']
-                            reads = int(reads.replace(',',''))
                             if (demux_process.udf['Threshold for % bases >= Q30'] > float(entry['% >= Q30bases']) and 
                             int(exp_smp_per_lne) > target_file.udf['# Read Pairs'] ):
                                 target_file.udf['Include reads'] = 'YES'
