@@ -27,6 +27,7 @@ def get_config_info(config_file):
         MAIN_LOG = None
     return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG
         
+
 if specified_config:
     config_file = specified_config
 else:
