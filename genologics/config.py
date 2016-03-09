@@ -4,8 +4,16 @@ import warnings
 
 import ConfigParser
 
-#specified_config = "/Users/julia/Desktop/LIMS/config/.genologicsprod"
-specified_config = None
+'''
+changed up config file so instead of loading BASENAME, USERNAME, PASSWORD etc
+you now must load genologics.config and then run:
+
+from genologics import config
+
+load_config() 
+#with the option to add:
+specified_config = <your config file location>
+'''
 
 def get_config_info(config_file):
     config = ConfigParser.SafeConfigParser()
@@ -28,19 +36,23 @@ def get_config_info(config_file):
     return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG
         
 
-if specified_config:
-    config_file = specified_config
-else:
-    config = ConfigParser.SafeConfigParser()
-    try:
-        conf_file = config.read([os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
-                    'genologics.conf', 'genologics.cfg', '/etc/genologics.conf'])
+def load_config(specified_config = None):
+    if specified_config != None:
+        config_file = specified_config
+    else:
+        config = ConfigParser.SafeConfigParser()
+        try:
+            conf_file = config.read([os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
+                        'genologics.conf', 'genologics.cfg', '/etc/genologics.conf'])
 
-        # First config file found wins
-        config_file = conf_file[0]
-    
-    except:
-        warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
-        sys.exit(-1)
+            # First config file found wins
+            config_file = conf_file[0]
+            print(config_file)
 
-BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = get_config_info(config_file)
+        except:
+            warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
+            sys.exit(-1)
+
+    BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = get_config_info(config_file)
+
+    return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG    
