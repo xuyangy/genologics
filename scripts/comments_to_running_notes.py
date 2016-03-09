@@ -126,7 +126,8 @@ def main(lims, args):
             #bitwise or to add inp.samples to samplesas a set
             samples |= set(inp.samples)
         for sam in samples:
-            projects.add(sam.project)
+            if sam.project:
+                projects.add(sam.project)
 
         for proj in projects:
             if 'Running Notes' in proj.udf:
