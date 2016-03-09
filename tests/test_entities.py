@@ -12,7 +12,7 @@ else:
 
 
 from genologics.entities import StringDescriptor, StringAttributeDescriptor, StringListDescriptor, \
-    StringDictionaryDescriptor, IntegerDescriptor, BooleanDescriptor
+    StringDictionaryDescriptor, IntegerDescriptor, BooleanDescriptor, UdfDictionary
 
 
 class TestEntities(TestCase):
@@ -118,7 +118,7 @@ class TestIntegerDescriptor(TestDescriptor):
         sd.__set__(self.instance, 23)
         assert self.et.find('count').text == 23
         # FIXME: The BooleanDescriptor (and the IntegerDescriptor) uses the StringDescriptor
-        # Using them with their expected tyep makes serialization crash
+        # Using them with their expected type makes serialization crash
 
 class TestBooleanDescriptor(TestDescriptor):
 
@@ -136,13 +136,66 @@ class TestBooleanDescriptor(TestDescriptor):
 
     def test__set__(self):
         # FIXME: The BooleanDescriptor (and the IntegerDescriptor) uses the StringDescriptor
-        # Using them with their expected tyep makes serialization crash
+        # Using them with their expected type makes serialization crash
         sd = self._make_desc(BooleanDescriptor, 'istest')
         sd.__set__(self.instance, False)
         assert self.et.find('istest').text == False
         #sd.__set__(self.instance, True)
         #print(self._tostring(self.et))
         #sd.__get__(self.instance, None)
+
+
+class TestUdfDictionary(TestCase):
+    def setUp(self):
+        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<test-entry xmlns:udf="http://genologics.com/ri/userdefined">
+<udf:field type="String" name="test">stuff</udf:field>
+<udf:field type="Numeric" name="how much">42</udf:field>
+<udf:type
+</test-entry>""")
+        self.instance = Mock(root=self.et)
+        self.dict1 = UdfDictionary(self.instance)
+        self.dict2 = UdfDictionary(self.instance, udt=True)
+
+
+    def test_get_udt(self):
+        #FIXME: not sure what this does but I don't this it does it properly
+        print(self.dict1.get_udt())
+        print(self.dict2.get_udt())
+
+    def test_set_udt(self):
         pass
 
+    def test__update_elems(self):
+        pass
+
+    def test__prepare_lookup(self):
+        pass
+
+    def test___contains__(self):
+        pass
+
+    def test___getitem__(self):
+        pass
+
+    def test___setitem__(self):
+        pass
+
+    def test___delitem__(self):
+        pass
+
+    def test_items(self):
+        pass
+
+    def test_clear(self):
+        pass
+
+    def test___iter__(self):
+        pass
+
+    def test___next__(self):
+        pass
+
+    def test_get(self):
+        pass
 
