@@ -454,6 +454,32 @@ class Lims(object):
                 result.append(instance)
         return result
 
+    def route_artifacts(self, artifact_list, workflow_uri=None, stage_uri=None, unassign=False):
+
+        root = ElementTree.Element(nsmap('rt:routing'))
+
+        if unassign:
+            s = ElementTree.SubElement(root, 'unassign')
+        else:
+            s = ElementTree.SubElement(root, 'assign')
+        if workflow_uri:
+            s.set('workflow-uri', workflow_uri)
+        if stage_uri:
+            s.set('stage-uri', stage_uri)
+        for artifact in artifact_list:
+            a = ElementTree.SubElement(s, 'artifact')
+            a.set('uri', artifact.uri)
+
+        uri = self.get_uri('route', 'artifacts')
+        r = requests.post(uri, data=self.tostring(ElementTree.ElementTree(root)),
+                          auth=(self.username, self.password),
+                          headers={'content-type': 'application/xml',
+                                   'accept': 'application/xml'})
+
+        self.validate_response(r)
+
+
+
     def tostring(self, etree):
         "Return the ElementTree contents as a UTF-8 encoded XML string."
         outfile = BytesIO()

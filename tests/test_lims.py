@@ -95,6 +95,13 @@ class TestLims(TestCase):
                             Mock(uri=self.url+"/api/v2/samples/test_sample"),
                             'filename_to_upload')
 
+    @patch('requests.post', return_value=Mock(content = sample_xml, status_code=200))
+    def test_route_artifact(self, mocked_post):
+        lims = Lims(self.url, username=self.username, password=self.password)
+        artifact = Mock(uri=self.url+"/artifact/2")
+        lims.route_artifacts(artifact_list=[artifact], workflow_uri=self.url+'/api/v2/configuration/workflows/1')
+        assert mocked_post.call_count == 1
+
 
 
     def test_tostring(self):
@@ -109,4 +116,6 @@ class TestLims(TestCase):
 <a><b /><c><d /></c></a>"""
         string = lims.tostring(etree)
         assert string == expected_string
+
+
 
