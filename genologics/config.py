@@ -10,10 +10,18 @@ you now must load genologics.config and then run:
 
 from genologics import config
 
-load_config() 
-#with the option to add:
-specified_config = <your config file location>
+BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = load_config() 
+# or if config file is not a traditional name or not at the expected location user may type:
+load_config(specified_config = <path to config file>)
+
+Or it can be run as always via:
+
+from genologics.config import BASEURI, USERNAME, PASSWORD
+
+and if the user has the config file in a different location, they can modify spec_config below
 '''
+
+spec_config = None
 
 def get_config_info(config_file):
     config = ConfigParser.SafeConfigParser()
@@ -50,9 +58,12 @@ def load_config(specified_config = None):
             print(config_file)
 
         except:
-            warnings.warn("Please make sure you've created your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
+            warnings.warn("Please make sure you've created or indicated your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
             sys.exit(-1)
 
     BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = get_config_info(config_file)
 
-    return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG    
+    return BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG   
+    
+
+BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = load_config(specified_config = spec_config)
