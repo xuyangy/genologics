@@ -5,20 +5,12 @@ import warnings
 import ConfigParser
 
 '''
-changed up config file so instead of loading BASENAME, USERNAME, PASSWORD etc
-you now must load genologics.config and then run:
-
-from genologics import config
-
-BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = load_config() 
-# or if config file is not a traditional name or not at the expected location user may type:
-load_config(specified_config = <path to config file>)
-
-Or it can be run as always via:
-
+Usage:
 from genologics.config import BASEURI, USERNAME, PASSWORD
 
-and if the user has the config file in a different location, they can modify spec_config below
+Alternate Usage: 
+from genologics import config
+BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = load_config(specified_config = <path to config file>) 
 '''
 
 spec_config = None
@@ -55,7 +47,6 @@ def load_config(specified_config = None):
 
             # First config file found wins
             config_file = conf_file[0]
-            print(config_file)
 
         except:
             warnings.warn("Please make sure you've created or indicated your own Genologics configuration file (i.e: ~/.genologicsrc) as stated in README.md")
