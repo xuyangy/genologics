@@ -10,7 +10,7 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 
 Alternate Usage: 
 from genologics import config
-BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = load_config(specified_config = <path to config file>) 
+BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = config.load_config(specified_config = <path to config file>) 
 '''
 
 spec_config = None
