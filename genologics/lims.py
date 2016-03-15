@@ -552,10 +552,14 @@ class Lims(object):
             assign = ElementTree.SubElement(root, "assign", {'stage-uri': target.uri})
         else:
             raise ValueError("target parameter must be a Workflow or Stage")
+
+        do_request = False
         for i in analytes:
             ElementTree.SubElement(assign, "artifact", {'uri': i.uri})
+            do_request = True
 
-        self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
+        if do_request:
+            self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
 
     def set_default_next_step(self, step, analytes):
         """Assign analytes to default next step.
