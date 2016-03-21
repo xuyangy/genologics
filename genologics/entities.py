@@ -1202,6 +1202,19 @@ class Process(Entity):
                 cs.append(o_a.container)
         return list(frozenset(cs))
 
+
+class ControlType(Entity):
+
+    _URI = 'controltypes'
+
+    supplier = StringDescriptor('supplier')
+    catalogue_number = StringDescriptor('catalogue_number')
+    website = StringDescriptor('website')
+    concentration = StringDescriptor('concentration')
+    archived = BooleanDescriptor('archived')
+    single_step = BooleanDescriptor('single-step')
+
+
 class Artifact(Entity):
     "Any process input or output; analyte or file."
 
@@ -1217,6 +1230,7 @@ class Artifact(Entity):
     location       = LocationDescriptor('location')
     working_flag   = BooleanDescriptor('working-flag')
     samples        = EntityListDescriptor('sample', Sample)
+    control_type   = EntityDescriptor('control-type', ControlType)
     udf            = UdfDictionaryDescriptor()
     files          = EntityListDescriptor(nsmap('file:file'), File)
     reagent_labels = ReagentLabelSetDescriptor()
