@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 import subprocess
@@ -26,7 +25,7 @@ def makeContainerBarcode(plateid,copies=1):
     lines.append("^FO70,5^BCN,70,N,N^FN2^FS")
     lines.append("^XZ") #end format
 
-    for copy in range(copies):
+    for copy in xrange(copies):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+plateid+"^FS") #this is readable
@@ -53,7 +52,7 @@ def makeContainerNameBarcode(plate_name,copies=1):
 
     lines.append("^XZ") #end format
 
-    for copy in range(copies):
+    for copy in xrange(copies):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+plate_name+"^FS") #this is readable
@@ -76,7 +75,7 @@ def makeOperatorAndDateBarcode(operator,date,copies=1):
 
     if len(operator)>19:
         operator = operator[:19] # If string is longer, it would cover the date
-    for copy in range(copies):
+    for copy in xrange(copies):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+date+"^FS") #this is readable
@@ -103,7 +102,7 @@ def makeProcessNameBarcode(process_name,copies=1):
 
     lines.append("^XZ") #end format
 
-    for copy in range(copies):
+    for copy in xrange(copies):
         lines.append("^XA") #start of label format
         lines.append("^XFFORMAT^FS") #label home position
         lines.append("^FN1^FD"+process_name+"^FS") #this is readable

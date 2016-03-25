@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-DESC="""EPP script to calculate amount in ng from concentration and volume
+DESC="""EPP script to calculate amount in ng from concentration and volume 
 udf:s in Clarity LIMS. The script checks that the 'Volume (ul)' and 
 'Concentration' udf:s are defined and that the udf. 'Conc. Units' 
  have the correct value: 'ng/ul', otherwise that artifact is skipped, 
@@ -101,7 +100,7 @@ def main(lims,args,epp_logger):
         artifacts = p.all_inputs(unique=True)
     else:
         all_artifacts = p.all_outputs(unique=True)
-        artifacts = [a for a in all_artifacts if a.output_type == "ResultFile"]
+        artifacts = filter(lambda a: a.output_type == "ResultFile" ,all_artifacts)
 
     correct_artifacts, wrong_factor1 = check_udf_is_defined(artifacts, udf_factor1)
     correct_artifacts, wrong_factor2 = check_udf_is_defined(correct_artifacts, udf_factor2)
@@ -118,7 +117,7 @@ def main(lims,args,epp_logger):
     abstract = ("Updated {ca} artifact(s), skipped {ia} artifact(s) with "
                 "wrong and/or blank values for some udfs.").format(**d)
 
-    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
+    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

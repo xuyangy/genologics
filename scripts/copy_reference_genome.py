@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-DESC = """EPP script to copy user defined field 'Reference Genome' from project
+DESC = """EPP script to copy user defined field 'Reference Genome' from project 
 level to submitted sample level for the input artifacts of given process, 
 in Clarity LIMS. Can be executed in the background or triggered by a user
  pressing a "blue button".
@@ -132,7 +131,7 @@ def main(lims,args,epp_logger):
 
     abstract = ("Updated {cs} sample(s), {warning} with incorrect udf info.").format(**d)
 
-    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
+    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

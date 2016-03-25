@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 DESC = """EPP script to copy user defined field from any process to associated 
 project/projects in Clarity LIMS. If the specifyed process handles many artifacts 
 associated to different projects, all these projects will get the specifyed udf.
@@ -74,7 +73,7 @@ def main(lims, args, epp_logger):
          'pr': project_names}
 
     abstract = ("Updated {up} udf(s). Handeled project(s): {pr} {w}").format(**d)
-    print(abstract, file=sys.stderr)
+    print >> sys.stderr, abstract
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

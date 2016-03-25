@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from __future__ import print_function
-
 import logging
 import os
 import sys
@@ -70,7 +69,7 @@ def read_log(lims, pid, logfile):
 
             if "[Sample Information]" in line:
                 read=True
-        logger.info("obtained data for samples {0}".format(list(data.keys())))
+        logger.info("obtained data for samples {0}".format(data.keys()))
 
     for inp in pro.all_inputs():
         #save the data from the logfile to the lims artifacts

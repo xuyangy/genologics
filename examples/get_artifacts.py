@@ -1,4 +1,3 @@
-from __future__ import print_function
 """Python interface to GenoLogics LIMS via its REST API.
 
 Usage example: Get artifacts and artifact info.
@@ -36,15 +35,15 @@ lims.check_version()
 
 name = 'jgr33'
 artifacts = lims.get_artifacts(sample_name=name)
-print(len(artifacts), 'artifacts for sample name', name)
+print len(artifacts), 'artifacts for sample name', name
 
 artifacts = lims.get_batch(artifacts)
 for artifact in artifacts:
-    print(artifact, artifact.name, artifact.state)
+    print artifact, artifact.name, artifact.state
 
-print()
+print
 artifacts = lims.get_artifacts(qc_flag='PASSED')
-print(len(artifacts), 'QC PASSED artifacts')
+print len(artifacts), 'QC PASSED artifacts'
 artifacts = lims.get_batch(artifacts)
 for artifact in artifacts:
-    print(artifact, artifact.name, artifact.state)
+    print artifact, artifact.name, artifact.state
