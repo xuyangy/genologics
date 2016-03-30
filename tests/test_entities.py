@@ -151,17 +151,22 @@ class TestUdfDictionary(TestCase):
 <test-entry xmlns:udf="http://genologics.com/ri/userdefined">
 <udf:field type="String" name="test">stuff</udf:field>
 <udf:field type="Numeric" name="how much">42</udf:field>
-<udf:type
 </test-entry>""")
         self.instance = Mock(root=self.et)
         self.dict1 = UdfDictionary(self.instance)
         self.dict2 = UdfDictionary(self.instance, udt=True)
 
+    def _get_udf_value(self, udf_dict, key):
+        for e in udf_dict._elems:
+            if e.attrib['name'] != key:
+                continue
+            else:
+                return e.text
 
     def test_get_udt(self):
-        #FIXME: not sure what this does but I don't this it does it properly
-        print(self.dict1.get_udt())
-        print(self.dict2.get_udt())
+        #print(self.dict1.get_udt())
+        #print(self.dict2.get_udt())
+        pass
 
     def test_set_udt(self):
         pass
@@ -179,7 +184,19 @@ class TestUdfDictionary(TestCase):
         pass
 
     def test___setitem__(self):
-        pass
+        assert self._get_udf_value(self.dict1, 'test') == 'stuff'
+        self.dict1.__setitem__('test', 'other')
+        assert self._get_udf_value(self.dict1, 'test') == 'other'
+
+        assert self._get_udf_value(self.dict1, 'how much') == '42'
+        self.dict1.__setitem__('how much', 21)
+        assert self._get_udf_value(self.dict1, 'how much') == '21'
+
+        self.assertRaises(TypeError, self.dict1.__setitem__, 'how much', '433')
+
+        #I'm not sure if this is the expected behaviour
+        self.dict1.__setitem__('how much', None)
+        assert self._get_udf_value(self.dict1, 'how much') == 'None'
 
     def test___delitem__(self):
         pass
