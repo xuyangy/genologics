@@ -164,8 +164,6 @@ class TestUdfDictionary(TestCase):
                 return e.text
 
     def test_get_udt(self):
-        #print(self.dict1.get_udt())
-        #print(self.dict2.get_udt())
         pass
 
     def test_set_udt(self):
