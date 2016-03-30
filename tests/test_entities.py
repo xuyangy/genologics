@@ -194,7 +194,7 @@ class TestUdfDictionary(TestCase):
 
         #I'm not sure if this is the expected behaviour
         self.dict1.__setitem__('how much', None)
-        assert self._get_udf_value(self.dict1, 'how much') == 'None'
+        assert self._get_udf_value(self.dict1, 'how much') == b'None'
 
     def test___delitem__(self):
         pass
