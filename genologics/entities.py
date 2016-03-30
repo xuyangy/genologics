@@ -668,6 +668,8 @@ class NestedEntityListDescriptor(EntityListDescriptor):
         for node in rootnode.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
         return result
+
+
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
@@ -750,7 +752,6 @@ class Entity(object):
                 raise ValueError("Entity uri and id can't be both None")
             else:
                 uri = lims.get_uri(cls._URI, id)
-
         try:
             return lims.cache[uri]
         except KeyError:
@@ -950,6 +951,7 @@ class Process(Entity):
     udf            = UdfDictionaryDescriptor()
     udt            = UdtDictionaryDescriptor()
     files          = EntityListDescriptor(nsmap('file:file'), File)
+
     # instrument XXX
     # process_parameters XXX
 
@@ -1042,6 +1044,11 @@ class Process(Entity):
                 cs.append(o_a.container)
         return list(frozenset(cs))
 
+    @property
+    def step(self):
+        """Retrive the Step coresponding to this process. They share the same id"""
+        return Step(self.lims, id=self.id)
+
 class Artifact(Entity):
     "Any process input or output; analyte or file."
 
@@ -1128,6 +1135,36 @@ class StepActions(Entity):
                 art= lims.get_batch([Artifact(lims,uri=ch.attrib.get('uri')) for ch in node2])
                 self.escalation['artifacts'].extend(art)
 
+class ReagentKit(Entity):
+    """Type of Reagent with information about the provider"""
+    _URI="reagenttypes"
+    _TAG="reagent-kit"
+
+    name = StringDescriptor('name')
+    supplier = StringDescriptor('supplier')
+    website = StringDescriptor('website')
+    archived = BooleanDescriptor('archived')
+
+class ReagentLot(Entity):
+    """Reagent Lots contain information about a particualr lot of reagent used in a step"""
+    _URI="reagentlot"
+    _TAG="reagent-lot"
+
+    reagent_kit = EntityDescriptor('reagent-kit', ReagentKit)
+    name = StringDescriptor('name')
+    lot_number = StringDescriptor('lot-number')
+    created_date = StringDescriptor('created-date')
+    last_modified_date = StringDescriptor('last-modified-date')
+    expiry_date = StringDescriptor('expiry-date')
+    created_by = EntityDescriptor('created-by', Researcher)
+    last_modified_by = EntityDescriptor('last-modified-by', Researcher)
+    status = StringDescriptor('status')
+    usage_count = IntegerDescriptor('usage-count')
+
+
+class StepReagentLots(Entity):
+    reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -1138,12 +1175,16 @@ class Step(Entity):
         super(Step, self).__init__(lims,uri,id)
         assert self.uri is not None
         actionsuri="{0}/actions".format(self.uri)
-        self.actions= StepActions(lims,uri=actionsuri)
+        self.actions = StepActions(lims, uri=actionsuri)
 
+    _reagent_lots       = EntityDescriptor('reagent-lots', StepReagentLots)
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
+    @property
+    def reagent_lots(self):
+        return self._reagent_lots.reagent_lots
 
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
@@ -1173,6 +1214,7 @@ class Stage(Entity):
     """Holds Protocol/Workflow"""
     protocol = EntityDescriptor('protocol', Protocol)
 
+
 class Workflow(Entity):
     """ Workflow, introduced in 3.5"""
     _URI="configuration/workflows"
@@ -1200,10 +1242,10 @@ class ReagentType(Entity):
                     if child.attrib.get("name") == "Sequence":
                         self.sequence=child.attrib.get("value")
 
+
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
 Stage.workflow            = EntityDescriptor('workflow', Workflow)
 Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
 Step.configuration      = EntityDescriptor('configuration', ProtocolStep)
-
 
