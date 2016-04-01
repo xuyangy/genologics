@@ -7,9 +7,14 @@ import glob
 # if git is not available (PyPi package), use stored version.py.
 version_py = os.path.join(os.path.dirname(__file__), 'genologics', 'version.py')
 
+
+
 version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE).communicate()[0].rstrip()
 if not version:
-    execfile(version_py)
+    #This set the __version__
+    with open(version_py) as f:
+        code = compile(f.read(), version_py, 'exec')
+        exec(code)
     version = __version__
 
 
@@ -37,7 +42,7 @@ setup(name='genologics',
       url='https://github.com/scilifelab/genologics',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-      scripts=glob.glob("scripts/*.py"),
+      #scripts=glob.glob("scripts/*.py"),
       include_package_data=True,
       zip_safe=False,
       install_requires=[
