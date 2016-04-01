@@ -257,8 +257,13 @@ def normalization(current_step):
                 # Source sample:
                 src_plate = src.location[0].id
                 src_well = src.location[1]
-                src_tot_volume = float(src.udf["Volume (ul)"])
-                src_volume = float(dest.udf["Volume to take (uL)"])
+                try:
+                    src_tot_volume = float(src.udf["Volume (ul)"])
+                    src_volume = float(dest.udf["Volume to take (uL)"])
+                except:
+                    sys.stderr.write("Field 'Volume to take (uL)' is empty for artifact {0}\n".format(dest.name))
+                    sys.exit(2)
+
                 src_conc = src.udf["Concentration"]
                 # Diluted sample:
                 dest_plate = dest.location[0].id
