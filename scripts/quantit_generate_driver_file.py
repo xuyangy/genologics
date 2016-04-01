@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-DESC = """EPP script for Quant-iT measurements to generate a driver file (.csv)
+DESC = """EPP script for Quant-iT measurements to generate a driver file (.csv) 
 which include the Sample names and their positions in the working plate.
 
 Reads from:
@@ -32,7 +31,7 @@ from genologics.epp import ReadResultFiles
 
 class QuantitDriverFile():
     def __init__(self, process, drivf):
-        self.udfs = dict(list(process.udf.items()))
+        self.udfs = dict(process.udf.items())
         self.drivf = drivf
 
     def make_location_dict(self, io_filtered):
@@ -50,20 +49,20 @@ class QuantitDriverFile():
     def make_file(self, location_dict):
         """Writes the formated well location info into a driver 
         file sorted by row and col."""
-        keylist = list(location_dict.keys())
+        keylist = location_dict.keys()
         keylist.sort()
         f = open(self.drivf, 'a')
-        print('Row,Column,*Target Name,*Sample Name', file=f)
+        print >> f , 'Row,Column,*Target Name,*Sample Name'
         for key in keylist:
-            print(location_dict[key], file=f)
+            print >> f ,location_dict[key]
         f.close()
 
 def main(lims, pid, drivf ,epp_logger):
     process = Process(lims,id = pid)
     QiT = QuantitDriverFile(process, drivf)
     io = process.input_output_maps
-    io_filtered = [x_y for x_y in io if x_y[1]['output-generation-type']=='PerInput']
-    io_filtered = [x_y1 for x_y1 in io_filtered if x_y1[1]['output-type']=='ResultFile']
+    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput', io)
+    io_filtered = filter(lambda (x,y): y['output-type']=='ResultFile', io_filtered)
     location_dict = QiT.make_location_dict(io_filtered)
     QiT.make_file(location_dict)
 

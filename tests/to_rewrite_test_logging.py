@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 from os.path import isdir
 import os
 import sys
 from unittest.case import TestCase
-
 from genologics.epp import EppLogger
 
 file_path = os.path.realpath(__file__)

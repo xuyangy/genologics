@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-DESC = """EPP script for Quant-iT mesurements to set QC flaggs and
+DESC = """EPP script for Quant-iT mesurements to set QC flaggs and 
 intensity check based on concentrations, Fluorescence intensity. 
 
 Performance:
@@ -62,7 +61,7 @@ from genologics.epp import ReadResultFiles
 class QuantitQC():
     def __init__(self, process):
         self.result_files = process.result_files()
-        self.udfs = dict(list(process.udf.items()))
+        self.udfs = dict(process.udf.items())
         self.required_udfs = set(["Allowed %CV of duplicates",
             "Saturation threshold of fluorescence intensity",
             "Minimum required concentration (ng/ul)"])
@@ -80,8 +79,8 @@ class QuantitQC():
         allowed_dupl = self.udfs["Allowed %CV of duplicates"]
         fint_key1 = "Fluorescence intensity 2"
         fint_key2 = "Fluorescence intensity 1"
-        fint_2 = udfs[fint_key2] if fint_key2 in udfs else None
-        fint_1 = udfs[fint_key1] if fint_key1 in udfs else None
+        fint_2 = udfs[fint_key2] if udfs.has_key(fint_key2) else None
+        fint_1 = udfs[fint_key1] if udfs.has_key(fint_key1) else None
         if fint_1 or fint_2:
             qc_flag = "PASSED"
             if (fint_1 >= treshold) or (fint_2 >= treshold):
@@ -105,7 +104,7 @@ class QuantitQC():
 
     def concentration_QC(self, result_file, result_file_udfs):
         min_conc = self.udfs["Minimum required concentration (ng/ul)"]
-        if 'Concentration' in result_file_udfs:
+        if result_file_udfs.has_key('Concentration'):
             if result_file_udfs['Concentration'] < min_conc:
                 self.low_conc +=1
                 return "FAILED"
@@ -116,9 +115,9 @@ class QuantitQC():
             return None
 
     def assign_QC_flag(self):
-        if self.required_udfs.issubset(list(self.udfs.keys())):
+        if self.required_udfs.issubset(self.udfs.keys()):
             for result_file in self.result_files:
-                result_file_udfs = dict(list(result_file.udf.items()))
+                result_file_udfs = dict(result_file.udf.items())
                 QC_conc = self.concentration_QC(result_file, result_file_udfs)
                 QC_sat = self.saturation_QC(result_file, result_file_udfs)
                 if QC_conc and QC_sat:
@@ -154,7 +153,7 @@ def main(lims, pid, epp_logger):
         QiT.abstract.append("Concentration is missing for {0} "
                                      "sample(s).".format(QiT.conc_missing))
     QiT.abstract = list(set(QiT.abstract))
-    print(' '.join(QiT.abstract), file=sys.stderr)
+    print >> sys.stderr, ' '.join(QiT.abstract)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

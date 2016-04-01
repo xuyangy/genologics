@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """EPP example script for Clarity LIMS, written in Python
 
 Usage example: Trigger from Clarity with command
@@ -33,7 +32,7 @@ def main(lims,pid,file):
     io = p.input_output_maps
 
     # Filter them so that only PerInput output artifacts remains
-    io_filtered = [x_y for x_y in io if x_y[1]['output-generation-type']=='PerInput']
+    io_filtered = filter(lambda (x,y): y['output-generation-type']=='PerInput',io)
 
     # Fetch the first input-output artifact pair
     (input,output) = io_filtered[0]

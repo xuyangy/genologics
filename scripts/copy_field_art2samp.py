@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 DESC = """EPP script to copy user defined fields from analyte level to 
 submitted sample level in Clarity LIMS. Can be executed in the background 
 or triggered by a user pressing a "blue button".
@@ -76,7 +75,7 @@ def main(lims, args, epp_logger):
     abstract = ("Updated {ua} udf(s), out of {ca} in total, "
                 "{warning} with incorrect udf info.").format(**d)
 
-    print(abstract, file=sys.stderr) # stderr will be logged and printed in GUI
+    print >> sys.stderr, abstract # stderr will be logged and printed in GUI
 
 
 if __name__ == "__main__":

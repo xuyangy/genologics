@@ -17,7 +17,7 @@ else:
 class TestLims(TestCase):
     url = 'http://testgenologics.com:4040'
     username = 'test'
-    password ='password'
+    password = 'password'
     sample_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <smp:samples xmlns:smp="http://genologics.com/ri/sample">
     <sample uri="{url}/api/v2/samples/test_sample" limsid="test_id"/>
@@ -53,18 +53,26 @@ class TestLims(TestCase):
         mocked_instance.assert_called_with('http://testgenologics.com:4040/api/v2/artifacts?sample_name=test_sample', timeout=16,
                                   headers={'accept': 'application/xml'}, params={}, auth=('test', 'password'))
 
-    @patch('requests.put', return_value=Mock(content = sample_xml, status_code=200))
-    def test_put(self, mocked_instance):
+    def test_put(self):
         lims = Lims(self.url, username=self.username, password=self.password)
-        #TODO: create serialized xml pass it to put and test that it get passed on correctly
-        pass
+        uri = '{url}/api/v2/samples/test_sample'.format(url=self.url)
+        with patch('requests.put', return_value=Mock(content = self.sample_xml, status_code=200)) as mocked_put:
+            response = lims.put(uri=uri, data=self.sample_xml)
+            assert mocked_put.call_count == 1
+        with patch('requests.put', return_value=Mock(content = self.error_xml, status_code=400)) as mocked_put:
+            self.assertRaises(HTTPError, lims.put, uri=uri, data=self.sample_xml)
+            assert mocked_put.call_count == 1
 
 
-    @patch('requests.post', return_value=Mock(content = sample_xml, status_code=200))
-    def test_post(self, mocked_instance):
+    def test_post(self):
         lims = Lims(self.url, username=self.username, password=self.password)
-        #TODO: create serialized xml pass it to post and test that it get passed on correctly
-        pass
+        uri = '{url}/api/v2/samples'.format(url=self.url)
+        with patch('requests.post', return_value=Mock(content = self.sample_xml, status_code=200)) as mocked_put:
+            response = lims.post(uri=uri, data=self.sample_xml)
+            assert mocked_put.call_count == 1
+        with patch('requests.post', return_value=Mock(content = self.error_xml, status_code=400)) as mocked_put:
+            self.assertRaises(HTTPError, lims.post, uri=uri, data=self.sample_xml)
+            assert mocked_put.call_count == 1
 
 
     @patch('os.path.isfile', return_value=True)

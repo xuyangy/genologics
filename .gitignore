@@ -11,4 +11,6 @@ docs/.doctrees/
 docs/_templates/
 docs/*.html
 .fabfilerc
-.idea
+scripts/*.csv
+scripts/*.log
+scripts/*.out

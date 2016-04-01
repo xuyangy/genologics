@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-
 DESC = """EPP script to copy 'concentration' and 'concentration unit' for each 
 sample sample in the 'Qubit Result File' to the 'Concentration' and 'Conc. Units' 
 fields of the output analytes of the process.
@@ -38,56 +37,54 @@ from genologics.epp import set_field
 import csv
 
 def get_qbit_file(process):
-        outs = process.all_outputs()
-        for outart in outs:
-            #get the right output artifact
-            if outart.type == 'ResultFile' and outart.name == 'Qubit Result File':
-                #get the associated file
-                csvfile = outart.files[0]
-                #content location is a ugly sftp uri
-                file_path = csvfile.content_location.split('scilifelab.se')[1]
-                return file_path
-        return None
+    content = None
+    for outart in process.all_outputs():
+        #get the right output artifact
+        if outart.type == 'ResultFile' and outart.name == 'Qubit Result File':
+            try:
+                fid = outart.files[0].id
+                content = lims.get_file_contents(id=fid)
+            except:
+                raise(RuntimeError("Cannot access the tecan output file to read the concentrations."))
+            break
+    return content
 
-def get_data(file_path, log):
+def get_data(csv_content, log):
     read=False
     data={}
-    utflines=[]
-    with codecs.open(file_path ,'rb', 'iso-8859-1') as f:
-        #utf-8 translation, thanks qubit. 
-        for l in f:
-            utflines.append(l.encode('utf-8'))
+    text = csv_content.encode("utf-8")
+    # Try to determine the format of the csv:
+    dialect = csv.Sniffer().sniff(text)
+    pf = csv.reader(text.splitlines(), dialect=dialect)
+    #New Qubit
+    #defaults
+    sample_index=2
+    conc_index=6
+    conc_unit=7
+    for row in pf:
+        if 'Test Name' in row:
+            #this is the header row
+            sample_index=row.index('Test Name')
+            conc_index=row.index('Original sample conc.')
+            unit_index=conc_index+1
+            read=True
+        elif(read and row[sample_index]):
+            #this is every other row
+            if row[sample_index] in data:
+                #Sample is duplicated, drop the key
+                log.append("sample {0} has two rows in the Qubit CSV file. Please check the file manually.".format(row[sample_index]))
+                del data[row[sample_index]]
 
-        pf = csv.reader(utflines)
-        #New Qubit
-        #defaults
-        sample_index=2
-        conc_index=6
-        conc_unit=7
-        for row in pf:
-            if 'Test Name' in row:
-                #this is the header row
-                sample_index=row.index('Test Name')
-                conc_index=row.index('Original sample conc.')
-                unit_index=conc_index+1
-                read=True
-            elif(read and row[sample_index]):
-                #this is every other row
-                if row[sample_index] in data:
-                    #Sample is duplicated, drop the key
-                    log.append("sample {0} has two rows in the Qubit CSV file. Please check the file manually.".format(row[sample_index]))
-                    del data[row[sample_index]]
-
-                else:
-                    #normal procedure
-                    data[row[sample_index]]={}
-                    data[row[sample_index]]['concentration']=row[conc_index]
-                    data[row[sample_index]]['unit']=row[unit_index]
-            elif (not read  and 'Sample' in row):
-                sample_index=row.index('Sample')
-                conc_index=row.index('Sample Concentration')
-                unit_index=conc_index+1
-                read=True
+            else:
+                #normal procedure
+                data[row[sample_index]]={}
+                data[row[sample_index]]['concentration']=row[conc_index]
+                data[row[sample_index]]['unit']=row[unit_index]
+        elif (not read  and 'Sample' in row):
+            sample_index=row.index('Sample')
+            conc_index=row.index('Sample Concentration')
+            unit_index=conc_index+1
+            read=True
     return data
 
 def convert_to_ng_ul(conc, unit):
@@ -112,11 +109,10 @@ def get_qbit_csv_data(process):
     bad_format = 0
     #strings returned to the EPP user
     log = []
-
-    #get file path by parsing lims artifacts
-    file_path=get_qbit_file(process)
+    # Get file contents by parsing lims artifacts
+    file_content = get_qbit_file(process)
     #parse the qubit file and get the interesting data out
-    data=get_data(file_path, log)
+    data = get_data(file_content, log)
 
     if "Minimum required concentration (ng/ul)" in process.udf:
         min_conc=process.udf['Minimum required concentration (ng/ul)']
@@ -170,7 +166,7 @@ def main(lims, pid, epp_logger):
 
 def old_main(lims, pid, epp_logger):
     process = Process(lims,id = pid)
-    sample_names = [a.name for a in process.analytes()[0]]
+    sample_names = map(lambda a: a.name, process.analytes()[0])
     target_files = process.result_files()
     file_handler = ReadResultFiles(process)
     files = file_handler.shared_files['Qubit Result File']
@@ -182,17 +178,17 @@ def old_main(lims, pid, epp_logger):
     low_conc = 0
     bad_formated = 0
     abstract = []
-    udfs = dict(list(process.udf.items()))
-    if "Minimum required concentration (ng/ul)" in udfs:
+    udfs = dict(process.udf.items())
+    if udfs.has_key("Minimum required concentration (ng/ul)"):
         min_conc = udfs["Minimum required concentration (ng/ul)"]
     else:
         min_conc = None
         abstract.append("Set 'Minimum required concentration (ng/ul)' to get qc-flaggs based on this treshold!")
     for target_file in target_files:
         sample = target_file.samples[0].name
-        if sample in qubit_result_file:
+        if qubit_result_file.has_key(sample):
             sample_mesurements = qubit_result_file[sample]
-            if "Sample Concentration" in list(sample_mesurements.keys()):
+            if "Sample Concentration" in sample_mesurements.keys():
                 conc, unit = sample_mesurements["Sample Concentration"]
                 if conc == 'Out Of Range':
                     target_file.qc_flag = "FAILED"

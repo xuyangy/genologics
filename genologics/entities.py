@@ -250,7 +250,7 @@ class SampleHistory:
         part of the historychain get the outart set to None. This is very important."""
         # Use the local process map if we have one, else, query the lims 
         for process in self.processes_per_artifact[input_art] if self.processes_per_artifact else lims.get_processes(inputartifactlimsid = inart):
-            #outputs = map(lambda a: (a.id), process.all_outputs())
+            # outputs = map(lambda a: (a.id), process.all_outputs())
             outputs = [a.id for a in process.all_outputs()] 
             outart = out_artifact if out_artifact in outputs else None 
             step_info = {'date' : process.date_run,
@@ -478,7 +478,7 @@ class UdfDictionary(object):
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
             if not isinstance(value, str):
-                value = str(value, 'UTF-8')
+                value = str(value).encode('UTF-8')
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
@@ -504,7 +504,7 @@ class UdfDictionary(object):
                                           type=vtype,
                                           name=key)
             if not isinstance(value, str):
-                value = str(str(value), 'UTF-8')
+                value =str(value).encode('UTF-8')
             elem.text = value
 
     def __delitem__(self, key):
@@ -1140,10 +1140,10 @@ class Step(Entity):
         actionsuri="{0}/actions".format(self.uri)
         self.actions= StepActions(lims,uri=actionsuri)
 
-
     #placements         = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
+
 
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
