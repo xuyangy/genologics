@@ -257,8 +257,8 @@ def normalization(current_step):
                 # Source sample:
                 src_plate = src.location[0].id
                 src_well = src.location[1]
+                src_tot_volume = float(src.udf["Volume (ul)"])
                 try:
-                    src_tot_volume = float(src.udf["Volume (ul)"])
                     src_volume = float(dest.udf["Volume to take (uL)"])
                 except:
                     sys.stderr.write("Field 'Volume to take (uL)' is empty for artifact {0}\n".format(dest.name))
@@ -268,7 +268,11 @@ def normalization(current_step):
                 # Diluted sample:
                 dest_plate = dest.location[0].id
                 dest_well = dest.location[1]
-                dest_conc = dest.udf["Normalized conc. (nM)"]
+                try:
+                    dest_conc = dest.udf["Normalized conc. (nM)"]
+                except:
+                    sys.stderr.write("Field 'Normalized conc. (nM)' is empty for artifact {0}\n".format(dest.name))
+                    sys.exit(2)
                 if src.udf["Conc. Units"] != "nM":
                     log.append("ERROR: No valid concentration found for sample {0}".format(src.samples[0].name))
                 elif src_conc < dest_conc:
