@@ -1097,30 +1097,28 @@ class Artifact(Entity):
 
 class StepActions(Entity):
     """Actions associated with a step"""
-    _escalations = None
+    _escalation = None
 
     @property
-    def escalations(self):
-        if not self._escalations:
+    def escalation(self):
+        if not self._escalation:
             self.get()
-            self._escalations=[]
-            escalation={}
+            self._escalation={}
             for node in self.root.findall('escalation'):
-                escalation['artifacts']=[]
-                escalation['author']=Researcher(self.lims,uri=node.find('request').find('author').attrib.get('uri'))
-                escalation['request']=uri=node.find('request').find('comment').text
+                self._escalation['artifacts']=[]
+                self._escalation['author']=Researcher(self.lims,uri=node.find('request').find('author').attrib.get('uri'))
+                self._escalation['request']=uri=node.find('request').find('comment').text
                 if node.find('review') is not None: #recommended by the Etree doc
-                    escalation['status']='Reviewed'
-                    escalation['reviewer']= Researcher(self.lims,uri=node.find('review').find('author').attrib.get('uri'))
-                    escalation['answer']=uri=node.find('review').find('comment').text
+                    self._escalation['status']='Reviewed'
+                    self._escalation['reviewer']= Researcher(self.lims,uri=node.find('review').find('author').attrib.get('uri'))
+                    self._escalation['answer']=uri=node.find('review').find('comment').text
                 else:
-                    escalation['status']='Pending'
+                    self._escalation['status']='Pending'
 
                 for node2 in node.findall('escalated-artifacts'):
                     art= self.lims.get_batch([Artifact(self.lims, uri=ch.attrib.get('uri')) for ch in node2])
-                    escalation['artifacts'].extend(art)
-                self._escalations.append(escalation)
-        return self._escalations
+                    self._escalation['artifacts'].extend(art)
+        return self._escalation
 
     @property
     def next_actions(self):
