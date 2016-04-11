@@ -369,6 +369,12 @@ class BooleanDescriptor(StringDescriptor):
 class UdfDictionary(object):
     "Dictionary-like container of UDFs, optionally within a UDT."
 
+    def _is_string(self, value):
+        try:
+            return isinstance(value, basestring)
+        except:
+            return isinstance(value, str)
+
     def __init__(self, instance, udt=False):
         self.instance = instance
         self._udt = udt
@@ -443,13 +449,13 @@ class UdfDictionary(object):
             if value is None:
                 pass
             elif vtype == 'string':
-                if not isinstance(value, str):
+                if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
             elif vtype == 'str':
-                if not isinstance(value, str):
+                if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
             elif vtype == 'text':
-                if not isinstance(value, str):
+                if not self._is_string(value):
                     raise TypeError('Text UDF requires str or unicode value')
             elif vtype == 'numeric':
                 if not isinstance(value, (int, float)):
@@ -474,7 +480,7 @@ class UdfDictionary(object):
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
-            if isinstance(value, str) or isinstance(value, unicode):
+            if not self._is_string(value):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
