@@ -474,7 +474,7 @@ class UdfDictionary(object):
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
-            if isinstance(value, str):
+            if isinstance(value, str) or isinstance(value, unicode):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
