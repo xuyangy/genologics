@@ -480,7 +480,7 @@ class UdfDictionary(object):
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
-            if not self._is_string(value):
+            if self._is_string(value):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
