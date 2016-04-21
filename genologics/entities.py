@@ -786,6 +786,11 @@ class Entity(object):
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.lims.put(self.uri, data)
 
+    def post(self):
+        "Save this instance with POST"
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+        self.lims.post(self.uri, data)
+
 
 class Lab(Entity):
     "Lab; container of researchers."
@@ -1101,6 +1106,48 @@ class Artifact(Entity):
     state = property(get_state)
     stateless = property(stateless) 
 
+class StepPlacements(Entity):
+    """Placements from within a step. Supports POST"""
+    _placementslist= None
+    #[[A,(C,'A:1')][A,(C,'A:2')]] where A is an Artifact and C a Container
+    def get_placement_list(self):
+        if not self._placementslist:
+            #Only fetch the data once.
+            self.get()
+            self._placementslist= []
+            for node in self.root.find('output-placements').findall('output-placement'):
+                input = Artifact(self.lims, uri=node.attrib['uri'])
+                location=(None, None)
+                if node.find('location'):
+                    location = (Container(self.lims, uri=node.find('location').find('container').attrib['uri']), node.find('location').find('value').text)
+                self._placementslist.append([input, location])
+        return self._placementslist
+
+    def set_placement_list(self, value):
+        for node in self.root.find('output-placements').findall('output-placement'):
+            for pair in value:
+                art=pair[0]
+                if art.uri==node.attrib['uri']:
+                    location=pair[1]
+                    workset=location[0]
+                    well=location[1]
+                    if workset and location:
+                        if node.find('location'):
+                            cont_el=node.find('location').find('container')
+                            cont_el.attrib['uri']=workset.uri
+                            cont_el.attrib['limsid']=workset.id
+                            value_el=node.find('location').find('value')
+                            value_el.text=well
+                        else:
+                            loc_el=ElementTree.SubElement(node, 'location')
+                            cont_el=ElementTree.SubElement(loc_el, 'container', {'uri': workset.uri, 'limsid' : workset.id})
+                            well_el=ElementTree.SubElement(loc_el, 'value')
+                            well_el.text=well #not supported in the constructor
+
+        self._placementslist=value
+
+    placement_list=property(get_placement_list, set_placement_list)
+
 class StepActions(Entity):
     """Actions associated with a step"""
     _escalation = None
@@ -1181,7 +1228,7 @@ class Step(Entity):
 
     _reagent_lots       = EntityDescriptor('reagent-lots', StepReagentLots)
     actions             = EntityDescriptor('actions', StepActions)
-    #placements         = EntityDescriptor('placements', StepPlacements)
+    placements          = EntityDescriptor('placements', StepPlacements)
     #program_status     = EntityDescriptor('program-status',StepProgramStatus)
     #details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
