@@ -1119,11 +1119,15 @@ class StepPlacements(Entity):
                 input = Artifact(self.lims, uri=node.attrib['uri'])
                 location=(None, None)
                 if node.find('location'):
-                    location = (Container(self.lims, uri=node.find('location').find('container').attrib['uri']), node.find('location').find('value').text)
+                    location = (
+                        Container( self.lims, uri=node.find('location').find('container').attrib['uri']),
+                        node.find('location').find('value').text
+                    )
                 self._placementslist.append([input, location])
         return self._placementslist
 
     def set_placement_list(self, value):
+        self.get_placement_list()
         for node in self.root.find('output-placements').findall('output-placement'):
             for pair in value:
                 art=pair[0]
