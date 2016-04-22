@@ -226,7 +226,13 @@ class TestUdfDictionary(TestCase):
     def test_get(self):
         pass
 
-
+def elements_equal(e1, e2):
+    if e1.tag != e2.tag: return False
+    if e1.text != e2.text: return False
+    if e1.tail != e2.tail: return False
+    if e1.attrib != e2.attrib: return False
+    if len(e1) != len(e2): return False
+    return all(elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
 
 class TestEntities(TestCase):
     url = 'http://testgenologics.com:4040'
@@ -363,7 +369,7 @@ class TestStepPlacements(TestEntities):
         with patch('requests.Session.get',return_value=Mock(content = self.original_step_placements_xml, status_code=200)):
             new_placements = [[a1,(c1,'3:1')], [a2,(c1,'4:1')]]
             s.set_placement_list(new_placements)
-            assert ''.join(self._tostring(s).split()) == ''.join(self.modloc_step_placements_xml.split())
+            assert elements_equal(s.root, ElementTree.fromstring(self.modloc_step_placements_xml))
 
     def test_set_placements_list_fail(self):
         a1 = Artifact(uri='http://testgenologics.com:4040/artifacts/a1', lims=self.lims)
@@ -374,5 +380,4 @@ class TestStepPlacements(TestEntities):
         with patch('requests.Session.get',return_value=Mock(content = self.original_step_placements_xml, status_code=200)):
             new_placements = [[a1,(c2,'1:1')], [a2,(c2,'1:1')]]
             s.set_placement_list(new_placements)
-            assert ''.join(self._tostring(s).split()) == ''.join(self.modcont_step_placements_xml.split())
-
+            assert elements_equal(s.root, ElementTree.fromstring(self.modcont_step_placements_xml))
