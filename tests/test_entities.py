@@ -228,8 +228,8 @@ class TestUdfDictionary(TestCase):
 
 def elements_equal(e1, e2):
     if e1.tag != e2.tag: return False
-    if e1.text != e2.text: return False
-    if e1.tail != e2.tail: return False
+    if e1.text and e2.text and e1.text.strip() != e2.text.strip(): return False
+    if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip(): return False
     if e1.attrib != e2.attrib: return False
     if len(e1) != len(e2): return False
     return all(elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
@@ -350,7 +350,7 @@ class TestStepPlacements(TestEntities):
 
 
 
-    def test_get_plactements_list(self):
+    def test_get_placements_list(self):
         s = StepPlacements(uri=self.lims.get_uri('steps', 's1', 'placements'), lims=self.lims)
         with patch('requests.Session.get',return_value=Mock(content = self.original_step_placements_xml, status_code=200)):
             a1 = Artifact(uri='http://testgenologics.com:4040/artifacts/a1', lims=self.lims)
@@ -359,7 +359,7 @@ class TestStepPlacements(TestEntities):
             expected_placements = [[a1,(c1,'1:1')], [a2,(c1,'2:1')]]
             assert s.get_placement_list() == expected_placements
 
-    def test_set_plactements_list(self):
+    def test_set_placements_list(self):
         a1 = Artifact(uri='http://testgenologics.com:4040/artifacts/a1', lims=self.lims)
         a2 = Artifact(uri='http://testgenologics.com:4040/artifacts/a2', lims=self.lims)
         c1 = Container(uri='http://testgenologics.com:4040/containers/c1', lims=self.lims)
@@ -371,7 +371,7 @@ class TestStepPlacements(TestEntities):
             s.set_placement_list(new_placements)
             assert elements_equal(s.root, ElementTree.fromstring(self.modloc_step_placements_xml))
 
-    def test_set_plactements_list_fail(self):
+    def test_set_placements_list_fail(self):
         a1 = Artifact(uri='http://testgenologics.com:4040/artifacts/a1', lims=self.lims)
         a2 = Artifact(uri='http://testgenologics.com:4040/artifacts/a2', lims=self.lims)
         c2 = Container(uri='http://testgenologics.com:4040/containers/c2', lims=self.lims)

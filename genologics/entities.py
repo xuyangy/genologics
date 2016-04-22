@@ -1127,6 +1127,7 @@ class StepPlacements(Entity):
         return self._placementslist
 
     def set_placement_list(self, value):
+        containers=set()
         self.get_placement_list()
         for node in self.root.find('output-placements').findall('output-placement'):
             for pair in value:
@@ -1136,7 +1137,8 @@ class StepPlacements(Entity):
                     workset=location[0]
                     well=location[1]
                     if workset and location:
-                        if node.find('location'):
+                        containers.add(workset)
+                        if node.find('location') is not None:
                             cont_el=node.find('location').find('container')
                             cont_el.attrib['uri']=workset.uri
                             cont_el.attrib['limsid']=workset.id
@@ -1147,10 +1149,29 @@ class StepPlacements(Entity):
                             cont_el=ElementTree.SubElement(loc_el, 'container', {'uri': workset.uri, 'limsid' : workset.id})
                             well_el=ElementTree.SubElement(loc_el, 'value')
                             well_el.text=well #not supported in the constructor
-
+        #Handle selected containers
+        sc=self.root.find("selected-containers")
+        sc.clear()
+        for cont in containers:
+            ElementTree.SubElement(sc, 'container', uri=cont.uri)
         self._placementslist=value
 
     placement_list=property(get_placement_list, set_placement_list)
+
+    _selected_containers=None
+    def get_selected_containers(self):
+        _selected_containers=[]
+        if not _selected_containers:
+            self.get()
+            for node in self.root.find('selected-containers').findall('container'):
+                _selected_containers.append(Container(self.lims, uri=node.attrib['uri']))
+
+        return _selected_containers
+
+    selected_containers=property(get_selected_containers)
+
+
+
 
 class StepActions(Entity):
     """Actions associated with a step"""
