@@ -381,3 +381,6 @@ class TestStepPlacements(TestEntities):
             new_placements = [[a1,(c2,'1:1')], [a2,(c2,'1:1')]]
             s.set_placement_list(new_placements)
             assert elements_equal(s.root, ElementTree.fromstring(self.modcont_step_placements_xml))
+
+
+
