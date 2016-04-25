@@ -1160,6 +1160,7 @@ class StepPlacements(Entity):
         return self._placementslist
 
     def set_placement_list(self, value):
+        containers=set()
         self.get_placement_list()
         for node in self.root.find('output-placements').findall('output-placement'):
             for pair in value:
