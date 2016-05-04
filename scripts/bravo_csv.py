@@ -344,7 +344,7 @@ def calc_vol(art_tuple, logContext,checkTheLog):
         logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.\n")
         checkTheLog[0]=True
     except ZeroDivisionError:
-        logContext.write("ERROR: Sample {0} has a concentration of 0\n".format(art_tuple[1]['uri'].samples[0].name)
+        logContext.write("ERROR: Sample {0} has a concentration of 0\n".format(art_tuple[1]['uri'].samples[0].name))
         checkTheLog[0]=True
     #this allows to still write the file. Won't be readable though
     return "#ERROR#"
