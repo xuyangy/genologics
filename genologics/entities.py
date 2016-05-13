@@ -7,7 +7,11 @@ Copyright (C) 2012 Per Kraulis
 """
 
 import re
-import urlparse
+try:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+except ImportError:
+    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
+
 import datetime
 import time
 from collections import MutableSet
@@ -46,7 +50,7 @@ _NSMAP = dict(
     ver='http://genologics.com/ri/version',
     wkfcnf='http://genologics.com/ri/workflowconfiguration')
 
-for prefix, uri in _NSMAP.iteritems():
+for prefix, uri in _NSMAP.items():
     ElementTree._namespace_map[uri] = prefix
 
 _NSPATTERN = re.compile(r'(\{)(.+?)(\})')
@@ -92,11 +96,11 @@ class SampleHistory:
         #    logger.info(value[1]+"->"+value[0].id+"->"+key)
         logger.info ("\nHistory :\n\n")
         logger.info("Input\tProcess\tProcess info")
-        for key, dict in self.history.iteritems():
+        for key, dict in self.history.items():
             logger.info (key)
-            for key2, dict2 in dict.iteritems():
+            for key2, dict2 in dict.items():
                 logger.info ("\t{}".format(key2))
-                for key, value in dict2.iteritems():
+                for key, value in dict2.items():
                     logger.info ("\t\t{0}->{1}".format(key,(value if value is not None else "None")))
         logger.info ("\nHistory List")
         for art in self.history_list:
@@ -231,7 +235,7 @@ class SampleHistory:
              history, out_artifact = self._add_out_art_process_conection_list(input_art, 
                                                          out_artifact, history)
              hist_list.append(input_art)
-         while self.art_map.has_key(out_artifact):
+         while out_artifact in self.art_map:
              pro, input_art = self.art_map[out_artifact]
              hist_list.append(input_art)
              history, out_artifact = self._add_out_art_process_conection_list(input_art, 
@@ -248,7 +252,7 @@ class SampleHistory:
         part of the historychain get the outart set to None. This is very important."""
         # Use the local process map if we have one, else, query the lims 
         for process in self.processes_per_artifact[input_art] if self.processes_per_artifact else lims.get_processes(inputartifactlimsid = inart):
-            #outputs = map(lambda a: (a.id), process.all_outputs())
+            # outputs = map(lambda a: (a.id), process.all_outputs())
             outputs = [a.id for a in process.all_outputs()] 
             outart = out_artifact if out_artifact in outputs else None 
             step_info = {'date' : process.date_run,
@@ -257,7 +261,7 @@ class SampleHistory:
                          'inart' : input_art,
                          'type' : process.type.id,
                          'name' : process.type.name}
-            if history.has_key(input_art):
+            if input_art in history:
                 history[input_art][process.id] = step_info
             else:
                 history[input_art] = {process.id : step_info}
@@ -269,7 +273,6 @@ class BaseDescriptor(object):
     def __get__(self, instance, cls):
         raise NotImplementedError
 
-
 class TagDescriptor(BaseDescriptor):
     """Abstract base descriptor for an instance attribute
     represented by an XML element.
@@ -277,7 +280,6 @@ class TagDescriptor(BaseDescriptor):
 
     def __init__(self, tag):
         self.tag = tag
-
 
 class StringDescriptor(TagDescriptor):
     """An instance attribute containing a string value
@@ -361,6 +363,14 @@ class IntegerDescriptor(StringDescriptor):
         else:
             return int(node.text)
 
+class IntegerAttributeDescriptor(TagDescriptor):
+    """An instance attribute containing a integer value
+    represented by an XML attribute.
+    """
+
+    def __get__(self, instance, cls):
+        instance.get()
+        return int(instance.root.attrib[self.tag])
 
 class BooleanDescriptor(StringDescriptor):
     """An instance attribute containing a boolean value
@@ -379,6 +389,12 @@ class BooleanDescriptor(StringDescriptor):
 class UdfDictionary(object):
     "Dictionary-like container of UDFs, optionally within a UDT."
 
+    def _is_string(self, value):
+        try:
+            return isinstance(value, basestring)
+        except:
+            return isinstance(value, str)
+
     def __init__(self, instance, udt=False):
         self.instance = instance
         self._udt = udt
@@ -393,7 +409,7 @@ class UdfDictionary(object):
             return self._udt
 
     def set_udt(self, name):
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         if not self._udt:
             raise AttributeError('cannot set name for a UDF dictionary')
         self._udt = name
@@ -453,13 +469,13 @@ class UdfDictionary(object):
             if value is None:
                 pass
             elif vtype == 'string':
-                if not isinstance(value, basestring):
+                if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
             elif vtype == 'str':
-                if not isinstance(value, basestring):
+                if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
             elif vtype == 'text':
-                if not isinstance(value, basestring):
+                if not self._is_string(value):
                     raise TypeError('Text UDF requires str or unicode value')
             elif vtype == 'numeric':
                 if not isinstance(value, (int, float)):
@@ -474,17 +490,17 @@ class UdfDictionary(object):
                     raise TypeError('Date UDF requires datetime.date value')
                 value = str(value)
             elif vtype == 'uri':
-                if not isinstance(value, basestring):
+                if not isinstance(value, str):
                     raise TypeError('URI UDF requires str or punycode (unicode) value')
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
-            if not isinstance(value, unicode):
-                value = unicode(value, 'UTF-8')
+            if not isinstance(value, str):
+                value = str(value).encode('UTF-8')
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
-            if isinstance(value, basestring):
+            if self._is_string(value):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
@@ -505,8 +521,8 @@ class UdfDictionary(object):
                                           nsmap('udf:field'),
                                           type=vtype,
                                           name=key)
-            if not isinstance(value, unicode):
-                value = unicode(str(value), 'UTF-8')
+            if not isinstance(value, str):
+                value =str(value).encode('UTF-8')
             elem.text = value
 
     def __delitem__(self, key):
@@ -517,7 +533,7 @@ class UdfDictionary(object):
                 break
 
     def items(self):
-        return self._lookup.items()
+        return list(self._lookup.items())
 
     def clear(self):
         for elem in self._elems:
@@ -527,9 +543,9 @@ class UdfDictionary(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         try:
-            ret=self._lookup.keys()[self.location]
+            ret=list(self._lookup.keys())[self.location]
         except IndexError:
             raise StopIteration()
         self.location = self.location + 1
@@ -537,7 +553,6 @@ class UdfDictionary(object):
 
     def get(self, key, default=None):
         return self._lookup.get(key, default)
-
 
 
 class UdfDictionaryDescriptor(BaseDescriptor):
@@ -548,9 +563,10 @@ class UdfDictionaryDescriptor(BaseDescriptor):
     _UDT = False
 
     def __get__(self, instance, cls):
-    	instance.get()
-   	self.value = UdfDictionary(instance, udt=self._UDT)
-   	return self.value
+        instance.get()
+        self.value = UdfDictionary(instance, udt=self._UDT)
+        return self.value
+
 
 class UdtDictionaryDescriptor(UdfDictionaryDescriptor):
     """An instance attribute containing a dictionary of UDF values
@@ -566,12 +582,12 @@ class PlacementDictionaryDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
-    	instance.get()
-      	self.value = dict()
-      	for node in instance.root.findall(self.tag):
+        instance.get()
+        self.value = dict()
+        for node in instance.root.findall(self.tag):
             key = node.find('value').text
             self.value[key] = Artifact(instance.lims,uri=node.attrib['uri'])
-       	return self.value
+        return self.value
 
 
 class ExternalidListDescriptor(BaseDescriptor):
@@ -653,6 +669,7 @@ class NestedAttributeListDescriptor(StringAttributeDescriptor):
             result.append(node.attrib)
         return result
 
+
 class NestedStringListDescriptor(StringListDescriptor):
     """An instance yielding a list of strings
         for a nested list of xml elements"""
@@ -670,6 +687,7 @@ class NestedStringListDescriptor(StringListDescriptor):
         for node in rootnode.findall(self.tag):
             result.append(node.text)
         return result
+
 
 class NestedEntityListDescriptor(EntityListDescriptor):
     """same as EntityListDescriptor, but works on nested elements"""
@@ -857,7 +875,6 @@ class Entity(object):
                 raise ValueError("Entity uri and id can't be both None")
             else:
                 uri = lims.get_uri(cls._URI, id)
-
         try:
             return lims.cache[uri]
         except KeyError:
@@ -892,7 +909,7 @@ class Entity(object):
     @property
     def id(self):
         "Return the LIMS id; obtained from the URI."
-        parts = urlparse.urlsplit(self.uri)
+        parts = urlsplit(self.uri)
         return parts.path.split('/')[-1]
 
     def get(self, force=False):
@@ -904,6 +921,11 @@ class Entity(object):
         "Save this instance by doing PUT of its serialized XML."
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.lims.put(self.uri, data)
+
+    def post(self):
+        "Save this instance with POST"
+        data = self.lims.tostring(ElementTree.ElementTree(self.root))
+        self.lims.post(self.uri, data)
 
 
 class Lab(Entity):
@@ -939,7 +961,7 @@ class Researcher(Entity):
 
     @property
     def name(self):
-        return u"%s %s" % (self.first_name, self.last_name)
+        return "%s %s" % (self.first_name, self.last_name)
 
 
 class Note(Entity):
@@ -1076,7 +1098,7 @@ class Container(Entity):
         """Get the dictionary of locations and artifacts
         using the more efficient batch call."""
         result = self.placements.copy()
-        self.lims.get_batch(result.values())
+        self.lims.get_batch(list(result.values()))
         return result
 
 
@@ -1087,6 +1109,7 @@ class Processtype(Entity):
 
     name              = StringAttributeDescriptor('name')
     # XXX
+
 
 class Udfconfig(Entity):
     "Instance of field type (cnf namespace)."
@@ -1110,20 +1133,21 @@ class Process(Entity):
     udf            = UdfDictionaryDescriptor()
     udt            = UdtDictionaryDescriptor()
     files          = EntityListDescriptor(nsmap('file:file'), File)
+
     # instrument XXX
     # process_parameters XXX
 
     def outputs_per_input(self, inart, ResultFile = False, SharedResultFile = False,  Analyte = False):
         """Getting all the output artifacts related to a particual input artifact"""
         
-        inouts = filter(lambda io: io[0]['limsid'] == inart, self.input_output_maps)
+        inouts = [io for io in self.input_output_maps if io[0]['limsid'] == inart]
         if ResultFile:
-            inouts = filter(lambda io: io[1]['output-type'] == 'ResultFile', inouts)
+            inouts = [io for io in inouts if io[1]['output-type'] == 'ResultFile']
         elif SharedResultFile:
-            inouts = filter(lambda io: io[1]['output-type'] == 'SharedResultFile', inouts)
+            inouts = [io for io in inouts if io[1]['output-type'] == 'SharedResultFile']
         elif Analyte:
-            inouts = filter(lambda io: io[1]['output-type'] == 'Analyte', inouts)
-        outs = map(lambda io: io[1]['uri'], inouts)
+            inouts = [io for io in inouts if io[1]['output-type'] == 'Analyte']
+        outs = [io[1]['uri'] for io in inouts]
         return outs
 
     def input_per_sample(self, sample):
@@ -1169,12 +1193,12 @@ class Process(Entity):
     def shared_result_files(self):
         """Retreve all resultfiles of output-generation-type PerAllInputs."""
         artifacts = self.all_outputs(unique=True)
-        return filter(lambda a: a.output_type == 'SharedResultFile', artifacts)
+        return [a for a in artifacts if a.output_type == 'SharedResultFile']
 
     def result_files(self):
         """Retreve all resultfiles of output-generation-type perInput."""
         artifacts = self.all_outputs(unique=True)
-        return filter(lambda a: a.output_type == 'ResultFile', artifacts)
+        return [a for a in artifacts if a.output_type == 'ResultFile']
 
     def analytes(self):
         """Retreving the output Analytes of the process, if existing. 
@@ -1183,16 +1207,16 @@ class Process(Entity):
         Makes aggregate processes and normal processes look the same."""
         info = 'Output'
         artifacts = self.all_outputs(unique=True)
-        analytes = filter(lambda a: a.type == 'Analyte', artifacts)
+        analytes = [a for a in artifacts if a.type == 'Analyte']
         if len(analytes) == 0:
             artifacts = self.all_inputs(unique=True)
-            analytes = filter(lambda a: a.type == 'Analyte', artifacts)
+            analytes = [a for a in artifacts if a.type == 'Analyte']
             info = 'Input'
         return analytes, info
 
     def parent_processes(self):
         """Retrieving all parent processes through the input artifacts"""
-        return map(lambda i_a: i_a.parent_process, self.all_inputs(unique=True))
+        return [i_a.parent_process for i_a in self.all_inputs(unique=True)]
 
     def output_containers(self):
         """Retrieve all unique output containers"""
@@ -1201,6 +1225,11 @@ class Process(Entity):
             if o_a.container:
                 cs.append(o_a.container)
         return list(frozenset(cs))
+
+    @property
+    def step(self):
+        """Retrive the Step coresponding to this process. They share the same id"""
+        return Step(self.lims, id=self.id)
 
 
 class ControlType(Entity):
@@ -1250,8 +1279,8 @@ class Artifact(Entity):
 
     def get_state(self):
         "Parse out the state value from the URI."
-        parts = urlparse.urlparse(self.uri)
-        params = urlparse.parse_qs(parts.query)
+        parts = urlparse(self.uri)
+        params = parse_qs(parts.query)
         try:
             return params['state'][0]
         except (KeyError, IndexError):
@@ -1267,109 +1296,17 @@ class Artifact(Entity):
 
     def stateless(self):
         "returns the artefact independently of it's state"
-        parts = urlparse.urlparse(self.uri)
+        parts = urlparse(self.uri)
         if 'state' in parts[4]:
-            stateless_uri=urlparse.urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
+            stateless_uri=urlunparse([parts[0],parts[1], parts[2], parts[3], '',''])
             return Artifact(self.lims, uri=stateless_uri)
         else:
             return self
 
     # XXX set_state ?
     state = property(get_state)
-    stateless = property(stateless) 
+    stateless = property(stateless)
 
-
-#### Reagent lots ####
-
-class ReagentKit(Entity):
-    """ Class representing a reagent kit type."""
-
-    _URI = 'reagentkits'
-    _TAG = 'reagent-kit'
-
-    name            = StringDescriptor('name')
-    supplier        = StringDescriptor('supplier')
-    catalogue_number= StringDescriptor('catalogue-number')
-    website         = StringDescriptor('website')
-    archived        = BooleanDescriptor('archived')
-
-
-class ReagentLot(Entity):
-    """ Class representing a reagent lot."""
-
-    _URI = 'reagentlots'
-    _TAG = 'reagent-lot'
-    
-    reagent_kit      = EntityDescriptor('reagent-kit', ReagentKit)
-    name             = StringDescriptor('name')
-    lot_number       = StringDescriptor('lot-number')
-    created_date     = StringDescriptor('created-date')
-    last_modified_date= StringDescriptor('last-modified-date')
-    expiry_date      = StringDescriptor('expiry-date')
-    created_by       = EntityDescriptor('created-by', Researcher)
-    last_modified_by = EntityDescriptor('last-modified-by', Researcher)
-    storage_location = StringDescriptor('storage-location')
-    notes            = StringDescriptor('notes')
-    status           = StringDescriptor('status')
-    usage_count      = IntegerDescriptor('usage-count')
-
-
-#### Configuration of workflows, protocols, etc. ####
-
-class ProtocolStep(Entity):
-    """Steps key in the Protocol object"""
-
-    _TAG='step'
-    # Step config is not resolveable using a URI and an ID alone, because
-    # it's nested under a protocol.    
-    _URI = None
-
-    name                = StringAttributeDescriptor("name")
-    type                = EntityDescriptor('type', Processtype)
-    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
-    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
-    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
-    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
-    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
-    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
-    # Transitions represent the allowed next steps for samples
-    transitions         = NestedAttributeListDescriptor('transition', 'transitions')
-
-    def queue(self):
-        """Get the queue corresponding to this step."""
-        return Queue(self.lims, id = self.id)
-
-
-class Protocol(Entity):
-    """Protocol, holding ProtocolSteps and protocol-properties"""
-    _URI='configuration/protocols'
-    _TAG='protocol'
-
-    name        = StringAttributeDescriptor('name')
-    index       = StringAttributeDescriptor('index')
-    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
-    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
-
-
-class Stage(Entity):
-    """Holds Protocol/Workflow"""
-    protocol = EntityDescriptor('protocol', Protocol)
-    step =     EntityDescriptor('step', ProtocolStep)
-
-
-class Workflow(Entity):
-    """ Workflow, introduced in 3.5"""
-    _URI="configuration/workflows"
-    _TAG="workflow"
-    
-    name      = StringAttributeDescriptor("name")
-    status    = StringDescriptor('status')
-    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
-    stages    = NestedEntityListDescriptor('stage', Stage, 'stages')
-
-
-
-#### Classes related to the steps resource hierarchy ####
 
 class AvailableProgram(Entity):
     """Program registered on the process type, which can be referenced directly from
@@ -1385,32 +1322,34 @@ class AvailableProgram(Entity):
         self.lims.post(self.uri, "")
 
 
-class StepActions(Entity):
-    """Represents the Actions subentity of the Step entity. Right now, only the escalations and
-    next actions are parsed. Next actions can be modified, escalations are read-only."""
 
+
+class StepActions(Entity):
+    """Actions associated with a step"""
+    _escalation = None
     next_actions = NestedAttributeListDescriptor('next-action', 'next-actions')
 
     @property
     def escalation(self):
-        self.get()
-        escalation = {}
-        for node in self.root.findall('escalation'):
-            escalation['artifacts']=[]
-            escalation['author']=Researcher(self.lims,uri=node.find('request').find('author').attrib.get('uri'))
-            escalation['request']=uri=node.find('request').find('comment').text
-            if node.find('review') is not None: #recommended by the Etree doc
-                escalation['status']='Reviewed'
-                escalation['reviewer']= Researcher(self.lims,uri=node.find('review').find('author').attrib.get('uri'))
-                escalation['answer']=uri=node.find('review').find('comment').text
-            else:
-                escalation['status']='Pending'
+        if not self._escalation:
+            self.get()
+            self._escalation={}
+            for node in self.root.findall('escalation'):
+                self._escalation['artifacts']=[]
+                self._escalation['author']=Researcher(self.lims,uri=node.find('request').find('author').attrib.get('uri'))
+                self._escalation['request']=uri=node.find('request').find('comment').text
+                if node.find('review') is not None: #recommended by the Etree doc
+                    self._escalation['status']='Reviewed'
+                    self._escalation['reviewer']= Researcher(self.lims,uri=node.find('review').find('author').attrib.get('uri'))
+                    self._escalation['answer']=uri=node.find('review').find('comment').text
+                else:
+                    self._escalation['status']='Pending'
 
-            for node2 in node.findall('escalated-artifacts'):
-                art= [Artifact(self.lims,uri=ch.attrib.get('uri')) for ch in node2]
-                escalation['artifacts'].extend(art)
+                for node2 in node.findall('escalated-artifacts'):
+                    art= self.lims.get_batch([Artifact(self.lims, uri=ch.attrib.get('uri')) for ch in node2])
+                    self._escalation['artifacts'].extend(art)
+        return self._escalation
 
-        return escalation
 
 
     def put(self):
@@ -1438,18 +1377,6 @@ class ProgramStatus(Entity):
     configuration  = EntityDescriptor('configuration', ProtocolStep)
     status         = StringDescriptor('status')
     message        = StringDescriptor('message')
-
-
-class ReagentLots(Entity):
-    """A step's reagent lots subentity.
-    
-    To access the list of reagent lots for a step you need to do:
-    step.reagentlots.reagent_lots
-    because they are available through the reagentlots subentity (this).
-    """
-
-    reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
-
 
 class StepDetails(Entity):
     """Details resource contains an alternative representation of the
@@ -1523,6 +1450,47 @@ class StepPlacements(Entity):
         pass
 
 
+
+class ReagentKit(Entity):
+    """Type of Reagent with information about the provider"""
+    _URI="reagenttypes"
+    _TAG="reagent-kit"
+
+    name = StringDescriptor('name')
+    supplier = StringDescriptor('supplier')
+    website = StringDescriptor('website')
+    catalogue_number = StringDescriptor('catalogue-number')
+    archived = BooleanDescriptor('archived')
+
+
+class ReagentLot(Entity):
+    """Reagent Lots contain information about a particualr lot of reagent used in a step"""
+    _URI="reagentlot"
+    _TAG="reagent-lot"
+
+    reagent_kit = EntityDescriptor('reagent-kit', ReagentKit)
+    name = StringDescriptor('name')
+    lot_number = StringDescriptor('lot-number')
+    created_date = StringDescriptor('created-date')
+    last_modified_date = StringDescriptor('last-modified-date')
+    expiry_date = StringDescriptor('expiry-date')
+    created_by = EntityDescriptor('created-by', Researcher)
+    last_modified_by = EntityDescriptor('last-modified-by', Researcher)
+    status = StringDescriptor('status')
+    usage_count = IntegerDescriptor('usage-count')
+
+
+class StepReagentLots(Entity):
+    """A step's reagent lots subentity.
+    
+    To access the list of reagent lots for a step you need to do:
+    step.reagentlots.reagent_lots
+    because they are available through the reagentlots subentity (this).
+    """
+
+    reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
+
+
 class Step(Entity):
     """Step, as defined by the genologics API. Step ID is the same as the process ID."""
 
@@ -1532,7 +1500,7 @@ class Step(Entity):
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = InlineEntityListDescriptor('available-program', AvailableProgram, 'available-programs')
-    reagentlots         = EntityDescriptor('reagent-lots', ReagentLots)
+    reagentlots         = EntityDescriptor('reagent-lots', StepReagentLots)
     actions             = EntityDescriptor('actions', StepActions)
     details             = EntityDescriptor('details', StepDetails)
     pools               = EntityDescriptor('pools', StepPools)
@@ -1544,6 +1512,61 @@ class Step(Entity):
         advance_uri = "{0}/advance".format(self.uri)
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.root = self.lims.post(advance_uri, data)
+
+
+
+
+class ProtocolStep(Entity):
+    """Steps key in the Protocol object"""
+
+    _TAG='step'
+    # Step config is not resolvable using a URI and an ID alone, because
+    # it's nested under a protocol.    
+    _URI = None
+
+    name                = StringAttributeDescriptor("name")
+    type                = EntityDescriptor('type', Processtype)
+    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
+    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
+    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
+    # Transitions represent the allowed next steps for samples
+    transitions         = NestedAttributeListDescriptor('transition', 'transitions')
+
+    def queue(self):
+        """Get the queue corresponding to this step."""
+        return Queue(self.lims, id = self.id)
+
+
+class Protocol(Entity):
+    """Protocol, holding ProtocolSteps and protocol-properties"""
+    _URI='configuration/protocols'
+    _TAG='protocol'
+
+    name        = StringAttributeDescriptor('name')
+    index       = StringAttributeDescriptor('index')
+    steps       = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties  = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
+
+
+class Stage(Entity):
+    """Holds Protocol/Workflow"""
+    name     = StringAttributeDescriptor('name')
+    index    = IntegerAttributeDescriptor('index')
+    protocol = EntityDescriptor('protocol', Protocol)
+    step     = EntityDescriptor('step', ProtocolStep)
+
+class Workflow(Entity):
+    """ Workflow, introduced in 3.5"""
+    _URI="configuration/workflows"
+    _TAG="workflow"
+    
+    name      = StringAttributeDescriptor("name")
+    status    = StringAttributeDescriptor("status")
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
+    stages    = NestedEntityListDescriptor('stage', Stage, 'stages')
 
 
 class Queue(Entity):
@@ -1558,8 +1581,8 @@ class Queue(Entity):
 
 class ReagentType(Entity):
     """Reagent Type, usually, indexes for sequencing"""
-    _URI = 'reagenttypes'
-    _TAG = 'reagent-type'
+    _URI = "reagenttypes"
+    _TAG = "reagent-type"
 
     name    =StringAttributeDescriptor('name')
     category=StringDescriptor('reagent-category')
@@ -1575,9 +1598,9 @@ class ReagentType(Entity):
         return None
 
 
+
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
 Stage.workflow            = EntityDescriptor('workflow', Workflow)
 Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
-
 

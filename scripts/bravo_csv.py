@@ -258,12 +258,21 @@ def normalization(current_step):
                 src_plate = src.location[0].id
                 src_well = src.location[1]
                 src_tot_volume = float(src.udf["Volume (ul)"])
-                src_volume = float(dest.udf["Volume to take (uL)"])
+                try:
+                    src_volume = float(dest.udf["Volume to take (uL)"])
+                except:
+                    sys.stderr.write("Field 'Volume to take (uL)' is empty for artifact {0}\n".format(dest.name))
+                    sys.exit(2)
+
                 src_conc = src.udf["Concentration"]
                 # Diluted sample:
                 dest_plate = dest.location[0].id
                 dest_well = dest.location[1]
-                dest_conc = dest.udf["Normalized conc. (nM)"]
+                try:
+                    dest_conc = dest.udf["Normalized conc. (nM)"]
+                except:
+                    sys.stderr.write("Field 'Normalized conc. (nM)' is empty for artifact {0}\n".format(dest.name))
+                    sys.exit(2)
                 if src.udf["Conc. Units"] != "nM":
                     log.append("ERROR: No valid concentration found for sample {0}".format(src.samples[0].name))
                 elif src_conc < dest_conc:
@@ -310,6 +319,7 @@ def calc_vol(art_tuple, logContext,checkTheLog):
         amount_ng=art_tuple[1]['uri'].udf['Amount taken (ng)']
         conc=art_tuple[0]['uri'].udf['Concentration']
         volume=float(amount_ng)/float(conc)
+
         if volume<MIN_WARNING_VOLUME:
             #arbitrarily determined by Sverker Lundin
             logContext.write("WARN : Sample {0} located {1} {2}  has a LOW volume : {3}\n".format(art_tuple[1]['uri'].samples[0].name,
@@ -332,6 +342,9 @@ def calc_vol(art_tuple, logContext,checkTheLog):
         checkTheLog[0]=True
     except AssertionError:
         logContext.write("ERROR : This script expects the concentration to be in ng/ul, this does not seem to be the case.\n")
+        checkTheLog[0]=True
+    except ZeroDivisionError:
+        logContext.write("ERROR: Sample {0} has a concentration of 0\n".format(art_tuple[1]['uri'].samples[0].name))
         checkTheLog[0]=True
     #this allows to still write the file. Won't be readable though
     return "#ERROR#"

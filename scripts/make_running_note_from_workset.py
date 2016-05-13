@@ -48,7 +48,7 @@ def main(lims, args):
         else:
             rnt="{0} sample planned for {1}".format(len(datamap[pid]), wsname)
 
-        running_notes[now]={"note": rnt, "user" : username, "email":user_email}
+        running_notes[now]={"note": rnt, "user" : username, "email":user_email, "category":"Workset"}
 
         pj.udf['Running Notes']=json.dumps(running_notes)
         pj.put()

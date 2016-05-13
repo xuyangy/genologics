@@ -1,18 +1,24 @@
 from setuptools import setup, find_packages
+from genologics.version import __version__
 import sys, os
 import subprocess
 import glob
 
 # Fetch version from git tags.
 # if git is not available (PyPi package), use stored version.py.
-version_py = os.path.join(os.path.dirname(__file__), 'version.py')
+version_py = os.path.join(os.path.dirname(__file__), 'genologics', 'version.py')
+
+version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE, universal_newlines=True).communicate()[0].rstrip()
+if not version:
+    version = __version__
+else:
+    version = version.decode("utf-8")
 
 try:
-    version = subprocess.Popen(["git", "describe"],stdout=subprocess.PIPE).communicate()[0].rstrip()
+    with open("requirements.txt") as rq:
+        requires=rq.readlines()
 except:
-    execfile(version_py)
-    version = __version__
-
+    requires=["requests"]
 
 setup(name='genologics',
       version=version,
