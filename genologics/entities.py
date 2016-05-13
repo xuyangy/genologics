@@ -1380,9 +1380,9 @@ class ProgramStatus(Entity):
     _TAG = 'program-status'
 
     step           = StringDescriptor('step')
-    configuration  = EntityDescriptor('configuration', ProtocolStep)
     status         = StringDescriptor('status')
     message        = StringDescriptor('message')
+
 
 class StepDetails(Entity):
     """Details resource contains an alternative representation of the
