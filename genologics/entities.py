@@ -1502,7 +1502,7 @@ class Step(Entity):
 
     _URI = 'steps'
 
-    configuration       = EntityDescriptor('configuration', ProtocolStep)
+    #configuration       = Assigned at end of file
     current_state       = StringAttributeDescriptor('current-state')
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = InlineEntityListDescriptor('available-program', AvailableProgram, 'available-programs')
@@ -1518,8 +1518,6 @@ class Step(Entity):
         advance_uri = "{0}/advance".format(self.uri)
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.root = self.lims.post(advance_uri, data)
-
-
 
 
 class ProtocolStep(Entity):
@@ -1605,6 +1603,7 @@ class ReagentType(Entity):
 
 
 
+Step.configuration       = EntityDescriptor('configuration', ProtocolStep)
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
 Stage.workflow            = EntityDescriptor('workflow', Workflow)
