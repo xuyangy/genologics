@@ -558,7 +558,7 @@ class Lims(object):
 
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
-        etree.write(outfile, encoding='utf-8', xml_declaration=True)
+        etree.write(outfile, encoding='utf-8') #Python 2.6 compat: don't specify xml_declaration arg
 
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance. The inputs parameter is a list of 
