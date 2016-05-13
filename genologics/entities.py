@@ -10,6 +10,7 @@ import re
 import urlparse
 import datetime
 import time
+import requests
 from collections import MutableSet
 from xml.etree import ElementTree
 import logging
@@ -999,15 +1000,20 @@ class File(Entity):
     def download(self):
         lims = self.lims
         url = "{0}/download".format(self.uri)
-        r = lims.request_session.get(url,
+        response = lims.request_session.get(url,
                 auth=(lims.username, lims.password))
-        return r.content
+        if response.status_code != 200:
+            raise requests.exceptions.HTTPError("Failed to upload file, status code " +
+                    str(response.status_code))
+        else:
+            return r.content
 
     def upload(self, data):
         url = "{0}/upload".format(self.uri)
-        r = self.lims.request_session.post(
+        response = self.lims.request_session.post(
                 url, auth=(self.lims.username, self.lims.password),
                 files=dict(file=data))
+        return lims.parse_response(response, [200])
 
 
 class Project(Entity):
