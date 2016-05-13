@@ -1028,7 +1028,7 @@ class File(Entity):
             raise requests.exceptions.HTTPError("Failed to upload file, status code " +
                     str(response.status_code))
         else:
-            return r.content
+            return response.content
 
     def upload(self, data):
         url = "{0}/upload".format(self.uri)
