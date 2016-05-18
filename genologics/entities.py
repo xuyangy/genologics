@@ -496,8 +496,8 @@ class UdfDictionary(object):
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
-            if not isinstance(value, u''.__class__):
-                value = str(value).encode('UTF-8')
+            if not isinstance(value, type(u'')):
+                value = (type(u''))(value).encode('UTF-8')
             node.text = value
             break
         else:                           # Create new entry; heuristics for type
@@ -522,8 +522,8 @@ class UdfDictionary(object):
                                           nsmap('udf:field'),
                                           type=vtype,
                                           name=key)
-            if not isinstance(value, u''.__class__):
-                value =str(value).encode('UTF-8')
+            if not isinstance(value, type(u'')):
+                value =(type(u'')(value).encode('UTF-8')
             elem.text = value
 
     def __delitem__(self, key):
