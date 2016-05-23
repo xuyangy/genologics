@@ -523,7 +523,7 @@ class UdfDictionary(object):
                                           type=vtype,
                                           name=key)
             if not isinstance(value, type(u'')):
-                value =(type(u'')(value).encode('UTF-8')
+                value =(type(u''))(value).encode('UTF-8')
             elem.text = value
 
     def __delitem__(self, key):
