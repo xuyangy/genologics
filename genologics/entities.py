@@ -1034,7 +1034,10 @@ class File(Entity):
         response = self.lims.request_session.post(
                 url, auth=(self.lims.username, self.lims.password),
                 files=dict(file=data))
-        return self.lims.parse_response(response, [200])
+
+        if response.status_code != 200:
+            raise requests.exceptions.HTTPError("Failed to upload file, status code " +
+                    str(response.status_code))
 
 
 class Project(Entity):
