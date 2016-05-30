@@ -1020,10 +1020,9 @@ class File(Entity):
     is_published      = BooleanDescriptor('is-published')
 
     def download(self):
-        lims = self.lims
         url = "{0}/download".format(self.uri)
-        response = lims.request_session.get(url,
-                auth=(lims.username, lims.password))
+        response = self.lims.request_session.get(url,
+                auth=(self.lims.username, self.lims.password))
         if response.status_code != 200:
             raise requests.exceptions.HTTPError("Failed to upload file, status code " +
                     str(response.status_code))
@@ -1035,7 +1034,7 @@ class File(Entity):
         response = self.lims.request_session.post(
                 url, auth=(self.lims.username, self.lims.password),
                 files=dict(file=data))
-        return lims.parse_response(response, [200])
+        return self.lims.parse_response(response, [200])
 
 
 class Project(Entity):
