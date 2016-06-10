@@ -396,6 +396,16 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def get_workflows(self):
+        """Get the list of existing workflows on the system """
+        params = self._get_params()
+        return self._get_instances(Workflow, params=params)
+
+    def get_protocols(self):
+        """Get the list of existing protocols on the system """
+        params = self._get_params()
+        return self._get_instances(Protocol, params=params)
+
     def get_reagent_kits(self, name=None, start_index=None):
         """Get a list of reagent kits, filtered by keyword arguments.
         name: reagent kit  name, or list of names.

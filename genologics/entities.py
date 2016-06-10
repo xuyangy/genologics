@@ -247,6 +247,7 @@ class Processtype(Entity):
     name              = StringAttributeDescriptor('name')
     # XXX
 
+
 class Udfconfig(Entity):
     "Instance of field type (cnf namespace)."
     _URI = 'configuration/udfs'
@@ -367,6 +368,7 @@ class Process(Entity):
     def step(self):
         """Retrive the Step coresponding to this process. They share the same id"""
         return Step(self.lims, id=self.id)
+
 
 class Artifact(Entity):
     "Any process input or output; analyte or file."
@@ -550,6 +552,7 @@ class StepActions(Entity):
                 actions.append(action)
         return actions
 
+
 class ReagentKit(Entity):
     """Type of Reagent with information about the provider"""
     _URI="reagentkits"
@@ -560,19 +563,6 @@ class ReagentKit(Entity):
     supplier = StringDescriptor('supplier')
     website = StringDescriptor('website')
     archived = BooleanDescriptor('archived')
-
-    # @classmethod
-    # def create(cls, lims,  name, supplier, website, archived):
-    #     rkit = ReagentKit(lims, create_new=True)
-    #     rkit.root = ElementTree.Element(cls._TAG)
-    #     rkit.name = name
-    #     rkit.supplier = supplier
-    #     rkit.website = website
-    #     rkit.archived = archived
-    #     return rkit
-
-
-
 
 class ReagentLot(Entity):
     """Reagent Lots contain information about a particualr lot of reagent used in a step"""
@@ -612,6 +602,7 @@ class Step(Entity):
     def reagent_lots(self):
         return self._reagent_lots.reagent_lots
 
+
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
 
@@ -638,17 +629,22 @@ class Protocol(Entity):
 
 class Stage(Entity):
     """Holds Protocol/Workflow"""
+    name     = StringAttributeDescriptor('name')
+    index    = IntegerAttributeDescriptor('index')
     protocol = EntityDescriptor('protocol', Protocol)
+    step     = EntityDescriptor('step', ProtocolStep)
 
 
 class Workflow(Entity):
     """ Workflow, introduced in 3.5"""
     _URI="configuration/workflows"
     _TAG="workflow"
-    
-    name = StringAttributeDescriptor("name")
+
+    name      = StringAttributeDescriptor("name")
+    status    = StringAttributeDescriptor("status")
     protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols')
-    stages    = EntityListDescriptor('stage', Stage)
+    stages    = NestedEntityListDescriptor('stage', Stage, 'stages')
+
 
 class ReagentType(Entity):
     """Reagent Type, usually, indexes for sequencing"""
