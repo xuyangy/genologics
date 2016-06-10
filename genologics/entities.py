@@ -14,7 +14,7 @@ import logging
 
 from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor, UdfDictionaryDescriptor, \
     UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, nsmap, \
-    StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
+    StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, IntegerAttributeDescriptor,\
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
     NestedStringListDescriptor, NestedAttributeListDescriptor
 

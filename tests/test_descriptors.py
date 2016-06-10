@@ -5,6 +5,8 @@ from io import BytesIO
 
 from genologics.descriptors import StringDescriptor, StringAttributeDescriptor, StringListDescriptor, \
     StringDictionaryDescriptor, IntegerDescriptor, BooleanDescriptor, UdfDictionary, EntityDescriptor
+from genologics.lims import Lims
+from genologics.entities import Artifact
 
 if version_info.major == 2:
     from mock import Mock
@@ -112,26 +114,21 @@ class TestEntityDescriptor(TestDescriptor):
 <artifact uri="http://testgenologics.com:4040/api/v2/artifacts/a1"></artifact>
 </test-entry>
 """)
-        from genologics.lims import Lims
-        from genologics.entities import Artifact
         self.lims = Lims('http://testgenologics.com:4040', username='test', password='password')
         self.a1 = Artifact(self.lims,id='a1')
         self.a2 = Artifact(self.lims,id='a2')
         self.instance = Mock(root=self.et, lims=self.lims)
 
     def test__get__(self):
-        from genologics.entities import Artifact
         ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
         assert ed.__get__(self.instance, None) == self.a1
 
     def test__set__(self):
-        from genologics.entities import Artifact
         ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
         ed.__set__(self.instance, self.a2)
         assert self.et.find('artifact').attrib['uri'] == 'http://testgenologics.com:4040/api/v2/artifacts/a2'
 
     def test_create(self):
-        from genologics.entities import Artifact
         instance_new = Mock(root= ElementTree.Element('test-entry'))
         ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
         ed.__set__(instance_new, self.a1)

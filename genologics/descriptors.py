@@ -357,6 +357,14 @@ class IntegerDescriptor(StringDescriptor):
         if text is not None:
             return int(text)
 
+class IntegerAttributeDescriptor(TagDescriptor):
+    """An instance attribute containing a integer value
+    represented by an XML attribute.
+    """
+    def __get__(self, instance, cls):
+        instance.get()
+        return int(instance.root.attrib[self.tag])
+
 class BooleanDescriptor(StringDescriptor):
     """An instance attribute containing a boolean value
     represented by an XMl element.

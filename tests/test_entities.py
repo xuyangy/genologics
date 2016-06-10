@@ -272,20 +272,23 @@ class TestReagentLots(TestEntities):
     def test_parse_entity(self):
         l = ReagentLot(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
         with patch('requests.Session.get', return_value=Mock(content = self.reagentlot_xml, status_code=200)):
+            assert l.uri
             assert l.name == 'kitname'
             assert l.lot_number == '100'
             assert l.status == 'ARCHIVED'
 
     def test_create_entity(self):
-         with patch('requests.Session.get', return_value=Mock(content = self.reagentkit_xml, status_code=200)):
-             r = ReagentKit(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
-         with patch('genologics.lims.requests.post', return_value=Mock(content = self.reagentlot_xml, status_code=201)) as patch_post:
-             l = ReagentLot.create(
-                    self.lims,
-                    reagent_kit=r,
-                    name='kitname',
-                    lot_number='99',
-                    expiry_date='2020-05-01',
-                    status='ACTIVE'
-             )
-             print(patch_post.call_args_list)
+        with patch('requests.Session.get', return_value=Mock(content = self.reagentkit_xml, status_code=200)):
+            r = ReagentKit(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
+        with patch('genologics.lims.requests.post', return_value=Mock(content = self.reagentlot_xml, status_code=201)) as patch_post:
+            l = ReagentLot.create(
+                self.lims,
+                reagent_kit=r,
+                name='kitname',
+                lot_number='100',
+                expiry_date='2020-05-01',
+                status='ACTIVE'
+            )
+            assert l.uri
+            assert l.name == 'kitname'
+            assert l.lot_number == '100'
