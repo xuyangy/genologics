@@ -699,7 +699,6 @@ class LocationDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
-        from genologics.entities import Container
         instance.get()
         node = instance.root.find(self.tag)
         uri = node.find('container').attrib['uri']
@@ -733,7 +732,6 @@ class InputOutputMapList(BaseDescriptor):
         return self.value
 
     def get_dict(self, lims, node):
-        from genologics.entities import Artifact, Process
         if node is None: return None
         result = dict()
         for key in ['limsid', 'output-type', 'output-generation-type']:
@@ -750,7 +748,6 @@ class InputOutputMapList(BaseDescriptor):
         if node is not None:
             result['parent-process'] = Process(lims, node.attrib['uri'])
         return result
-
 
 
 class Entity(object):
@@ -837,8 +834,6 @@ class Entity(object):
         instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
         instance._uri = instance.root.attrib['uri']
         return instance
-
-
 
 class Lab(Entity):
     "Lab; container of researchers."
