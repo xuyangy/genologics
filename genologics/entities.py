@@ -756,11 +756,11 @@ class Entity(object):
     _URI = None
     _PREFIX=None
 
-    def __new__(cls, lims, uri=None, id=None, create_new=None):
+    def __new__(cls, lims, uri=None, id=None, _create_new=False):
         if not uri:
             if id:
                 uri = lims.get_uri(cls._URI, id)
-            elif create_new:
+            elif _create_new:
                 #create the Object without id or uri
                 pass
             else:
@@ -770,9 +770,9 @@ class Entity(object):
         except KeyError:
             return object.__new__(cls)
 
-    def __init__(self, lims, uri=None, id=None, create_new=None):
-        assert uri or id or create_new
-        if not create_new:
+    def __init__(self, lims, uri=None, id=None, _create_new=False):
+        assert uri or id or _create_new
+        if not _create_new:
             if hasattr(self, 'lims'): return
             if not uri:
                 uri = lims.get_uri(self._URI, id)
@@ -819,7 +819,7 @@ class Entity(object):
     @classmethod
     def create(cls, lims, **kwargs):
         """Create an instance from attributes then post it to the LIMS"""
-        instance = cls(lims, create_new=True)
+        instance = cls(lims, _create_new=True)
         if cls._TAG:
             instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + cls._TAG))
         else:
