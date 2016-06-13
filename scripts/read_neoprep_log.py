@@ -78,10 +78,20 @@ def read_log(lims, pid, logfile):
                 inp.qc="PASSED"
             elif data[inp.name]['stat'] == 'Fail':
                 inp.qc="FAILED"
-            inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
-            inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
+
+            try:
+                inp.udf['Molar Conc. (nM)']=float(data[inp.name]['conc'])
+            except ValueError:
+                inp.udf['Molar Conc. (nM)']=0
+            try:
+                inp.udf['Normalized conc. (nM)']=float(data[inp.name]['norm'])
+            except ValueError:
+                inp.udf['Normalized conc. (nM)']=0
+            try:
+                inp.udf['Size (bp)']=float(data[inp.name]['ist_size'])
+            except ValueError:
+                inp.udf['Size (bp)']=0
             inp.udf['NeoPrep Machine QC']=data[inp.name]['stat']
-            inp.udf['Size (bp)']=float(data[inp.name]['ist_size'])
             inp.put()
             logger.info("updated sample {0}".format(inp.name))
 
