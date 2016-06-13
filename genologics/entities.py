@@ -254,7 +254,6 @@ class SampleHistory:
         processes that the input artifact has been involved in, but that are not
         part of the historychain get the outart set to None. This is very important."""
         # Use the local process map if we have one, else, query the lims
-        from genologics import lims
         for process in self.processes_per_artifact[input_art] if self.processes_per_artifact else lims.get_processes(inputartifactlimsid = input_art):
             # outputs = map(lambda a: (a.id), process.all_outputs())
             outputs = [a.id for a in process.all_outputs()]
