@@ -4,23 +4,15 @@ from sys import version_info
 from io import BytesIO
 
 from genologics.lims import Lims
-from genologics.entities import StringDescriptor, StringAttributeDescriptor, StringListDescriptor, \
-    StringDictionaryDescriptor, IntegerDescriptor, BooleanDescriptor, UdfDictionary, StepActions, Researcher, Artifact, \
-    Step, StepPlacements, Container
+from genologics.entities import StepActions, Researcher, Artifact, \
+    Step, StepPlacements, Container, Stage, ReagentKit, ReagentLot,\
+    StringDescriptor, StringAttributeDescriptor, StringListDescriptor, \
+    StringDictionaryDescriptor, IntegerDescriptor, BooleanDescriptor, UdfDictionary, EntityDescriptor
 
 if version_info.major == 2:
     from mock import patch, Mock
 else:
     from unittest.mock import patch, Mock
-
-
-
-
-
-class TestEntities(TestCase):
-
-    def test_pass(self):
-        pass
 
 
 class TestDescriptor(TestCase):
@@ -37,7 +29,7 @@ class TestDescriptor(TestCase):
 class TestStringDescriptor(TestDescriptor):
 
     def setUp(self):
-        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="utf-8"?>
 <test-entry>
 <name>test name</name>
 </test-entry>
@@ -52,6 +44,96 @@ class TestStringDescriptor(TestDescriptor):
         sd = self._make_desc(StringDescriptor, 'name')
         sd.__set__(self.instance, "new test name")
         assert self.et.find('name').text == "new test name"
+
+    def test_create(self):
+        instance_new = Mock(root= ElementTree.Element('test-entry'))
+        sd = self._make_desc(StringDescriptor, 'name')
+        sd.__set__(instance_new, "test name")
+        assert instance_new.root.find('name').text == 'test name'
+
+class TestIntegerDescriptor(TestDescriptor):
+
+    def setUp(self):
+        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<test-entry>
+<count>32</count>
+</test-entry>
+""")
+        self.instance = Mock(root=self.et)
+
+    def test__get__(self):
+        sd = self._make_desc(IntegerDescriptor, 'count')
+        assert sd.__get__(self.instance, None) == 32
+
+    def test__set__(self):
+        sd = self._make_desc(IntegerDescriptor, 'count')
+        sd.__set__(self.instance, 23)
+        assert self.et.find('count').text == '23'
+        sd.__set__(self.instance, '23')
+        assert self.et.find('count').text == '23'
+
+
+    def test_create(self):
+        instance_new = Mock(root= ElementTree.Element('test-entry'))
+        sd = self._make_desc(IntegerDescriptor, 'count')
+        sd.__set__(instance_new, 23)
+        assert instance_new.root.find('count').text == '23'
+
+class TestBooleanDescriptor(TestDescriptor):
+
+    def setUp(self):
+        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<test-entry>
+<istest>true</istest>
+</test-entry>
+""")
+        self.instance = Mock(root=self.et)
+
+    def test__get__(self):
+        bd = self._make_desc(BooleanDescriptor, 'istest')
+        assert bd.__get__(self.instance, None) == True
+
+    def test__set__(self):
+        bd = self._make_desc(BooleanDescriptor, 'istest')
+        bd.__set__(self.instance, False)
+        assert self.et.find('istest').text == 'false'
+        bd.__set__(self.instance, 'true')
+        assert self.et.find('istest').text == 'true'
+
+    def test_create(self):
+        instance_new = Mock(root= ElementTree.Element('test-entry'))
+        bd = self._make_desc(BooleanDescriptor, 'istest')
+        bd.__set__(instance_new, True)
+        assert instance_new.root.find('istest').text == 'true'
+
+
+class TestEntityDescriptor(TestDescriptor):
+
+    def setUp(self):
+        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<test-entry>
+<artifact uri="http://testgenologics.com:4040/api/v2/artifacts/a1"></artifact>
+</test-entry>
+""")
+        self.lims = Lims('http://testgenologics.com:4040', username='test', password='password')
+        self.a1 = Artifact(self.lims,id='a1')
+        self.a2 = Artifact(self.lims,id='a2')
+        self.instance = Mock(root=self.et, lims=self.lims)
+
+    def test__get__(self):
+        ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
+        assert ed.__get__(self.instance, None) == self.a1
+
+    def test__set__(self):
+        ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
+        ed.__set__(self.instance, self.a2)
+        assert self.et.find('artifact').attrib['uri'] == 'http://testgenologics.com:4040/api/v2/artifacts/a2'
+
+    def test_create(self):
+        instance_new = Mock(root= ElementTree.Element('test-entry'))
+        ed = self._make_desc(EntityDescriptor, 'artifact', Artifact)
+        ed.__set__(instance_new, self.a1)
+        assert instance_new.root.find('artifact').attrib['uri'] == 'http://testgenologics.com:4040/api/v2/artifacts/a1'
 
 
 class TestStringAttributeDescriptor(TestDescriptor):
@@ -100,51 +182,6 @@ class TestStringDictionaryDescriptor(TestDescriptor):
         assert type(res) == dict
         self.assertIsNone(res['test-firstkey'])
         assert res['test-secondkey'] == 'second value'
-
-class TestIntegerDescriptor(TestDescriptor):
-
-    def setUp(self):
-        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<test-entry>
-<count>32</count>
-</test-entry>
-""")
-        self.instance = Mock(root=self.et)
-
-    def test__get__(self):
-        sd = self._make_desc(IntegerDescriptor, 'count')
-        assert sd.__get__(self.instance, None) == 32
-
-    def test__set__(self):
-        sd = self._make_desc(IntegerDescriptor, 'count')
-        sd.__set__(self.instance, 23)
-        assert self.et.find('count').text == 23
-        # FIXME: The BooleanDescriptor (and the IntegerDescriptor) uses the StringDescriptor
-        # Using them with their expected type makes serialization crash
-
-class TestBooleanDescriptor(TestDescriptor):
-
-    def setUp(self):
-        self.et = ElementTree.fromstring("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<test-entry>
-<istest>true</istest>
-</test-entry>
-""")
-        self.instance = Mock(root=self.et)
-
-    def test__get__(self):
-        sd = self._make_desc(BooleanDescriptor, 'istest')
-        assert sd.__get__(self.instance, None) == True
-
-    def test__set__(self):
-        # FIXME: The BooleanDescriptor (and the IntegerDescriptor) uses the StringDescriptor
-        # Using them with their expected type makes serialization crash
-        sd = self._make_desc(BooleanDescriptor, 'istest')
-        sd.__set__(self.instance, False)
-        assert self.et.find('istest').text == False
-        #sd.__set__(self.instance, True)
-        #print(self._tostring(self.et))
-        #sd.__get__(self.instance, None)
 
 
 class TestUdfDictionary(TestCase):
@@ -226,29 +263,77 @@ class TestUdfDictionary(TestCase):
     def test_get(self):
         pass
 
-def elements_equal(e1, e2):
-    if e1.tag != e2.tag: return False
-    if e1.text and e2.text and e1.text.strip() != e2.text.strip(): return False
-    if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip(): return False
-    if e1.attrib != e2.attrib: return False
-    if len(e1) != len(e2): return False
-    return all(elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
 
-class TestEntities(TestCase):
-    url = 'http://testgenologics.com:4040'
-    dummy_xml="""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    <dummy></dummy>"""
+url = 'http://testgenologics.com:4040'
 
-    def setUp(self):
-        self.lims = Lims(self.url, username='test', password='password')
+########
+# Entities in XML
+generic_artifact_xml = """<?xml version='1.0' encoding='utf-8'?>
+<art:artifact xmlns:art="http://genologics.com/ri/artifact"  xmlns:file="http://genologics.com/ri/file" xmlns:udf="http://genologics.com/ri/userdefined"  uri="{url}/api/v2/artifacts/a1" limsid="a1">
+<name>test_sample1</name>
+<type>Analyte</type>
+<output-type>Analyte</output-type>
+<qc-flag>PASSED</qc-flag>
+<location>
+  <container uri="{url}/api/v2/containers/c1" limsid="c1"/>
+  <value>A:1</value>
+</location>
+<working-flag>true</working-flag>
+<sample uri="{url}/api/v2/samples/s1" limsid="s1"/>
+<udf:field type="Numeric" name="Ave. Conc. (ng/uL)">1</udf:field>
+<udf:field type="String" name="Workflow Desired">TruSeq Nano DNA Sample Prep</udf:field>
+<workflow-stages>
+<workflow-stage status="QUEUED" name="Test workflow s2" uri="{url}/api/v2/configuration/workflows/1/stages/2"/>
+<workflow-stage status="COMPLETE" name="Test workflow s1" uri="{url}/api/v2/configuration/workflows/1/stages/1"/>
+</workflow-stages>
+</art:artifact>"""
 
-    def _tostring(self, entity):
-        return self.lims.tostring(ElementTree.ElementTree(entity.root)).decode("utf-8")
+generic_step_placements_xml = """<?xml version='1.0' encoding='utf-8'?>
+<stp:placements xmlns:stp="http://genologics.com/ri/step" uri="{url}/steps/s1/placements">
+  <step uri="{url}/steps/s1" />
+  <configuration uri="{url}/configuration/protocols/1/steps/1">Step name</configuration>
+  <selected-containers>
+    <container uri="{url}/containers/{container}" />
+  </selected-containers>
+  <output-placements>
+    <output-placement uri="{url}/artifacts/a1">
+      <location>
+        <container limsid="{container}" uri="{url}/containers/{container}" />
+        <value>{loc1}</value>
+      </location>
+    </output-placement>
+    <output-placement uri="{url}/artifacts/a2">
+      <location>
+        <container limsid="{container}" uri="{url}/containers/{container}" />
+        <value>{loc2}</value>
+      </location>
+    </output-placement>
+  </output-placements>
+</stp:placements>"""
 
+generic_reagentkit_xml = """<?xml version='1.0' encoding='utf-8'?>
+<kit:reagent-kit xmlns:kit="http://genologics.com/ri/reagentkit" uri="{url}:8080/api/v2/reagentkits/r1">
+<name>regaentkitname</name>
+<supplier>reagentProvider</supplier>
+<website>www.reagentprovider.com</website>
+<archived>false</archived>
+</kit:reagent-kit>"""
 
-class TestStepActions(TestEntities):
-    url = 'http://testgenologics.com:4040'
-    step_actions_xml = """<stp:actions xmlns:stp="http://genologics.com/ri/step" uri="...">
+generic_reagentlot_xml = """<?xml version='1.0' encoding='utf-8'?>
+<lot:reagent-lot xmlns:lot="http://genologics.com/ri/reagentlot" limsid="l1" uri="{url}/api/v2/reagentlots/l1">
+<reagent-kit uri="{url}/api/v2/reagentkits/r1" name="kitname"/>
+<name>kitname</name>
+<lot-number>100</lot-number>
+<created-date>2015-07-16</created-date>
+<last-modified-date>2015-08-17</last-modified-date>
+<expiry-date>2022-08-16</expiry-date>
+<created-by uri="{url}/api/v2/researchers/1"/>
+<last-modified-by uri="{url}/api/v2/researchers/1"/>
+<status>ARCHIVED</status>
+<usage-count>1</usage-count>
+</lot:reagent-lot>"""
+
+generic_step_actions_xml = """<stp:actions xmlns:stp="http://genologics.com/ri/step" uri="...">
   <step rel="..." uri="{url}/steps/s1">
   </step>
   <configuration uri="{url}/config/1">...</configuration>
@@ -282,9 +367,10 @@ class TestStepActions(TestEntities):
       </escalated-artifact>
     </escalated-artifacts>
   </escalation>
-</stp:actions>""".format(url=url)
+</stp:actions>"""
 
-    step_actions_no_escalation_xml = """<stp:actions xmlns:stp="http://genologics.com/ri/step" uri="...">
+
+generic_step_actions_no_escalation_xml = """<stp:actions xmlns:stp="http://genologics.com/ri/step" uri="...">
   <step rel="..." uri="{url}/steps/s1">
   </step>
   <configuration uri="{url}/config/1">...</configuration>
@@ -292,7 +378,36 @@ class TestStepActions(TestEntities):
     <next-action artifact-uri="{url}/artifacts/a1" action="requeue" step-uri="{url}/steps/s1" rework-step-uri="{url}/steps/s2">
     </next-action>
   </next-actions>
-</stp:actions>""".format(url=url)
+</stp:actions>"""
+
+class TestEntities(TestCase):
+
+    def test_pass(self):
+        pass
+
+
+def elements_equal(e1, e2):
+    if e1.tag != e2.tag: return False
+    if e1.text and e2.text and e1.text.strip() != e2.text.strip(): return False
+    if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip(): return False
+    if e1.attrib != e2.attrib: return False
+    if len(e1) != len(e2): return False
+    return all(elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
+
+class TestEntities(TestCase):
+    dummy_xml="""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <dummy></dummy>"""
+
+    def setUp(self):
+        self.lims = Lims(url, username='test', password='password')
+
+    def _tostring(self, entity):
+        return self.lims.tostring(ElementTree.ElementTree(entity.root)).decode("utf-8")
+
+
+class TestStepActions(TestEntities):
+    step_actions_xml = generic_step_actions_xml.format(url=url)
+    step_actions_no_escalation_xml = generic_step_actions_no_escalation_xml.format(url=url)
 
     def test_escalation(self):
         s = StepActions(uri=self.lims.get_uri('steps', 'step_id', 'actions'), lims=self.lims)
@@ -321,33 +436,10 @@ class TestStepActions(TestEntities):
 
 
 class TestStepPlacements(TestEntities):
-    url = 'http://testgenologics.com:4040'
-    generic_step_placements_xml = """<?xml version='1.0' encoding='utf-8'?>
-<stp:placements xmlns:stp="http://genologics.com/ri/step" uri="{url}/steps/s1/placements">
-  <step uri="{url}/steps/s1" />
-  <configuration uri="{url}/configuration/protocols/1/steps/1">Step name</configuration>
-  <selected-containers>
-    <container uri="{url}/containers/{container}" />
-  </selected-containers>
-  <output-placements>
-    <output-placement uri="{url}/artifacts/a1">
-      <location>
-        <container limsid="{container}" uri="{url}/containers/{container}" />
-        <value>{loc1}</value>
-      </location>
-    </output-placement>
-    <output-placement uri="{url}/artifacts/a2">
-      <location>
-        <container limsid="{container}" uri="{url}/containers/{container}" />
-        <value>{loc2}</value>
-      </location>
-    </output-placement>
-  </output-placements>
-</stp:placements>"""
+
     original_step_placements_xml = generic_step_placements_xml.format(url=url, container="c1", loc1='1:1', loc2='2:1')
     modloc_step_placements_xml = generic_step_placements_xml.format(url=url, container="c1", loc1='3:1', loc2='4:1')
     modcont_step_placements_xml = generic_step_placements_xml.format(url=url, container="c2", loc1='1:1', loc2='1:1')
-
 
 
     def test_get_placements_list(self):
@@ -384,3 +476,70 @@ class TestStepPlacements(TestEntities):
 
 
 
+
+class TestArtifacts(TestEntities):
+
+    root_artifact_xml = generic_artifact_xml.format(url=url)
+
+    def test_input_artifact_list(self):
+        a = Artifact(uri=self.lims.get_uri('artifacts', 'a1'), lims=self.lims)
+        with patch('requests.Session.get',return_value=Mock(content = self.root_artifact_xml, status_code=200)):
+            assert a.input_artifact_list() == []
+
+    def test_workflow_stages_and_statuses(self):
+        a = Artifact(uri=self.lims.get_uri('artifacts', 'a1'), lims=self.lims)
+        expected_wf_stage = [
+            (Stage(self.lims, uri = url + '/api/v2/configuration/workflows/1/stages/2'), 'QUEUED', 'Test workflow s2'),
+            (Stage(self.lims, uri = url + '/api/v2/configuration/workflows/1/stages/1'), 'COMPLETE', 'Test workflow s1')
+        ]
+        with patch('requests.Session.get',return_value=Mock(content = self.root_artifact_xml, status_code=200)):
+            assert a.workflow_stages_and_statuses == expected_wf_stage
+
+
+
+
+class TestReagentKits(TestEntities):
+    url = 'http://testgenologics.com:4040'
+    reagentkit_xml = generic_reagentkit_xml.format(url=url)
+
+    def test_parse_entity(self):
+        r = ReagentKit(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
+        with patch('requests.Session.get', return_value=Mock(content = self.reagentkit_xml, status_code=200)):
+            assert r.name == 'regaentkitname'
+            assert r.supplier == 'reagentProvider'
+            assert r.website == 'www.reagentprovider.com'
+            assert r.archived == False
+
+    def test_create_entity(self):
+        with patch('genologics.lims.requests.post', return_value=Mock(content = self.reagentkit_xml, status_code=201)):
+            r = ReagentKit.create(self.lims, name='regaentkitname', supplier='reagentProvider', website='www.reagentprovider.com', archived=False)
+        self.assertRaises(TypeError,ReagentKit.create,self.lims, error='test')
+
+
+class TestReagentLots(TestEntities):
+    reagentlot_xml = generic_reagentlot_xml.format(url=url)
+    reagentkit_xml = generic_reagentkit_xml.format(url=url)
+
+    def test_parse_entity(self):
+        l = ReagentLot(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
+        with patch('requests.Session.get', return_value=Mock(content = self.reagentlot_xml, status_code=200)):
+            assert l.uri
+            assert l.name == 'kitname'
+            assert l.lot_number == '100'
+            assert l.status == 'ARCHIVED'
+
+    def test_create_entity(self):
+        with patch('requests.Session.get', return_value=Mock(content = self.reagentkit_xml, status_code=200)):
+            r = ReagentKit(uri=self.lims.get_uri('reagentkits', 'r1'), lims=self.lims)
+        with patch('genologics.lims.requests.post', return_value=Mock(content = self.reagentlot_xml, status_code=201)) as patch_post:
+            l = ReagentLot.create(
+                self.lims,
+                reagent_kit=r,
+                name='kitname',
+                lot_number='100',
+                expiry_date='2020-05-01',
+                status='ACTIVE'
+            )
+            assert l.uri
+            assert l.name == 'kitname'
+            assert l.lot_number == '100'

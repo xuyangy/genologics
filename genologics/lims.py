@@ -406,6 +406,27 @@ class Lims(object):
         params = self._get_params()
         return self._get_instances(Protocol, params=params)
 
+    def get_reagent_kits(self, name=None, start_index=None):
+        """Get a list of reagent kits, filtered by keyword arguments.
+        name: reagent kit  name, or list of names.
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name,
+                                  start_index=start_index)
+        return self._get_instances(ReagentKit, params=params)
+
+    def get_reagent_lots(self, name=None, kitname=None, number=None,
+                         start_index=None):
+        """Get a list of reagent lots, filtered by keyword arguments.
+        name: reagent kit  name, or list of names.
+        kitname: name of the kit this lots belong to
+        number: lot number or list of lot number
+        start_index: Page to retrieve; all if None.
+        """
+        params = self._get_params(name=name, kitname=kitname, number=number,
+                                  start_index=start_index)
+        return self._get_instances(ReagentLot, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
