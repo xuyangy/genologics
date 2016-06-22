@@ -334,6 +334,7 @@ class PlacementDictionaryDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
+        from genologics.entities import Artifact
         instance.get()
         self.value = dict()
         for node in instance.root.findall(self.tag):
