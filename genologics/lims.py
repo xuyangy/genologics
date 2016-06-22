@@ -597,6 +597,12 @@ class Lims(object):
         lot.root = response
         return lot
 
+    def create_project(self, name, researcher):
+        """Create a project, specifying only the required information.
+
+        Returns a new Project object."""
+        raise NotImplementedError()
+
     def glsstorage(self, attached_to, original_location):
         """Allocates and returns a file resource in the glsstorage area. This 
         doesn't actually upload the file, it only sets up the metadata.
