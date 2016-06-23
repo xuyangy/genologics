@@ -597,11 +597,23 @@ class Lims(object):
         lot.root = response
         return lot
 
-    def create_project(self, name, researcher):
+    def create_project(self, name, researcher, open_date=None, udf={}):
         """Create a project, specifying only the required information.
 
         Returns a new Project object."""
-        raise NotImplementedError()
+        root = ElementTree.Element('prj:project', {'xmlns:prj': 'http://genologics.com/ri/project'})
+
+        proj = Project(self, id="dummy")
+        proj.root = root
+        proj.name = name
+        proj.researcher = researcher
+        for k, v in udf.items():
+            proj.udf[k] = v
+        if open_date:
+            proj.open_date = open_date
+        xml_data = self.tostring(ElementTree.ElementTree(proj.root))
+        response = self.post(self.get_uri("projects"), xml_data)
+        return response
 
     def glsstorage(self, attached_to, original_location):
         """Allocates and returns a file resource in the glsstorage area. This 
