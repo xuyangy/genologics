@@ -619,6 +619,13 @@ class EntityDescriptor(TagDescriptor):
         else:
             return self.klass(instance.lims, uri=node.attrib['uri'])
 
+    def __set__(self, instance, value):
+        instance.get()
+        node = instance.root.find(self.tag)
+        if node is None:
+            node = ElementTree.SubElement(instance.root, self.tag)
+        node.attrib['uri'] = value.uri
+
 
 class EntityAttributeDescriptor(BaseDescriptor):
     """An instance attribute referencing another entity instance, implemented
