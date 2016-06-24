@@ -569,13 +569,18 @@ class Lims(object):
         etree.write(tempfile, encoding='utf-8') #Python 2.6 compat: don't specify xml_declaration arg
 
         replace = {
-                'æ': 0x00e6, 'Æ': 0x00c6, 'ø': 0x00f8, 'Ø': 0x00d8, 'å': 0x00c5, 'Å': 0x00c5
+                u'æ': u'a',
+                u'Æ': u'A',
+                u'ø': u'o',
+                u'Ø': u'O',
+                u'å': u'a',
+                u'Å': u'A'
                 }
-        req = tempfile.getvalue()
+        req = tempfile.getvalue().decode('utf-8')
+        print repr(req)
         for pat,repl in replace.items():
-            req.replace(pat, repl)
-        outfile.write(req)
-
+            req = req.replace(pat, repl)
+        outfile.write(req.encode('utf-8'))
 
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance. The inputs parameter is a list of 
