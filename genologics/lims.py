@@ -577,7 +577,6 @@ class Lims(object):
                 u'Å': u'A'
                 }
         req = tempfile.getvalue().decode('utf-8')
-        print repr(req)
         for pat,repl in replace.items():
             req = req.replace(pat, repl)
         outfile.write(req.encode('utf-8'))
