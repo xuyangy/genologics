@@ -1,3 +1,5 @@
+# coding=utf-8
+
 """Python interface to GenoLogics LIMS via its REST API.
 
 LIMS interface.
@@ -575,7 +577,26 @@ class Lims(object):
 
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
-        etree.write(outfile, encoding='utf-8') #Python 2.6 compat: don't specify xml_declaration arg
+        
+        # TODO: Work-around for charset problems in API. To be reverted if we can ever submit raw
+        # UTF-8 data again.
+        # (Since this is a temporary measure, we're just doing it easy and making *another* BytesIO
+        # buffer, even though this will normally be called via tostring, which also makes a BytesIO)
+        tempfile = BytesIO()
+        etree.write(tempfile, encoding='utf-8') #Python 2.6 compat: don't specify xml_declaration arg
+
+        replace = {
+                u'æ': u'a',
+                u'Æ': u'A',
+                u'ø': u'o',
+                u'Ø': u'O',
+                u'å': u'a',
+                u'Å': u'A'
+                }
+        req = tempfile.getvalue().decode('utf-8')
+        for pat,repl in replace.items():
+            req = req.replace(pat, repl)
+        outfile.write(req.encode('utf-8'))
 
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance. The inputs parameter is a list of 
