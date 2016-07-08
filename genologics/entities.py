@@ -10,8 +10,9 @@ from genologics.constants import nsmap
 from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor, UdfDictionaryDescriptor, \
     UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, \
     StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
-    PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
-    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor
+    PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, NestedEntityListDescriptor, \
+    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor,\
+    ReagentLabelSetDescriptor, EntityAttributeDescriptor, ObjectListDescriptor, InlineEntityListDescriptor
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
@@ -252,17 +253,6 @@ class Entity(object):
         except KeyError:
             return object.__new__(cls)
 
-<<<<<<< HEAD
-    def __init__(self, lims, uri=None, id=None):
-        assert uri or id
-        if hasattr(self, 'lims'): return
-        if not uri:
-            uri = lims.get_uri(self._URI, id)
-        lims.cache[uri] = self
-        lims.cache_list.append(uri)
-        if len(lims.cache_list) > CACHE_N_ENTRIES:
-            del lims.cache[lims.cache_list.pop(0)]
-=======
     def __init__(self, lims, uri=None, id=None, _create_new=False):
         assert uri or id or _create_new
         if not _create_new:
@@ -270,8 +260,9 @@ class Entity(object):
             if not uri:
                 uri = lims.get_uri(self._URI, id)
             lims.cache[uri] = self
-            self.root = None
->>>>>>> upstream/master
+            lims.cache_list.append(uri)
+            if len(lims.cache_list) > CACHE_N_ENTRIES:
+                del lims.cache[lims.cache_list.pop(0)]
         self.lims = lims
         self._uri = uri
         self.root = None
@@ -366,14 +357,6 @@ class Researcher(Entity):
     @property
     def name(self):
         return "%s %s" % (self.first_name, self.last_name)
-
-<<<<<<< HEAD
-=======
-
-class Reagent_label(Entity):
-    """Reagent label element"""
-    reagent_label = StringDescriptor('reagent-label')
->>>>>>> upstream/master
 
 
 class Note(Entity):
@@ -744,89 +727,18 @@ class Artifact(Entity):
     workflow_stages_and_statuses = property(_get_workflow_stages_and_statuses)
 
 
-<<<<<<< HEAD
 class AvailableProgram(Entity):
     """Program registered on the process type, which can be referenced directly from
     the step instance. Only represented by a tag in the Step entity, not at its own 
     resource."""
-=======
-class StepPlacements(Entity):
-    """Placements from within a step. Supports POST"""
-    _placementslist = None
-
-    # [[A,(C,'A:1')][A,(C,'A:2')]] where A is an Artifact and C a Container
-    def get_placement_list(self):
-        if not self._placementslist:
-            # Only fetch the data once.
-            self.get()
-            self._placementslist = []
-            for node in self.root.find('output-placements').findall('output-placement'):
-                input = Artifact(self.lims, uri=node.attrib['uri'])
-                location = (None, None)
-                if node.find('location'):
-                    location = (
-                        Container(self.lims, uri=node.find('location').find('container').attrib['uri']),
-                        node.find('location').find('value').text
-                    )
-                self._placementslist.append([input, location])
-        return self._placementslist
-
-    def set_placement_list(self, value):
-        containers = set()
-        self.get_placement_list()
-        for node in self.root.find('output-placements').findall('output-placement'):
-            for pair in value:
-                art = pair[0]
-                if art.uri == node.attrib['uri']:
-                    location = pair[1]
-                    workset = location[0]
-                    well = location[1]
-                    if workset and location:
-                        containers.add(workset)
-                        if node.find('location') is not None:
-                            cont_el = node.find('location').find('container')
-                            cont_el.attrib['uri'] = workset.uri
-                            cont_el.attrib['limsid'] = workset.id
-                            value_el = node.find('location').find('value')
-                            value_el.text = well
-                        else:
-                            loc_el = ElementTree.SubElement(node, 'location')
-                            cont_el = ElementTree.SubElement(loc_el, 'container',
-                                                             {'uri': workset.uri, 'limsid': workset.id})
-                            well_el = ElementTree.SubElement(loc_el, 'value')
-                            well_el.text = well  # not supported in the constructor
-        # Handle selected containers
-        sc = self.root.find("selected-containers")
-        sc.clear()
-        for cont in containers:
-            ElementTree.SubElement(sc, 'container', uri=cont.uri)
-        self._placementslist = value
-
-    placement_list = property(get_placement_list, set_placement_list)
-
-    _selected_containers = None
-
-    def get_selected_containers(self):
-        _selected_containers = []
-        if not _selected_containers:
-            self.get()
-            for node in self.root.find('selected-containers').findall('container'):
-                _selected_containers.append(Container(self.lims, uri=node.attrib['uri']))
->>>>>>> upstream/master
 
     name        = StringAttributeDescriptor('name')
 
-<<<<<<< HEAD
     def get(self):
         pass
 
     def trigger(self):
         self.lims.post(self.uri, "")
-
-
-=======
-    selected_containers = property(get_selected_containers)
->>>>>>> upstream/master
 
 
 class StepActions(Entity):
@@ -856,8 +768,6 @@ class StepActions(Entity):
                     art = self.lims.get_batch([Artifact(self.lims, uri=ch.attrib.get('uri')) for ch in node2])
                     self._escalation['artifacts'].extend(art)
         return self._escalation
-
-<<<<<<< HEAD
 
 
     def put(self):
@@ -956,25 +866,6 @@ class StepPlacements(Entity):
     def post(self):
         """Serialize the current state of output_placements [Not supported]."""
         pass
-
-=======
-    @property
-    def next_actions(self):
-        actions = []
-        self.get()
-        if self.root.find('next-actions') is not None:
-            for node in self.root.find('next-actions').findall('next-action'):
-                action = {
-                    'artifact': Artifact(self.lims, node.attrib.get('artifact-uri')),
-                    'action': node.attrib.get('action'),
-                }
-                if node.attrib.get('step-uri'):
-                    action['step'] = Step(self.lims, uri=node.attrib.get('step-uri'))
-                if node.attrib.get('rework-step-uri'):
-                    action['rework-step'] = Step(self.lims, uri=node.attrib.get('rework-step-uri'))
-                actions.append(action)
-        return actions
->>>>>>> upstream/master
 
 
 class ReagentKit(Entity):
