@@ -655,9 +655,7 @@ class Lims(object):
         ElementTree.SubElement(root, 'name').text = name
         ElementTree.SubElement(root, 'researcher', {'uri': researcher.uri})
         for k, v in udf.items():
-            #proj.udf[k] = v
-            # TODO
-            pass
+            ElementTree.SubElement(root, 'udf:field', {'xmlns': 'http://genologics.com/ri/userdefined'}).text = str(v)
         if open_date:
             ElementTree.SubElement(root, 'open-date', str(open_date))
         xml_data = self.tostring(ElementTree.ElementTree(root))
@@ -687,14 +685,14 @@ class Lims(object):
             if not self.tube:
                 self.tube = self.get_container_types('Tube')[0]
             container = self.create_container(self.tube)
-            print (container)
             well = '1:1'
         location = ElementTree.SubElement(root, 'location')
         ElementTree.SubElement(location, 'container', {'uri': container.uri})
         ElementTree.SubElement(location, 'value').text = well
         for k, v in udf.items():
-            # TODO
-            pass
+            ElementTree.SubElement(root, 'udf:field',
+                    {'xmlns:udf': 'http://genologics.com/ri/userdefined', 'name': k}
+                    ).text = str(v)
         xml_data = self.tostring(ElementTree.ElementTree(root))
         try:
             response = self.post(self.get_uri("samples"), xml_data)
