@@ -2,7 +2,10 @@ import os
 import sys
 import warnings
 
-import ConfigParser
+try:
+    import configparser
+except:
+    import ConfigParser as configparser
 
 '''
 Usage:
@@ -16,7 +19,7 @@ BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = config.load_config(specified_co
 spec_config = None
 
 def get_config_info(config_file):
-    config = ConfigParser.SafeConfigParser()
+    config = configparser.SafeConfigParser()
     config.readfp(open(config_file))
     
     
@@ -40,7 +43,7 @@ def load_config(specified_config = None):
     if specified_config != None:
         config_file = specified_config
     else:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         try:
             conf_file = config.read([os.path.expanduser('~/.genologicsrc'), '.genologicsrc',
                         'genologics.conf', 'genologics.cfg', '/etc/genologics.conf'])
