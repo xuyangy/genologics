@@ -303,6 +303,7 @@ class Entity(object):
 
     def delete(self):
         del self.lims.cache[self.uri]
+        self.lims.cache_list.remove(self.uri)
         self.lims.delete(self.uri)
 
     @classmethod
