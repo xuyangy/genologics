@@ -66,6 +66,8 @@ class Lims(object):
         # The connection pool has a default size of 10
         self.adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
         self.request_session.mount('http://', self.adapter)
+        # Cache tube Container type, used in create_sample
+        self.tube = None
 
     def get_uri(self, *segments, **query):
         "Return the full URI given the path segments and optional query."
@@ -381,6 +383,10 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Container, params=params)
 
+    def get_container_types(self, name):
+        params = self._get_params(name=name)
+        return self._get_instances(Containertype, params=params)
+
     def get_processes(self, last_modified=None, type=None,
                       inputartifactlimsid=None,
                       techfirstname=None, techlastname=None, projectname=None,
@@ -640,18 +646,60 @@ class Lims(object):
 
         Returns a new Project object."""
         root = ElementTree.Element('prj:project', {'xmlns:prj': 'http://genologics.com/ri/project'})
-
-        proj = Project(self, id="dummy")
-        proj.root = root
-        proj.name = name
-        proj.researcher = researcher
+        ElementTree.SubElement(root, 'name').text = name
+        ElementTree.SubElement(root, 'researcher', {'uri': researcher.uri})
         for k, v in udf.items():
-            proj.udf[k] = v
+            #proj.udf[k] = v
+            # TODO
+            pass
         if open_date:
-            proj.open_date = open_date
-        xml_data = self.tostring(ElementTree.ElementTree(proj.root))
+            ElementTree.SubElement(root, 'open-date', str(open_date))
+        xml_data = self.tostring(ElementTree.ElementTree(root))
         response = self.post(self.get_uri("projects"), xml_data)
+        project = Project(self, uri=response.attrib['uri'])
+        project.root = reponse
         return response
+
+    def create_container(self, type, name=None):
+        root = ElementTree.Element('con:container', {'xmlns:con': 'http://genologics.com/ri/container'})
+        ElementTree.SubElement(root, 'type', {'uri': type.uri})
+        if name:
+            ElementTree.SubElement(root, 'name').text = name
+        xml_data = self.tostring(ElementTree.ElementTree(root))
+        response = self.post(self.get_uri("containers"), xml_data)
+        container = Container(self, uri=response.attrib['uri'])
+        container.root = response
+        return container
+
+    def create_sample(self, name, project, container=None, well=None, udf={}):
+        """Create a sample.  Returns a new Sample object."""
+        root = ElementTree.Element('smp:samplecreation', {'xmlns:smp': 'http://genologics.com/ri/sample'})
+        ElementTree.SubElement(root, 'name').text = name
+        ElementTree.SubElement(root, 'project', {'uri': project.uri})
+        create_container = container is None
+        if create_container:
+            if not self.tube:
+                self.tube = self.get_container_types('Tube')[0]
+            container = self.create_container(self.tube)
+            print (container)
+            well = '1:1'
+        location = ElementTree.SubElement(root, 'location')
+        ElementTree.SubElement(location, 'container', {'uri': container.uri})
+        ElementTree.SubElement(location, 'value').text = well
+        for k, v in udf.items():
+            # TODO
+            pass
+        xml_data = self.tostring(ElementTree.ElementTree(root))
+        try:
+            response = self.post(self.get_uri("samples"), xml_data)
+        except requests.exceptions.HTTPError:
+            # TODO: Implement DELETE
+            #if create_container:
+            #    container.delete()
+            raise
+        sample = Sample(self, uri=response.attrib['uri'])
+        sample.root = response
+        return sample
 
     def glsstorage(self, attached_to, original_location):
         """Allocates and returns a file resource in the glsstorage area. This 
