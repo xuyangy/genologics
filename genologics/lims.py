@@ -155,6 +155,12 @@ class Lims(object):
                                    'accept': 'application/xml'})
         return self.parse_response(r, accept_status_codes=[200, 201, 202])
 
+    def delete(self, uri):
+        """Issue a HTTP DELETE request."""
+        r = requests.delete(uri, auth=(self.username, self.password))
+        if not r.status_code == 204:
+            raise requests.exceptions.HTTPError(str(r.content))
+
     def check_version(self):
         """Raise ValueError if the version for this interface
         does not match any of the versions given for the API.
@@ -693,9 +699,8 @@ class Lims(object):
         try:
             response = self.post(self.get_uri("samples"), xml_data)
         except requests.exceptions.HTTPError:
-            # TODO: Implement DELETE
-            #if create_container:
-            #    container.delete()
+            if create_container:
+                container.delete()
             raise
         sample = Sample(self, uri=response.attrib['uri'])
         sample.root = response

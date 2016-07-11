@@ -301,6 +301,10 @@ class Entity(object):
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.lims.post(self.uri, data)
 
+    def delete(self):
+        del self.lims.cache[self.uri]
+        self.lims.delete(self.uri)
+
     @classmethod
     def create(cls, lims, **kwargs):
         """Create an instance from attributes then post it to the LIMS"""
