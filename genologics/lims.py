@@ -655,7 +655,9 @@ class Lims(object):
         ElementTree.SubElement(root, 'name').text = name
         ElementTree.SubElement(root, 'researcher', {'uri': researcher.uri})
         for k, v in udf.items():
-            ElementTree.SubElement(root, 'udf:field', {'xmlns': 'http://genologics.com/ri/userdefined'}).text = str(v)
+            ElementTree.SubElement(root, 'udf:field',
+                    {'xmlns:udf': 'http://genologics.com/ri/userdefined', 'name': k}
+                    ).text = str(v)
         if open_date:
             ElementTree.SubElement(root, 'open-date', str(open_date))
         xml_data = self.tostring(ElementTree.ElementTree(root))
