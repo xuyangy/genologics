@@ -76,6 +76,10 @@ class StringAttributeDescriptor(TagDescriptor):
         instance.get()
         return instance.root.attrib[self.tag]
 
+    def __set__(self, instance, value):
+        instance.get()
+        instance.root.attrib[self.tag] = value
+
 
 class StringListDescriptor(TagDescriptor):
     """An instance attribute containing a list of strings
