@@ -192,7 +192,7 @@ class Lims(object):
                 if node is not None:
                     message += ' ' + node.text
             except ETREE_EXCEPTION: # some error messages might not follow the xml standard
-                message=response.content 
+                message = response.content
             raise requests.exceptions.HTTPError(message)
         return True
 
@@ -420,6 +420,10 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def get_workflows(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(Workflow, params=params)
+
     def get_process_types(self, displayname=None):
         """Get a list of process types with the specified name."""
         params = self._get_params(displayname=displayname)
@@ -436,10 +440,6 @@ class Lims(object):
     def get_reagent_lots(self, name=None, kitname=None, number=None):
         params = self._get_params(name=name, kitname=kitname, number=number)
         return self._get_instances(ReagentLot, params=params)
-
-    def get_workflows(self, name=None):
-        params = self._get_params(name=name)
-        return self._get_instances(Workflow, params=params)
 
     def get_protocols(self, name=None):
         """Get a list of protocol configuration entities.
