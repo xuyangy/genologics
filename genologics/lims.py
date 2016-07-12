@@ -34,6 +34,7 @@ from .entities import *
 
 # Python 2.6 support work-around
 if not hasattr(ElementTree, 'ParseError'):
+    from xml.parsers import expat
     ElementTree.ParseError = expat.ExpatError
 
 TIMEOUT = 16
