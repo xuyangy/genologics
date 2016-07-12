@@ -18,7 +18,7 @@ import requests
 # python 2.7, 3+ compatibility
 from sys import version_info
 
-if version_info.major == 2:
+if version_info[0] == 2:
     from urlparse import urljoin
     from urllib import urlencode
 else:
@@ -27,6 +27,11 @@ else:
 
 
 from .entities import *
+
+# Python 2.6 support work-around
+if not hasattr(ElementTree, 'ParseError'):
+    from xml.parsers import expat
+    ElementTree.ParseError = expat.ExpatError
 
 TIMEOUT = 16
 
