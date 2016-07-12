@@ -659,12 +659,12 @@ class Lims(object):
                     {'xmlns:udf': 'http://genologics.com/ri/userdefined', 'name': k}
                     ).text = str(v)
         if open_date:
-            ElementTree.SubElement(root, 'open-date', str(open_date))
+            ElementTree.SubElement(root, 'open-date').text = str(open_date)
         xml_data = self.tostring(ElementTree.ElementTree(root))
         response = self.post(self.get_uri("projects"), xml_data)
         project = Project(self, uri=response.attrib['uri'])
-        project.root = reponse
-        return response
+        project.root = response
+        return project
 
     def create_container(self, type, name=None):
         root = ElementTree.Element('con:container', {'xmlns:con': 'http://genologics.com/ri/container'})
