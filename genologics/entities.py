@@ -11,8 +11,8 @@ from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor,
     UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, \
     StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, NestedEntityListDescriptor, \
-    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor,\
-    ReagentLabelSetDescriptor, EntityAttributeDescriptor, ObjectListDescriptor, InlineEntityListDescriptor
+    ReagentLabelSetDescriptor, EntityAttributeDescriptor, ObjectListDescriptor, InlineEntityListDescriptor\
+    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
@@ -881,7 +881,7 @@ class ReagentKit(Entity):
 
     name     = StringDescriptor('name')
     supplier = StringDescriptor('supplier')
-    website = StringDescriptor('website')
+    website  = StringDescriptor('website')
     catalogue_number = StringDescriptor('catalogue-number')
     archived = BooleanDescriptor('archived')
 
@@ -916,7 +916,7 @@ class StepReagentLots(Entity):
 
 
 class Step(Entity):
-    """Step, as defined by the genologics API. Step ID is the same as the process ID."""
+    "Step, as defined by the genologics API."
 
     _URI = 'steps'
     _PREFIX = 'stp'
@@ -942,7 +942,7 @@ class Step(Entity):
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
 
-    _TAG='step'
+    _TAG = 'step'
     # Step config is not resolvable using a URI and an ID alone, because
     # it's nested under a protocol.    
     _URI = None
@@ -981,6 +981,7 @@ class Stage(Entity):
     protocol = EntityDescriptor('protocol', Protocol)
     step     = EntityDescriptor('step', ProtocolStep)
 
+
 class Workflow(Entity):
     """ Workflow, introduced in 3.5"""
     _URI = "configuration/workflows"
@@ -1007,8 +1008,8 @@ class ReagentType(Entity):
     _URI = "reagenttypes"
     _TAG = "reagent-type"
 
-    name    =StringAttributeDescriptor('name')
-    category=StringDescriptor('reagent-category')
+    category = StringDescriptor('reagent-category')
+    name     = StringAttributeDescriptor('name')
 
     @property
     def sequence(self):
