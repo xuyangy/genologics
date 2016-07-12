@@ -419,6 +419,7 @@ class Lims(object):
         return self._get_instances(Process, params=params)
 
     def get_workflows(self, name=None):
+        """Get the list of existing workflows on the system """
         params = self._get_params(name=name)
         return self._get_instances(Workflow, params=params)
 
@@ -435,15 +436,14 @@ class Lims(object):
         params = self._get_params(name=name)
         return self._get_instances(ReagentKit, params=params)
 
+    def get_protocols(self, name=None):
+        """Get the list of existing protocols on the system """
+        params = self._get_params(name=name)
+        return self._get_instances(Protocol, params=params)
+
     def get_reagent_lots(self, name=None, kitname=None, number=None):
         params = self._get_params(name=name, kitname=kitname, number=number)
         return self._get_instances(ReagentLot, params=params)
-
-    def get_protocols(self, name=None):
-        """Get a list of protocol configuration entities.
-        Optionally filter by protocol name."""
-        params = self._get_params(name=name)
-        return self._get_instances(ProtocolConfiguration, params=params)
 
     def get_reagent_kits(self, name=None, start_index=None):
         """Get a list of reagent kits, filtered by keyword arguments.
