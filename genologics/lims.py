@@ -33,11 +33,8 @@ else:
 from .entities import *
 
 # Python 2.6 support work-around
-if hasattr(ElementTree, 'ParseError'):
-    ETREE_EXCEPTION = ElementTree.ParseError
-else:
-    from xml.parsers import expat
-    ETREE_EXCEPTION = expat.ExpatError
+if not hasattr(ElementTree, 'ParseError'):
+    ElementTree.ParseError = expat.ExpatError
 
 TIMEOUT = 16
 
@@ -191,7 +188,7 @@ class Lims(object):
                 node = root.find('suggested-actions')
                 if node is not None:
                     message += ' ' + node.text
-            except ETREE_EXCEPTION: # some error messages might not follow the xml standard
+            except ElementTree.ParseError:  # some error messages might not follow the xml standard
                 message = response.content
             raise requests.exceptions.HTTPError(message)
         return True
