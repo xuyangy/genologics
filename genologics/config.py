@@ -4,7 +4,7 @@ import warnings
 
 try:
     import configparser
-except:
+except ImportError:
     import ConfigParser as configparser
 
 '''
