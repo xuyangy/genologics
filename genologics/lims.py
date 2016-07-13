@@ -413,14 +413,6 @@ class Lims(object):
         params = self._get_params(name=name)
         return self._get_instances(Protocol, params=params)
 
-    def get_reagent_kits(self, name=None):
-        params = self._get_params(name=name)
-        return self._get_instances(ReagentKit, params=params)
-
-    def get_reagent_lots(self, name=None, kitname=None, number=None):
-        params = self._get_params(name=name, kitname=kitname, number=number)
-        return self._get_instances(ReagentLot, params=params)
-
     def get_reagent_kits(self, name=None, start_index=None):
         """Get a list of reagent kits, filtered by keyword arguments.
         name: reagent kit  name, or list of names.
