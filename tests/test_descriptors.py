@@ -142,6 +142,17 @@ class TestStringAttributeDescriptor(TestDescriptor):
         sd = self._make_desc(StringAttributeDescriptor, 'name')
         assert sd.__get__(self.instance, None) == "test name"
 
+    def test__set__(self):
+        sd = self._make_desc(StringAttributeDescriptor, 'name')
+        sd.__set__(self.instance, "test name2")
+        assert self.et.attrib['name'] == "test name2"
+
+    def test_create(self):
+        instance_new = Mock(root=ElementTree.Element('test-entry'))
+        bd = self._make_desc(StringAttributeDescriptor, 'name')
+        bd.__set__(instance_new, "test name2")
+        assert instance_new.root.attrib['name'] == "test name2"
+
 
 class TestStringListDescriptor(TestDescriptor):
     def setUp(self):
