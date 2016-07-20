@@ -28,10 +28,16 @@ else:
 
 from .entities import *
 
-# Python 2.6 support work-around
-if not hasattr(ElementTree, 'ParseError'):
+# Python 2.6 support work-arounds
+# - Exception ElementTree.ParseError does not exist
+# - ElementTree.ElementTree.write does not take arg. xml_declaration
+if version_info[:2] < (2,7):
     from xml.parsers import expat
     ElementTree.ParseError = expat.ExpatError
+    p26_write = ElementTree.ElementTree.write
+    ElementTree.ElementTree.write = lambda self, file, encoding, xml_declaration: p26_write(
+                self, file, encoding=encoding
+                )
 
 TIMEOUT = 16
 
