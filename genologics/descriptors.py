@@ -243,13 +243,16 @@ class UdfDictionary(object):
                     raise TypeError('Date UDF requires datetime.date value')
                 value = str(value)
             elif vtype == 'uri':
-                if not isinstance(value, str):
+                if not self._is_string(value):
                     raise TypeError('URI UDF requires str or punycode (unicode) value')
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
             if not isinstance(value, str):
-                value = str(value).encode('UTF-8')
+                if self._is_string(value):
+                    value=value.encode("UTF-8")
+                else:
+                    value = str(value).encode('UTF-8')
             node.text = value
             break
         else:  # Create new entry; heuristics for type
@@ -275,7 +278,11 @@ class UdfDictionary(object):
                                           type=vtype,
                                           name=key)
             if not isinstance(value, str):
-                value = str(value).encode('UTF-8')
+                if self._is_string(value):
+                    value=value.encode("UTF-8")
+                else:
+                    value = value.encode('UTF-8')
+
             elem.text = value
 
     def __delitem__(self, key):
