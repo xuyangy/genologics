@@ -461,9 +461,18 @@ class Udfconfig(Entity):
     "Instance of field type (cnf namespace)."
     _URI = 'configuration/udfs'
 
-    name               = StringDescriptor('name')
-    attach_to_name     = StringDescriptor('attach-to-name')
-    attach_to_category = StringDescriptor('attach-to-category')
+    name                          = StringDescriptor('name')
+    attach_to_name                = StringDescriptor('attach-to-name')
+    attach_to_category            = StringDescriptor('attach-to-category')
+    show_in_lablink               = BooleanDescriptor('show-in-lablink')
+    allow_non_preset_values       = BooleanDescriptor('allow-non-preset-values')
+    first_preset_is_default_value = BooleanDescriptor('first-preset-is-default-value')
+    show_in_tables                = BooleanDescriptor('show-in-tables')
+    is_editable                   = BooleanDescriptor('is-editable')
+    is_deviation                  = BooleanDescriptor('is-deviation') 
+    is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
+    presets                       = StringListDescriptor('preset') 
+
 
 
 class Process(Entity):
