@@ -249,9 +249,7 @@ class UdfDictionary(object):
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
             if not isinstance(value, str):
-                if self._is_string(value):
-                    value=value.encode("UTF-8")
-                else:
+                if not self._is_string(value):
                     value = str(value).encode('UTF-8')
             node.text = value
             break
@@ -278,9 +276,7 @@ class UdfDictionary(object):
                                           type=vtype,
                                           name=key)
             if not isinstance(value, str):
-                if self._is_string(value):
-                    value=value.encode("UTF-8")
-                else:
+                if not self._is_string(value):
                     value = value.encode('UTF-8')
 
             elem.text = value
