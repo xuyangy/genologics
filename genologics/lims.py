@@ -35,9 +35,11 @@ if version_info[:2] < (2,7):
     from xml.parsers import expat
     ElementTree.ParseError = expat.ExpatError
     p26_write = ElementTree.ElementTree.write
-    ElementTree.ElementTree.write = lambda self, file, encoding, xml_declaration: p26_write(
-                self, file, encoding=encoding
-                )
+    def write_with_xml_declaration(self, file, encoding, xml_declaration):
+        assert xml_declaration is True # Support our use case only 
+        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
+        p26_write(self, file, encoding=encoding)
+    ElementTree.ElementTree.write = write_with_xml_declaration
 
 TIMEOUT = 16
 
