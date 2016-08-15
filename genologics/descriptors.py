@@ -58,6 +58,7 @@ class StringDescriptor(TagDescriptor):
             return node.text
 
     def __set__(self, instance, value):
+        instance.get()
         node = self.get_node(instance)
         if node is None:
             # create the new tag
@@ -74,6 +75,10 @@ class StringAttributeDescriptor(TagDescriptor):
     def __get__(self, instance, cls):
         instance.get()
         return instance.root.attrib[self.tag]
+
+    def __set__(self, instance, value):
+        instance.get()
+        instance.root.attrib[self.tag] = value
 
 
 class StringListDescriptor(TagDescriptor):
@@ -375,6 +380,7 @@ class EntityDescriptor(TagDescriptor):
             return self.klass(instance.lims, uri=node.attrib['uri'])
 
     def __set__(self, instance, value):
+        instance.get()
         node = self.get_node(instance)
         if node is None:
             # create the new tag
