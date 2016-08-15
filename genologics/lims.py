@@ -165,7 +165,9 @@ class Lims(object):
                 node = root.find('message')
                 if node is None:
                     response.raise_for_status()
-                message = "%s: %s" % (response.status_code, node.text)
+                    message = "%s" % (response.status_code)
+                else:
+                    message = "%s: %s" % (response.status_code, node.text)
                 node = root.find('suggested-actions')
                 if node is not None:
                     message += ' ' + node.text
