@@ -733,7 +733,7 @@ class Lims(object):
         if do_request:
             self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
 
-    def set_default_next_step(self, step, analytes):
+    def set_default_next_step(self, step):
         """Assign analytes to default next step.
 
         Utilitiy function which implements a common use case."""
@@ -745,9 +745,10 @@ class Lims(object):
             action = "complete"
 
         for next_action in step.actions.next_actions:
-            if action == "nextstep":
-                next_action['step-uri'] = next_step_uri
-            next_action['action'] = action
+            if next_action.get('action') != "remove": # Don't set next action for controls, which have default "remove"
+                if action == "nextstep":
+                    next_action['step-uri'] = next_step_uri
+                next_action['action'] = action
 
         step.actions.put()
 
