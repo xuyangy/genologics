@@ -242,7 +242,7 @@ class UdfDictionary(object):
             elif vtype == 'boolean':
                 if not isinstance(value, bool):
                     raise TypeError('Boolean UDF requires bool value')
-                value = value and 'True' or 'False'
+                value = value and 'true' or 'false'
             elif vtype == 'date':
                 if not isinstance(value, datetime.date):  # Too restrictive?
                     raise TypeError('Date UDF requires datetime.date value')
@@ -263,9 +263,10 @@ class UdfDictionary(object):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
-                value = value and 'True' or 'False'
+                value = value and 'true' or 'false'
             elif isinstance(value, (int, float)):
                 vtype = 'Numeric'
+                value = str(value)
             elif isinstance(value, datetime.date):
                 vtype = 'Date'
                 value = str(value)
@@ -285,6 +286,10 @@ class UdfDictionary(object):
                     value = str(value).encode('UTF-8')
 
             elem.text = value
+
+            #update the internal elements and lookup with new values
+            self._update_elems()
+            self._prepare_lookup()
 
     def __delitem__(self, key):
         del self._lookup[key]
