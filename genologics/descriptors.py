@@ -243,17 +243,18 @@ class UdfDictionary(object):
             elif vtype == 'boolean':
                 if not isinstance(value, bool):
                     raise TypeError('Boolean UDF requires bool value')
-                value = value and 'True' or 'False'
+                value = value and 'true' or 'false'
             elif vtype == 'date':
                 if not isinstance(value, datetime.date):  # Too restrictive?
                     raise TypeError('Date UDF requires datetime.date value')
                 value = str(value)
             elif vtype == 'uri':
-                if not isinstance(value, str):
+                if not self._is_string(value):
                     raise TypeError('URI UDF requires str or punycode (unicode) value')
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
+
             if not isinstance(value, type(u'')):
                 value = (type(u''))(value).encode('UTF-8')
             node.text = value
@@ -263,9 +264,10 @@ class UdfDictionary(object):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
-                value = value and 'True' or 'False'
+                value = value and 'true' or 'false'
             elif isinstance(value, (int, float)):
                 vtype = 'Numeric'
+                value = str(value)
             elif isinstance(value, datetime.date):
                 vtype = 'Date'
                 value = str(value)
@@ -283,6 +285,10 @@ class UdfDictionary(object):
             if not isinstance(value, type(u'')):
                 value =(type(u''))(value).encode('UTF-8')
             elem.text = value
+
+            #update the internal elements and lookup with new values
+            self._update_elems()
+            self._prepare_lookup()
 
     def __delitem__(self, key):
         del self._lookup[key]
