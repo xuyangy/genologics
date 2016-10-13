@@ -554,6 +554,7 @@ class Process(Entity):
     udf               = UdfDictionaryDescriptor()
     udt               = UdtDictionaryDescriptor()
     files             = EntityListDescriptor(nsmap('file:file'), File)
+    process_parameter = StringDescriptor('process-parameter')
 
     # instrument XXX
     # process_parameters XXX
@@ -1031,9 +1032,17 @@ class ReagentType(Entity):
         return None
 
 
+class Queue(Entity):
+    """Queue of a given step"""
+    _URI = "queues"
+    _TAG= "queue"
+    _PREFIX = "que"
 
-Step.configuration       = EntityDescriptor('configuration', ProtocolStep)
+    artifacts=NestedEntityListDescriptor("artifact", Artifact, "artifacts")
+
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
 Stage.workflow           = EntityDescriptor('workflow', Workflow)
 Artifact.workflow_stages = NestedEntityListDescriptor('workflow-stage', Stage, 'workflow-stages')
+Step.configuration       = EntityDescriptor('configuration', ProtocolStep)
+
