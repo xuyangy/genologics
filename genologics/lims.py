@@ -593,7 +593,7 @@ class Lims(object):
         # (Since this is a temporary measure, we're just doing it easy and making *another* BytesIO
         # buffer, even though this will normally be called via tostring, which also makes a BytesIO)
         tempfile = BytesIO()
-        etree.write(tempfile, encoding='utf-8') #Python 2.6 compat: don't specify xml_declaration arg
+        etree.write(tempfile, encoding='utf-8', xml_declaration=True)
 
         replace = {
                 u'æ': u'a',
