@@ -739,7 +739,7 @@ class Lims(object):
             do_request = True
 
         if do_request:
-            self.post(self.get_uri("route", "artifacts"), ElementTree.tostring(root))
+            self.post(self.get_uri("route", "artifacts"), self.tostring(ElementTree.ElementTree(root)))
 
     def set_default_next_step(self, step):
         """Assign analytes to default next step.
