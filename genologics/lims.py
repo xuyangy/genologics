@@ -618,7 +618,7 @@ class Lims(object):
         for i in inputs:
             ElementTree.SubElement(inputs_element, "input", {'uri': i.uri})
 
-        root = self.post(self.get_uri("steps"), ElementTree.tostring(root))
+        root = self.post(self.get_uri("steps"), this.tostring(ElementTree.ElementTree(root)))
         limsid = root.attrib.get('limsid')
         step = Step(self, id = limsid)
         step.root = root
