@@ -824,6 +824,9 @@ class Step(Entity):
     # program_status     = EntityDescriptor('program-status',StepProgramStatus)
     # details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
 
+    def advance(self):
+        self.lims.post("{}/advance".format(self.uri))
+
     @property
     def reagent_lots(self):
         return self._reagent_lots.reagent_lots
