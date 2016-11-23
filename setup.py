@@ -6,13 +6,15 @@ import glob
 
 # Fetch version from git tags.
 # if git is not available (PyPi package), use stored version.py.
-version_py = os.path.join(os.path.dirname(__file__), 'genologics', 'version.py')
 
-version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE, universal_newlines=True).communicate()[0].rstrip()
-if not version:
-    version = __version__
-else:
+try:
+    version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE, universal_newlines=True).communicate()[0].rstrip()
     version = version.decode("utf-8")
+except:
+    try:
+        version = __version__
+    except:
+        version_py = os.path.join(os.path.dirname(__file__), 'genologics', 'version.py')
 
 try:
     with open("requirements.txt") as rq:
