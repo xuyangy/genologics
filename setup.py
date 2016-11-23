@@ -11,10 +11,7 @@ try:
     version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE, universal_newlines=True).communicate()[0].rstrip()
     version = version.decode("utf-8")
 except:
-    try:
-        version = __version__
-    except:
-        version_py = os.path.join(os.path.dirname(__file__), 'genologics', 'version.py')
+    version = __version__
 
 try:
     with open("requirements.txt") as rq:
