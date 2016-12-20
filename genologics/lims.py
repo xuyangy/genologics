@@ -41,7 +41,7 @@ if version_info[:2] < (2,7):
     p26_write = ElementTree.ElementTree.write
     def write_with_xml_declaration(self, file, encoding, xml_declaration):
         assert xml_declaration is True # Support our use case only 
-        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
+        file.write("<?xml version='1.0' encoding='{0}'?>\n".format(encoding))
         p26_write(self, file, encoding=encoding)
     ElementTree.ElementTree.write = write_with_xml_declaration
 
@@ -601,7 +601,8 @@ class Lims(object):
                 u'ø': u'o',
                 u'Ø': u'O',
                 u'å': u'a',
-                u'Å': u'A'
+                u'Å': u'A',
+                u'\u2013': u'-' # En-dash
                 }
         req = tempfile.getvalue().decode('utf-8')
         for pat,repl in replace.items():
