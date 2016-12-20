@@ -602,7 +602,8 @@ class Lims(object):
                 u'Ø': u'O',
                 u'å': u'a',
                 u'Å': u'A',
-                u'\u2013': u'-' # En-dash
+                u'\u2013': u'-', # En-dash
+                u'\u2019': u"'", # Apostrophe
                 }
         req = tempfile.getvalue().decode('utf-8')
         for pat,repl in replace.items():
