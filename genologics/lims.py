@@ -149,7 +149,7 @@ class Lims(object):
                          auth=(self.username, self.password),
                          headers={'content-type': 'application/xml',
                                   'accept': 'application/xml'})
-        return self.parse_response(r)
+        self.validate_response(r)
 
     def post(self, uri, data, params=dict()):
         """POST the serialized XML to the given URI.
@@ -602,8 +602,6 @@ class Lims(object):
                 u'Ø': u'O',
                 u'å': u'a',
                 u'Å': u'A',
-                u'\u2013': u'-', # En-dash
-                u'\u2019': u"'", # Apostrophe
                 }
         req = tempfile.getvalue().decode('utf-8')
         for pat,repl in replace.items():
