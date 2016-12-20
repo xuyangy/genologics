@@ -255,7 +255,6 @@ class UdfDictionary(object):
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
 
-            print "Modifying UDF to ", repr(value)
             node.text = value
             break
         else:  # Create new entry; heuristics for type
@@ -281,7 +280,6 @@ class UdfDictionary(object):
                                           nsmap('udf:field'),
                                           type=vtype,
                                           name=key)
-            print "Setting UDF to ", repr(value)
             elem.text = value
 
             #update the internal elements and lookup with new values
