@@ -255,8 +255,7 @@ class UdfDictionary(object):
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
 
-            if not isinstance(value, type(u'')):
-                value = (type(u''))(value).encode('UTF-8')
+            print "Modifying UDF to ", repr(value)
             node.text = value
             break
         else:  # Create new entry; heuristics for type
@@ -282,8 +281,7 @@ class UdfDictionary(object):
                                           nsmap('udf:field'),
                                           type=vtype,
                                           name=key)
-            if not isinstance(value, type(u'')):
-                value =(type(u''))(value).encode('UTF-8')
+            print "Setting UDF to ", repr(value)
             elem.text = value
 
             #update the internal elements and lookup with new values
