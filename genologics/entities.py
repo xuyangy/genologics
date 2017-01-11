@@ -547,6 +547,7 @@ class Process(Entity):
     _PREFIX = 'prc'
 
     type              = EntityDescriptor('type', Processtype)
+    type_name         = StringDescriptor('type')
     date_run          = StringDescriptor('date-run')
     technician        = EntityDescriptor('technician', Researcher)
     protocol_name     = StringDescriptor('protocol-name')
