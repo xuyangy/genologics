@@ -311,8 +311,6 @@ class TestReagentLots(TestEntities):
                     expiry_date='2020-05-01',
                     status='ACTIVE'
             )
-            print(patch_post.call_args_list)
-
             assert l.uri
             assert l.name == 'kitname'
             assert l.lot_number == '100'
