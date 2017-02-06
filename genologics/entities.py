@@ -297,10 +297,12 @@ class Entity(object):
         self.lims.post(self.uri, data)
 
     @classmethod
-    def create(cls, lims, **kwargs):
-        """Create an instance from attributes then post it to the LIMS"""
+    def _create(cls, lims, creation_tag=None, **kwargs):
+        """Create an instance from attributes and return it"""
         instance = cls(lims, _create_new=True)
-        if cls._TAG:
+        if creation_tag:
+            instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + creation_tag))
+        elif cls._TAG:
             instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + cls._TAG))
         else:
             instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + cls.__name__.lower()))
@@ -309,6 +311,13 @@ class Entity(object):
                 setattr(instance, attribute, kwargs.get(attribute))
             else:
                 raise TypeError("%s create: got an unexpected keyword argument '%s'" % (cls.__name__, attribute))
+
+        return instance
+
+    @classmethod
+    def create(cls, lims, creation_tag=None, **kwargs):
+        """Create an instance from attributes then post it to the LIMS"""
+        instance = cls._create(lims, creation_tag=None, **kwargs)
         data = lims.tostring(ElementTree.ElementTree(instance.root))
         instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
         instance._uri = instance.root.attrib['uri']
@@ -410,6 +419,23 @@ class Sample(Entity):
     files          = EntityListDescriptor(nsmap('file:file'), File)
     externalids    = ExternalidListDescriptor()
     # biosource XXX
+
+
+    @classmethod
+    def create(cls, lims, container, position, **kwargs):
+        """Create an instance of Sample from attributes then post it to the LIMS"""
+        if not isinstance(container, Container):
+            raise TypeError('%s is not of type Container'%container)
+        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+
+        location = ElementTree.SubElement(instance.root, 'location')
+        ElementTree.SubElement(location, 'container', dict(uri=container.uri))
+        position_element = ElementTree.SubElement(location, 'value')
+        position_element.text = position
+        data = lims.tostring(ElementTree.ElementTree(instance.root))
+        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
+        instance._uri = instance.root.attrib['uri']
+        return instance
 
 
 class Containertype(Entity):
