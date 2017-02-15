@@ -528,10 +528,17 @@ class InputOutputMapList(BaseDescriptor):
     maps of a Process instance.
     """
 
+    def __init__(self, *args):
+        super(BaseDescriptor, self).__init__()
+        self.rootkeys = args
+
     def __get__(self, instance, cls):
         instance.get()
         self.value = []
-        for node in instance.root.findall('input-output-map'):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        for node in rootnode.findall('input-output-map'):
             input = self.get_dict(instance.lims, node.find('input'))
             output = self.get_dict(instance.lims, node.find('output'))
             self.value.append((input, output))

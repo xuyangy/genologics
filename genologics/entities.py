@@ -846,7 +846,7 @@ class StepReagentLots(Entity):
 class StepDetails(Entity):
     """Detail associated with a step"""
 
-    input_output_maps = NestedEntityListDescriptor
+    input_output_maps = InputOutputMapList('input-output-maps')
     udf = UdfDictionaryDescriptor('fields')
     udt = UdtDictionaryDescriptor('fields')
 
