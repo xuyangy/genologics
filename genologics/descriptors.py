@@ -153,9 +153,9 @@ class UdfDictionary(object):
         except:
             return isinstance(value, str)
 
-    def __init__(self, instance, *args, udt=False):
+    def __init__(self, instance, *args, **kwargs):
         self.instance = instance
-        self._udt = udt
+        self._udt = kwargs.pop('udt', False)
         self.rootkeys = args
         self._rootnode = None
         self._update_elems()
