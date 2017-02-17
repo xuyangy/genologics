@@ -346,6 +346,12 @@ class UdfDictionaryDescriptor(BaseDescriptor):
         self.value = UdfDictionary(instance, *self.rootkeys, udt=self._UDT)
         return self.value
 
+    def __set__(self, instance, dict_value):
+        instance.get()
+        udf_dict = UdfDictionary(instance, *self.rootkeys, udt=self._UDT)
+        for k in dict_value:
+            udf_dict[k] = dict_value[k]
+
 
 class UdtDictionaryDescriptor(UdfDictionaryDescriptor):
     """An instance attribute containing a dictionary of UDF values
