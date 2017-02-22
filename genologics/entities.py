@@ -785,8 +785,7 @@ class StepActions(Entity):
                     self._escalation['artifacts'].extend(art)
         return self._escalation
 
-    @property
-    def next_actions(self):
+    def get_next_actions(self):
         actions = []
         self.get()
         if self.root.find('next-actions') is not None:
@@ -801,6 +800,14 @@ class StepActions(Entity):
                     action['rework-step'] = Step(self.lims, uri=node.attrib.get('rework-step-uri'))
                 actions.append(action)
         return actions
+
+    def set_next_actions(self, actions):
+        for node in self.root.find('next-actions').findall('next-action'):
+            art_uri = node.attrib.get('artifact-uri')
+            action = [action for action in actions if action['artifact'].uri == art_uri][0]
+            if 'action' in action: node.attrib['action'] = action.get('action')
+
+    next_actions = property(get_next_actions, set_next_actions)
 
 
 class ReagentKit(Entity):
@@ -836,6 +843,13 @@ class ReagentLot(Entity):
 class StepReagentLots(Entity):
     reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
 
+class StepDetails(Entity):
+    """Detail associated with a step"""
+
+    input_output_maps = InputOutputMapList('input-output-maps')
+    udf = UdfDictionaryDescriptor('fields')
+    udt = UdtDictionaryDescriptor('fields')
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -843,15 +857,19 @@ class Step(Entity):
     _URI = 'steps'
     _PREFIX = 'stp'
 
+    current_state = StringAttributeDescriptor('current-state')
     _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
     actions       = EntityDescriptor('actions', StepActions)
     placements    = EntityDescriptor('placements', StepPlacements)
+    details       = EntityDescriptor('details', StepDetails)
 
-    # program_status     = EntityDescriptor('program-status',StepProgramStatus)
-    # details            = EntityListDescriptor(nsmap('file:file'), StepDetails)
+    #program_status     = EntityDescriptor('program-status',StepProgramStatus)
 
     def advance(self):
-        self.lims.post("{}/advance".format(self.uri))
+        self.root = self.lims.post(
+            uri="{}/advance".format(self.uri),
+            data=self.lims.tostring(ElementTree.ElementTree(self.root))
+        )
 
     @property
     def reagent_lots(self):
