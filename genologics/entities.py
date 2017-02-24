@@ -925,6 +925,17 @@ class StepReagentLots(Entity):
 
     reagent_lots = NestedEntityListDescriptor('reagent-lot', ReagentLot, 'reagent-lots')
 
+    def set_reagent_lots(self, lots):
+        """Sets the reagent lots for this step (removes any existing ones)."""
+
+        self.get()
+        reagent_lots_elem = self.root.find('reagent-lots')
+        reagent_lots_elem.clear()
+        for lot in lots:
+            node = ElementTree.Element('reagent-lot', uri=lot.uri, limsid=lot.id)
+            reagent_lots_elem.append(node)
+        self.put()
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -966,6 +977,7 @@ class ProtocolStep(Entity):
     sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
     step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
     epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
+    required_reagent_kits = NestedEntityListDescriptor('reagent-kit', ReagentKit, 'required-reagent-kits')
     # Transitions represent the allowed next steps for samples
     transitions         = NestedAttributeListDescriptor('transition', 'transitions')
 
