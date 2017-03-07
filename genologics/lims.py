@@ -768,3 +768,32 @@ class Lims(object):
         return [qc_results[a.id] for a in analytes]
 
 
+    def get_qc_results_re(self, analytes, qc_process_re):
+        """Get QC results for a list of analytes, from a process which produces 
+        ResultFiles, which had the specified analytes directly as inputs.
+
+        qc_process_re: A regular expression used to match the process name. The
+                 re.match() function is used, so the regex has to match the beginning
+                 of the name.
+
+        Returns the QC results (ResultFile artifacts) in the same order as
+        the input list of analytes.
+
+        Raises a KeyError if any of the input samples does not have a QC result file.
+        """
+
+        qc_processes = self.get_processes(
+                inputartifactlimsid=[a.id for a in analytes]
+                )
+
+        qc_results = {}
+        # Uses most recent QC result for each sample
+        for qc_process in sorted(qc_processes, key=lambda x: x.date_run):
+            if re.match(qc_process_re, qc_process.type_name):
+                for i, o in qc_process.input_output_maps:
+                    if o and o['output-type'] == "ResultFile" and o['output-generation-type'] == 'PerInput':
+                        qc_results[i['uri'].id] = o['uri']
+
+        return [qc_results[a.id] for a in analytes]
+
+
