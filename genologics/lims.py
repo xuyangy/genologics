@@ -199,7 +199,7 @@ class Lims(object):
                     message += ' ' + node.text
             except ElementTree.ParseError:  # some error messages might not follow the xml standard
                 message = response.content
-            raise requests.exceptions.HTTPError(message)
+            raise requests.exceptions.HTTPError(message, response=response)
         return True
 
     def parse_response(self, response, accept_status_codes=[200]):
