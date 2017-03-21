@@ -41,7 +41,7 @@ if version_info[:2] < (2,7):
     p26_write = ElementTree.ElementTree.write
     def write_with_xml_declaration(self, file, encoding, xml_declaration):
         assert xml_declaration is True # Support our use case only 
-        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
+        file.write("<?xml version='1.0' encoding='{0}'?>\n".format(encoding))
         p26_write(self, file, encoding=encoding)
     ElementTree.ElementTree.write = write_with_xml_declaration
 
@@ -149,7 +149,7 @@ class Lims(object):
                          auth=(self.username, self.password),
                          headers={'content-type': 'application/xml',
                                   'accept': 'application/xml'})
-        return self.parse_response(r)
+        self.validate_response(r)
 
     def post(self, uri, data, params=dict()):
         """POST the serialized XML to the given URI.
@@ -587,26 +587,7 @@ class Lims(object):
 
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
-        
-        # TODO: Work-around for charset problems in API. To be reverted if we can ever submit raw
-        # UTF-8 data again.
-        # (Since this is a temporary measure, we're just doing it easy and making *another* BytesIO
-        # buffer, even though this will normally be called via tostring, which also makes a BytesIO)
-        tempfile = BytesIO()
-        etree.write(tempfile, encoding='utf-8', xml_declaration=True)
-
-        replace = {
-                u'æ': u'a',
-                u'Æ': u'A',
-                u'ø': u'o',
-                u'Ø': u'O',
-                u'å': u'a',
-                u'Å': u'A'
-                }
-        req = tempfile.getvalue().decode('utf-8')
-        for pat,repl in replace.items():
-            req = req.replace(pat, repl)
-        outfile.write(req.encode('utf-8'))
+        etree.write(outfile, encoding='utf-8', xml_declaration=True)
 
     def create_step(self, step_configuration, inputs):
         """Creates a new protocol step instance. The inputs parameter is a list of 
@@ -783,6 +764,35 @@ class Lims(object):
             for i, o in qc_process.input_output_maps:
                 if o and o['output-type'] == "ResultFile" and o['output-generation-type'] == 'PerInput':
                     qc_results[i['uri'].id] = o['uri']
+
+        return [qc_results[a.id] for a in analytes]
+
+
+    def get_qc_results_re(self, analytes, qc_process_re):
+        """Get QC results for a list of analytes, from a process which produces 
+        ResultFiles, which had the specified analytes directly as inputs.
+
+        qc_process_re: A regular expression used to match the process name. The
+                 re.match() function is used, so the regex has to match the beginning
+                 of the name.
+
+        Returns the QC results (ResultFile artifacts) in the same order as
+        the input list of analytes.
+
+        Raises a KeyError if any of the input samples does not have a QC result file.
+        """
+
+        qc_processes = self.get_processes(
+                inputartifactlimsid=[a.id for a in analytes]
+                )
+
+        qc_results = {}
+        # Uses most recent QC result for each sample
+        for qc_process in sorted(qc_processes, key=lambda x: x.date_run):
+            if re.match(qc_process_re, qc_process.type_name):
+                for i, o in qc_process.input_output_maps:
+                    if o and o['output-type'] == "ResultFile" and o['output-generation-type'] == 'PerInput':
+                        qc_results[i['uri'].id] = o['uri']
 
         return [qc_results[a.id] for a in analytes]
 
