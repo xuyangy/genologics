@@ -1009,7 +1009,7 @@ class Step(Entity):
 
     def advance(self):
         self.root = self.lims.post(
-            uri="{}/advance".format(self.uri),
+            uri="{0}/advance".format(self.uri),
             data=self.lims.tostring(ElementTree.ElementTree(self.root))
         )
 
