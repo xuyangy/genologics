@@ -307,10 +307,12 @@ class Entity(object):
         self.lims.delete(self.uri)
 
     @classmethod
-    def create(cls, lims, **kwargs):
-        """Create an instance from attributes then post it to the LIMS"""
+    def _create(cls, lims, creation_tag=None, **kwargs):
+        """Create an instance from attributes and return it"""
         instance = cls(lims, _create_new=True)
-        if cls._TAG:
+        if creation_tag:
+            instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + creation_tag))
+        elif cls._TAG:
             instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + cls._TAG))
         else:
             instance.root = ElementTree.Element(nsmap(cls._PREFIX + ':' + cls.__name__.lower()))
@@ -319,6 +321,13 @@ class Entity(object):
                 setattr(instance, attribute, kwargs.get(attribute))
             else:
                 raise TypeError("%s create: got an unexpected keyword argument '%s'" % (cls.__name__, attribute))
+
+        return instance
+
+    @classmethod
+    def create(cls, lims, creation_tag=None, **kwargs):
+        """Create an instance from attributes then post it to the LIMS"""
+        instance = cls._create(lims, creation_tag=None, **kwargs)
         data = lims.tostring(ElementTree.ElementTree(instance.root))
         instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
         instance._uri = instance.root.attrib['uri']
@@ -475,6 +484,23 @@ class Sample(Entity):
     files          = EntityListDescriptor(nsmap('file:file'), File)
     externalids    = ExternalidListDescriptor()
     # biosource XXX
+
+
+    @classmethod
+    def create(cls, lims, container, position, **kwargs):
+        """Create an instance of Sample from attributes then post it to the LIMS"""
+        if not isinstance(container, Container):
+            raise TypeError('%s is not of type Container'%container)
+        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+
+        location = ElementTree.SubElement(instance.root, 'location')
+        ElementTree.SubElement(location, 'container', dict(uri=container.uri))
+        position_element = ElementTree.SubElement(location, 'value')
+        position_element.text = position
+        data = lims.tostring(ElementTree.ElementTree(instance.root))
+        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
+        instance._uri = instance.root.attrib['uri']
+        return instance
 
 
 class Containertype(Entity):
@@ -785,6 +811,29 @@ class StepActions(Entity):
                     self._escalation['artifacts'].extend(art)
         return self._escalation
 
+    def get_next_actions(self):
+        actions = []
+        self.get()
+        if self.root.find('next-actions') is not None:
+            for node in self.root.find('next-actions').findall('next-action'):
+                action = {
+                    'artifact': Artifact(self.lims, node.attrib.get('artifact-uri')),
+                    'action': node.attrib.get('action'),
+                }
+                if node.attrib.get('step-uri'):
+                    action['step'] = Step(self.lims, uri=node.attrib.get('step-uri'))
+                if node.attrib.get('rework-step-uri'):
+                    action['rework-step'] = Step(self.lims, uri=node.attrib.get('rework-step-uri'))
+                actions.append(action)
+        return actions
+
+    def set_next_actions(self, actions):
+        for node in self.root.find('next-actions').findall('next-action'):
+            art_uri = node.attrib.get('artifact-uri')
+            action = [action for action in actions if action['artifact'].uri == art_uri][0]
+            if 'action' in action: node.attrib['action'] = action.get('action')
+
+    next_actions = property(get_next_actions, set_next_actions)
 
     def put(self):
         """Updates next actions, then put.""" 
@@ -883,7 +932,6 @@ class StepPlacements(Entity):
         """Serialize the current state of output_placements [Not supported]."""
         pass
 
-
 class ReagentKit(Entity):
     """Type of Reagent with information about the provider"""
     _URI = "reagentkits"
@@ -936,6 +984,12 @@ class StepReagentLots(Entity):
             reagent_lots_elem.append(node)
         self.put()
 
+class StepDetails(Entity):
+    """Detail associated with a step"""
+
+    input_output_maps = InputOutputMapList('input-output-maps')
+    udf = UdfDictionaryDescriptor('fields')
+    udt = UdtDictionaryDescriptor('fields')
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -943,23 +997,25 @@ class Step(Entity):
     _URI = 'steps'
     _PREFIX = 'stp'
 
-    #configuration       = Assigned at end of file
-    current_state       = StringAttributeDescriptor('current-state')
+    current_state = StringAttributeDescriptor('current-state')
+    actions       = EntityDescriptor('actions', StepActions)
+    placements    = EntityDescriptor('placements', StepPlacements)
+    details       = EntityDescriptor('details', StepDetails)
+    _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
+    pools               = EntityDescriptor('pools', StepPools)
     program_status      = EntityDescriptor('program-status', ProgramStatus)
     available_programs  = InlineEntityListDescriptor('available-program', AvailableProgram, 'available-programs')
     reagentlots         = EntityDescriptor('reagent-lots', StepReagentLots)
-    actions             = EntityDescriptor('actions', StepActions)
-    details             = EntityDescriptor('details', StepDetails)
-    pools               = EntityDescriptor('pools', StepPools)
-    placements          = EntityDescriptor('placements', StepPlacements)
 
     def advance(self):
-        """Advances to next stage (placement, record details, finish, etc)"""
-        self.get()
-        advance_uri = "{0}/advance".format(self.uri)
-        data = self.lims.tostring(ElementTree.ElementTree(self.root))
-        self.root = self.lims.post(advance_uri, data)
+        self.root = self.lims.post(
+            uri="{}/advance".format(self.uri),
+            data=self.lims.tostring(ElementTree.ElementTree(self.root))
+        )
 
+    @property
+    def reagent_lots(self):
+        return self._reagent_lots.reagent_lots
 
 class ProtocolStep(Entity):
     """Steps key in the Protocol object"""
