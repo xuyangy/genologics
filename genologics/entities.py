@@ -833,7 +833,7 @@ class StepActions(Entity):
             action = [action for action in actions if action['artifact'].uri == art_uri][0]
             if 'action' in action: node.attrib['action'] = action.get('action')
 
-    next_actions = property(get_next_actions, set_next_actions)
+    #next_actions = property(get_next_actions, set_next_actions)
 
     def put(self):
         """Updates next actions, then put.""" 
