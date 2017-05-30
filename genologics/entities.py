@@ -897,6 +897,21 @@ class StepPools(Entity):
     pooled_inputs      = ObjectListDescriptor('pool', Pool, 'pooled-inputs')
     available_inputs   = NestedEntityListDescriptor('input', Artifact, 'available-inputs')
 
+    def create_pool(self, pool_name, input_list=[], input_replicates=[]):
+        """Create a new pool from a list of inputs. Inputs should be taken from available_inputs.
+        
+        Accepts either a list of (unique) inputs, using a single replicate for each, or a list
+        of tupes of the form (input, replicates), where replicates is the number of replicates."""
+
+        self.get()
+        pooled_inputs = self.root.find('pooled-inputs')
+        pool = ElementTree.SubElement(pooled_inputs, 'pool', name=pool_name)
+        for input in input_list:
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=1)
+        for input, replicates in input_replicates:
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=replicates)
+        self.put()
+
 
 class StepPlacements(Entity):
     """Placements from within a step. Supports POST"""
