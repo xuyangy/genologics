@@ -907,9 +907,9 @@ class StepPools(Entity):
         pooled_inputs = self.root.find('pooled-inputs')
         pool = ElementTree.SubElement(pooled_inputs, 'pool', name=pool_name)
         for input in input_list:
-            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=1)
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates="1")
         for input, replicates in input_replicates:
-            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=replicates)
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=str(replicates))
         self.put()
 
 
