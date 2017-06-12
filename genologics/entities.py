@@ -12,7 +12,8 @@ from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor,
     StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, NestedEntityListDescriptor, \
     ReagentLabelSetDescriptor, EntityAttributeDescriptor, ObjectListDescriptor, InlineEntityListDescriptor,\
-    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor
+    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor,\
+    StringTagAttributeDescriptor
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
@@ -525,6 +526,7 @@ class Container(Entity):
 
     name           = StringDescriptor('name')
     type           = EntityDescriptor('type', Containertype)
+    type_name      = StringTagAttributeDescriptor('type', 'name')
     occupied_wells = IntegerDescriptor('occupied-wells')
     placements     = PlacementDictionaryDescriptor('placement')
     udf            = UdfDictionaryDescriptor()
