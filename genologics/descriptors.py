@@ -82,6 +82,31 @@ class StringAttributeDescriptor(TagDescriptor):
         instance.root.attrib[self.tag] = value
 
 
+class StringTagAttributeDescriptor(TagDescriptor):
+    """A named string attribute on a child element of the entity's root."""
+
+    def __init__(self, tag, attribute):
+        super(StringTagAttributeDescriptor, self).__init__(tag)
+        self.attribute = attribute
+
+    def __get__(self, instance, cls):
+        instance.get()
+        node = self.get_node(instance)
+        if node is None:
+            return None
+        else:
+            return node.attrib.get(self.attribute)
+
+    def __set__(self, instance, value):
+        instance.get()
+        node = self.get_node(instance)
+        if node is None:
+            # create the new tag
+            node = ElementTree.Element(self.tag)
+            instance.root.append(node)
+        node.attrib[self.attribute] = str(value)
+
+
 class StringListDescriptor(TagDescriptor):
     """An instance attribute containing a list of strings
     represented by multiple XML elements.
