@@ -190,7 +190,7 @@ class UdfDictionary(object):
 
     @property
     def rootnode(self):
-        if not self._rootnode:
+        if self._rootnode is None:
             self._rootnode = self.instance.root
             for rootkey in self.rootkeys:
                 self._rootnode = self._rootnode.find(rootkey)
