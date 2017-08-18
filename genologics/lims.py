@@ -602,7 +602,7 @@ class Lims(object):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='utf-8', xml_declaration=True)
 
-    def create_step(self, step_configuration, inputs):
+    def create_step(self, step_configuration, inputs, container_type=None, reagent_category=None):
         """Creates a new protocol step instance. The inputs parameter is a list of 
 		artifact inputs. Returns the new step."""
 		
@@ -611,6 +611,11 @@ class Lims(object):
         inputs_element = ElementTree.SubElement(root, "inputs")
         for i in inputs:
             ElementTree.SubElement(inputs_element, "input", {'uri': i.uri})
+
+        if container_type:
+            ElementTree.SubElement(root, "container-type").text = container_type
+        if reagent_category:
+            ElementTree.SubElement(root, "reagent-category").text = reagent_cateogry
 
         root = self.post(self.get_uri("steps"), self.tostring(ElementTree.ElementTree(root)))
         limsid = root.attrib.get('limsid')

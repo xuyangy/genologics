@@ -9,7 +9,7 @@ Copyright (C) 2012 Per Kraulis
 from genologics.constants import nsmap
 from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor, UdfDictionaryDescriptor, \
     UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, \
-    StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
+    StringAttributeDescriptor, StringTagAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, NestedEntityListDescriptor, \
     ReagentLabelSetDescriptor, EntityAttributeDescriptor, ObjectListDescriptor, InlineEntityListDescriptor,\
     NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor,\
@@ -909,9 +909,9 @@ class StepPools(Entity):
         pooled_inputs = self.root.find('pooled-inputs')
         pool = ElementTree.SubElement(pooled_inputs, 'pool', name=pool_name)
         for input in input_list:
-            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=1)
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates="1")
         for input, replicates in input_replicates:
-            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=replicates)
+            ElementTree.SubElement(pool, 'input', uri=input.stateless.uri, replicates=str(replicates))
         self.put()
 
 
@@ -1003,6 +1003,7 @@ class ReagentLot(Entity):
     _PREFIX = 'lot'
 
     reagent_kit        = EntityDescriptor('reagent-kit', ReagentKit)
+    reagent_kit_name   = StringTagAttributeDescriptor('reagent-kit', 'name')
     name               = StringDescriptor('name')
     lot_number         = StringDescriptor('lot-number')
     created_date       = StringDescriptor('created-date')

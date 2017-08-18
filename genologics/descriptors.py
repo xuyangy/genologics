@@ -83,11 +83,11 @@ class StringAttributeDescriptor(TagDescriptor):
 
 
 class StringTagAttributeDescriptor(TagDescriptor):
-    """An string value on an attribute on a tag"""
+    """A named string attribute on a child element of the entity's root."""
 
-    def __init__(self, tag, attr):
+    def __init__(self, tag, attribute):
         super(StringTagAttributeDescriptor, self).__init__(tag)
-        self.attr = attr
+        self.attribute = attribute
 
     def __get__(self, instance, cls):
         instance.get()
@@ -95,7 +95,7 @@ class StringTagAttributeDescriptor(TagDescriptor):
         if node is None:
             return None
         else:
-            return node.attrib.get(self.attr)
+            return node.attrib.get(self.attribute)
 
     def __set__(self, instance, value):
         instance.get()
@@ -104,7 +104,7 @@ class StringTagAttributeDescriptor(TagDescriptor):
             # create the new tag
             node = ElementTree.Element(self.tag)
             instance.root.append(node)
-        node.attrib[self.attr] = str(value)
+        node.attrib[self.attribute] = str(value)
 
 
 class StringListDescriptor(TagDescriptor):
@@ -190,7 +190,7 @@ class UdfDictionary(object):
 
     @property
     def rootnode(self):
-        if not self._rootnode:
+        if self._rootnode is None:
             self._rootnode = self.instance.root
             for rootkey in self.rootkeys:
                 self._rootnode = self._rootnode.find(rootkey)
