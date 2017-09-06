@@ -752,7 +752,9 @@ class Lims(object):
             action = "complete"
 
         for next_action in step.actions.next_actions:
-            if next_action.get('action') != "remove": # Don't set next action for controls, which have default "remove"
+            if not re.match(r".*\/\d+C-\d+PA1", next_action['artifact-uri']): # The regex should match /, and the LIMSID of control artifacts
+                # Note: This doesn't set the next action for multi-step controls! That would require another one or two requests, to check 
+                # the type.
                 if action == "nextstep":
                     next_action['step-uri'] = next_step_uri
                 next_action['action'] = action
