@@ -388,11 +388,11 @@ class Glsstorage(object):
     content_location   = StringDescriptor('content-location')
     original_location  = StringDescriptor('original-location')
 
-    def __init__(self, lims, root = None): 
+    def __init__(self, lims, root = None):
         '''Specify an entity to attach the file: set attached_to to an entity object.
 
         The original location is required, but not used for anything.
-        
+
         root is mainly used internally and should be left blank.'''
 
         self.lims = lims
@@ -403,7 +403,7 @@ class Glsstorage(object):
 
     def get(self):
         """Get is a no-op for ProtoFile, but required to use the descriptors
-        which are intended for Entities. There is no ultimate correct copy in 
+        which are intended for Entities. There is no ultimate correct copy in
         the LIMS, only the local data"""
         pass
 
@@ -562,9 +562,9 @@ class Udfconfig(Entity):
     first_preset_is_default_value = BooleanDescriptor('first-preset-is-default-value')
     show_in_tables                = BooleanDescriptor('show-in-tables')
     is_editable                   = BooleanDescriptor('is-editable')
-    is_deviation                  = BooleanDescriptor('is-deviation') 
+    is_deviation                  = BooleanDescriptor('is-deviation')
     is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
-    presets                       = StringListDescriptor('preset') 
+    presets                       = StringListDescriptor('preset')
 
 
 
@@ -652,8 +652,8 @@ class Process(Entity):
         return [a for a in artifacts if a.output_type == 'ResultFile']
 
     def analytes(self):
-        """Retreving the output Analytes of the process, if existing. 
-        If the process is not producing any output analytes, the input 
+        """Retreving the output Analytes of the process, if existing.
+        If the process is not producing any output analytes, the input
         analytes are returned. Input/Output is returned as a information string.
         Makes aggregate processes and normal processes look the same."""
         info = 'Output'
@@ -773,7 +773,7 @@ class Artifact(Entity):
 
 class AvailableProgram(Entity):
     """Program registered on the process type, which can be referenced directly from
-    the step instance. Only represented by a tag in the Step entity, not at its own 
+    the step instance. Only represented by a tag in the Step entity, not at its own
     resource."""
 
     name        = StringAttributeDescriptor('name')
@@ -838,7 +838,7 @@ class StepActions(Entity):
     #next_actions = property(get_next_actions, set_next_actions)
 
     def put(self):
-        """Updates next actions, then put.""" 
+        """Updates next actions, then put."""
         # In the future one may want to centralise the update handling into the descriptor.
         # For now we handle next actions as a special case, to be able to update the next actions,
         # while changing to use the NestedAttributeListDescriptor
@@ -866,7 +866,7 @@ class ProgramStatus(Entity):
 class StepDetails(Entity):
     """Details resource contains an alternative representation of the
     information in processes (input/output maps, UDFs). In the details
-    XML payload, these are nested under a parent XML element; 
+    XML payload, these are nested under a parent XML element;
     input-output-maps, fields. In time, the relevant descriptors may be
     generalised to work here too."""
 
@@ -885,14 +885,14 @@ class Pool(object):
     output            = EntityAttributeDescriptor('output-uri', Artifact)
 
     def get(self):
-        """Don't have a uri to get, all data are in memory, but the 
+        """Don't have a uri to get, all data are in memory, but the
         descriptors use get()."""
         pass
 
 
 class StepPools(Entity):
     """Pooling (read-only representation).
-    
+
     This is a temporary measure, it should probably be replaced with a fully
     read/write representation, including creation of pools. """
 
@@ -901,7 +901,7 @@ class StepPools(Entity):
 
     def create_pool(self, pool_name, input_list=[], input_replicates=[]):
         """Create a new pool from a list of inputs. Inputs should be taken from available_inputs.
-        
+
         Accepts either a list of (unique) inputs, using a single replicate for each, or a list
         of tupes of the form (input, replicates), where replicates is the number of replicates."""
 
@@ -1017,7 +1017,7 @@ class ReagentLot(Entity):
 
 class StepReagentLots(Entity):
     """A step's reagent lots subentity.
-    
+
     To access the list of reagent lots for a step you need to do:
     step.reagentlots.reagent_lots
     because they are available through the reagentlots subentity (this).
@@ -1050,6 +1050,8 @@ class Step(Entity):
     _PREFIX = 'stp'
 
     current_state = StringAttributeDescriptor('current-state')
+    date_started = StringDescriptor('date-started')
+    date_completed = StringDescriptor('date-completed')
     actions       = EntityDescriptor('actions', StepActions)
     placements    = EntityDescriptor('placements', StepPlacements)
     details       = EntityDescriptor('details', StepDetails)
@@ -1074,7 +1076,7 @@ class ProtocolStep(Entity):
 
     _TAG = 'step'
     # Step config is not resolvable using a URI and an ID alone, because
-    # it's nested under a protocol.    
+    # it's nested under a protocol.
     _URI = None
 
     name                = StringAttributeDescriptor("name")
@@ -1125,7 +1127,7 @@ class Workflow(Entity):
 
 
 class Queue(Entity):
-    """Get the queue of analytes ready to start on a protocol step. 
+    """Get the queue of analytes ready to start on a protocol step.
     Give the protocol configuration ID"""
 
     _URI = 'queues'
