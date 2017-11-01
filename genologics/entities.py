@@ -24,6 +24,7 @@ import requests
 from xml.etree import ElementTree
 
 import logging
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 CACHE_N_ENTRIES = 10000
@@ -787,33 +788,53 @@ class AvailableProgram(Entity):
 
 class StepActions(Entity):
     """Actions associated with a step"""
-    _escalation = None
+
+    def __new__(cls, lims, uri=None, protocolStepID=None):
+        if not uri:
+            if protocolStepID:
+                uri = lims.get_uri('steps', protocolStepID, 'actions')
+            else:
+                raise ValueError("Entity uri and protocolStepID can't be both None")
+        try:
+            return lims.cache[uri]
+        except KeyError:
+            return object.__new__(cls)
+
+    def __init__(self, lims, uri=None, protocolStepID=None):
+        assert uri or protocolStepID
+        # returned from the lims.cache, instead of a new instance
+        if hasattr(self, 'lims'): return
+        if not uri:
+            uri = lims.get_uri(Step._URI, protocolStepID, 'actions')
+        lims.cache[uri] = self
+        lims.cache_list.append(uri)
+        if len(lims.cache_list) > CACHE_N_ENTRIES:
+            del lims.cache[lims.cache_list.pop(0)]
+        self.lims = lims
+        self._uri = uri
+        self.root = None
+
+    # escalation is not always available for any sample, so it is safer to use try block when
+    # access escalation related attributes
+    escalation_request_author = NestedEntityListDescriptor('author', Researcher, 'escalation',
+                                                           'request')
+    escalation_request_reviewer = NestedEntityListDescriptor('reviewer', Researcher, 'escalation',
+                                                             'request')
+    escalation_request_date = NestedStringListDescriptor('date', 'escalation', 'request')
+    escalation_request_comment = NestedStringListDescriptor('comment', 'escalation', 'request')
+    escalation_review_author = NestedEntityListDescriptor('author', Researcher, 'escalation',
+                                                          'review')
+    escalation_review_date = NestedStringListDescriptor('date', 'escalation', 'review')
+    escalation_review_comment = NestedStringListDescriptor('comment', 'escalation', 'review')
+    escalation_escalated_artifacts = NestedEntityListDescriptor('escalated-artifact', Artifact,
+                                                                'escalation',
+                                                                'escalated-artifacts')
     next_actions = NestedAttributeListDescriptor('next-action', 'next-actions')
 
-    @property
-    def escalation(self):
-        if not self._escalation:
-            self.get()
-            self._escalation = {}
-            for node in self.root.findall('escalation'):
-                self._escalation['artifacts'] = []
-                self._escalation['author'] = Researcher(self.lims,
-                                                        uri=node.find('request').find('author').attrib.get('uri'))
-                self._escalation['request'] = uri = node.find('request').find('comment').text
-                if node.find('review') is not None:  # recommended by the Etree doc
-                    self._escalation['status'] = 'Reviewed'
-                    self._escalation['reviewer'] = Researcher(self.lims,
-                                                              uri=node.find('review').find('author').attrib.get('uri'))
-                    self._escalation['answer'] = uri = node.find('review').find('comment').text
-                else:
-                    self._escalation['status'] = 'Pending'
-
-                for node2 in node.findall('escalated-artifacts'):
-                    art = self.lims.get_batch([Artifact(self.lims, uri=ch.attrib.get('uri')) for ch in node2])
-                    self._escalation['artifacts'].extend(art)
-        return self._escalation
-
     def get_next_actions(self):
+        """
+        :return: dict with uri-attributes converted to Entities
+        """
         actions = []
         self.get()
         if self.root.find('next-actions') is not None:
@@ -830,26 +851,104 @@ class StepActions(Entity):
         return actions
 
     def set_next_actions(self, actions):
+
+        """
+        :actions: list(# nextstep
+                       dict(step-uri=ConfProtocolStep.uri, action="nextstep", artifact=Artifact),
+
+                       # review
+                       dict(action='review',[author=Researcher,]reviewer=Researcher,
+                            [comment="",]artifact=Artifact),
+                       # repeat
+                       dict(action='repeat',artifact=Artifact),
+
+                       # rework
+                       #   Input queued for specified earlier step. Output no longer in workflow
+                       #   optional step-uri defaults to rework_step_uri's ConfProtocolStep.uri
+                       dict(rework-step-uri=ProtocolStep.uri,[step-uri=ConfProtocolStep.uri,]
+                            action='rework', artifact=Artifact),
+
+                       # completerepeat
+                       #   Input is requeued for the same step. Output is queued for next step in
+                       #   the same protocol(not last step in protocol) or queued for first step in
+                       #   next protocol(last step in protocol; not last step in workflow) or no
+                       #   longer in workflow(last step in workflow)
+                       dict(step-uri=ConfProtocolStep.uri, action='completerepeat',
+                            artifact=Artifact),
+
+                       # remove
+                       dict(action='remove', artifact=Artifact))
+
+                       # complete
+                       # compelte a Protocol
+                       dict(action='complete', artifact=Artifact))
+
+        """
+        self.get()
         for node in self.root.find('next-actions').findall('next-action'):
             art_uri = node.attrib.get('artifact-uri')
-            action = [action for action in actions if action['artifact'].uri == art_uri][0]
-            if 'action' in action: node.attrib['action'] = action.get('action')
+            # actions must be set for all artifact in one go
+            try:
+                act = [action for action in actions if action['artifact'].uri == art_uri][0]
+            except IndexError as err:
+                if not err.args:
+                    err.args = ('',)
+                msg = 'missing action for artifact: {0}'.format(art_uri)
+                err.args += (msg,)
+                raise
+            if 'action' not in act:
+                raise RuntimeError("action must be any of 'nextstep', 'review', 'repeat', "
+                                   "'rework', 'completerepeat', 'remove', 'complete'!")
+            action_type = act.get('action')
+            # set action type
+            node.attrib['action'] = action_type
+            # set additional attributes for the action type
+            if action_type == 'review':
+                reviewer = act.get('reviewer')
+                author = act.get('author', None)
+                comment = act.get('comment', None)
+                self._set_escalation(request_reviewer=reviewer, request_author=author,
+                                     request_comment=comment)
+            elif action_type == 'nextstep':
+                next_step_uri = act.get('step-uri')
+                node.attrib['step-uri'] = next_step_uri
+            elif action_type == 'completerepeat':
+                next_step_uri = act.get('step-uri', None)
+                if next_step_uri:  # not allowed when step is the last step in a workflow
+                    node.attrib['step-uri'] = next_step_uri
+            elif action_type == 'rework':
+                rework_step_uri = act.get('rework-step-uri')
+                node.attrib['rework-step-uri'] = rework_step_uri
+        self.put()
 
-    #next_actions = property(get_next_actions, set_next_actions)
+    def _set_escalation(self, request_reviewer, request_author=None, request_comment=None):
 
-    def put(self):
-        """Updates next actions, then put."""
-        # In the future one may want to centralise the update handling into the descriptor.
-        # For now we handle next actions as a special case, to be able to update the next actions,
-        # while changing to use the NestedAttributeListDescriptor
-        next_actions_elem = self.root.find('next-actions')
-        if not next_actions_elem is None:
-            next_actions = list(self.next_actions)
-            next_actions_elem.clear()
-            for na in next_actions:
-                ElementTree.SubElement(next_actions_elem, 'next-action', attrib=na)
-
-        super(StepActions, self).put()
+        """
+        : request_author   : Researcher, person who submit the request, DEFAULTS to login user
+        : request_reviewer : Researcher, person requested to review, MANDATORY
+        : request_comment  : String, reason why review needed, OPTIONAL
+        """
+        escalation = self.root.find('escalation')
+        if escalation is None:
+            escalation_node = ElementTree.Element('escalation')
+            # request node
+            request_node = ElementTree.Element('request')
+            #   request author node, optional, defaults to loggin user
+            if request_author:
+                request_author_node = ElementTree.Element('author')
+                request_author_node.attrib['uri'] = request_author.uri
+                request_node.append(request_author_node)
+            #   request reviewer node, mandatory
+            request_reviewer_node = ElementTree.Element('reviewer')
+            request_reviewer_node.attrib['uri'] = request_reviewer.uri
+            request_node.append(request_reviewer_node)
+            #   request comment node, optional
+            if request_comment:
+                request_comment_node = ElementTree.Element('comment')
+                request_comment_node.text = str(request_comment)
+                request_node.append(request_comment_node)
+            escalation_node.append(request_node)
+            self.root.append(escalation_node)
 
 
 class ProgramStatus(Entity):
