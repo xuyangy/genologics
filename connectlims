@@ -1,0 +1,5 @@
+#!/bin/bash
+
+pyenv global anaconda3-5.0.0
+export PYTHONPATH+=$HOME/Git/ousamg-genologics/genologics
+python -c "from genologics.lims import *; from genologics.config import BASEURI, USERNAME, PASSWORD; lims=Lims(BASEURI, USERNAME, PASSWORD); from IPython import embed; embed()"

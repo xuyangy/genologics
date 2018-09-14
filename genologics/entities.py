@@ -1261,6 +1261,7 @@ class Queue(Entity):
     _PREFIX = "que"
 
     artifacts=NestedEntityListDescriptor("artifact", Artifact, "artifacts")
+    protocol_step_config   = EntityAttributeDescriptor('protocol-step-uri', ProtocolStep)
 
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)

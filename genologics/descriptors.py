@@ -528,7 +528,7 @@ class NestedEntityListDescriptor(EntityListDescriptor):
 
 class InlineEntityListDescriptor(EntityListDescriptor):
     """EntityListDescriptor which saves the XML tags in the parent entity as the
-    root elements of the referenced entities. Useful when the full body of the 
+    root elements of the referenced entities. Useful when the full body of the
     referenced entity is enclosed in the parent."""
 
     def __init__(self, tag, klass, *args):
@@ -634,7 +634,7 @@ class ReagentLabelSet(MutableSet):
         return str(self.value)
 
     def __getitem__(self, index):
-        """Emulate list-like indexing to support code written when this was 
+        """Emulate list-like indexing to support code written when this was
         a list."""
         return list(self.value)[index]
 
